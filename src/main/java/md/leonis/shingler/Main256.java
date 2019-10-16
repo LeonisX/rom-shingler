@@ -6,49 +6,23 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.CRC32;
 
-public class Main {
+public class Main256 {
 
     private static final int SHINGLE_LENGTH = 8;
-    private static final int SAMPLE_PROBE = 1;
+    private static final int SAMPLE_PROBE = 256;
 
     @SuppressWarnings("all")
     public static void main(String[] args) throws IOException, ClassNotFoundException {
-
         final File folder = new File("D:\\Downloads\\games");
         final File shdFolder = new File("D:\\Downloads\\games\\shd");
-        final File sampleFolder = new File("D:\\Downloads\\games\\sample");
+        final File sampleFolder = new File("D:\\Downloads\\games\\sample" + SAMPLE_PROBE);
         shdFolder.mkdir();
         sampleFolder.mkdir();
         List<File> files = listFilesForFolder(folder);
 
         System.out.println("Generating shingles...");
 
-        int[] kx = {1};
-
-        files.parallelStream().forEach(file -> {
-            try {
-                File shdFile = new File(shdFolder.getAbsolutePath() + File.separator + file.getName() + ".shg");
-
-                if (shdFile.exists() && shdFile.length() > 0) {
-                    System.out.println(String.format(Locale.US, "Skipping: %s: %2.2f", file.getName(), (kx[0] * 100.0 / files.size())));
-                } else {
-                    byte[] bytes = readFromFile(file);
-                    Set<Long> shingles = toShingles(bytes);
-
-                    System.out.println(String.format(Locale.US, "%s: %2.2f%%", file.getName(), (kx[0] * 100.0 / files.size())));
-                    FileOutputStream fout = new FileOutputStream(shdFile);
-                    ObjectOutputStream oos = new ObjectOutputStream(fout);
-                    oos.writeObject(shingles);
-                    oos.close();
-                    fout.close();
-                }
-                kx[0]++;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
-
-        /*for (int i = 0; i < files.size(); i++) {
+        for (int i = 0; i < files.size(); i++) {
             File file = files.get(i);
 
             File shdFile = new File(shdFolder.getAbsolutePath() + File.separator + file.getName() + ".shg");
@@ -67,62 +41,9 @@ public class Main {
             oos.writeObject(shingles);
             oos.close();
             fout.close();
-        }*/
+        }
 
         PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("result.csv", true)));
-
-        // sample
-
-        System.out.println("\nGetting samples...");
-
-        kx[0] = 1;
-
-        files.parallelStream().forEach(file -> {
-            try {
-                File sampleFile = new File(sampleFolder.getAbsolutePath() + File.separator + file.getName() + ".shg");
-
-                if (sampleFile.exists() && sampleFile.length() > 0) {
-                    System.out.println(String.format(Locale.US, "Skipping: %s: %2.2f", file.getName(), (kx[0] * 100.0 / files.size())));
-                } else {
-
-                    System.out.println(String.format(Locale.US, "%s: %2.2f%%", file.getName(), (kx[0] * 100.0 / files.size())));
-
-                    Set<Long> shingles = readShdFromFile(new File(shdFolder.getAbsolutePath() + File.separator + file.getName() + ".shg"));
-
-                    FileOutputStream fout = new FileOutputStream(sampleFile);
-                    ObjectOutputStream oos = new ObjectOutputStream(fout);
-                    //TODO SAMPLE_PROBE
-                    oos.writeObject(shingles.stream().filter(s -> s % 16 == 0).collect(Collectors.toSet()));
-                    oos.close();
-                    fout.close();
-                }
-                kx[0]++;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
-
-        /*for (int i = 0; i < files.size(); i++) {
-            File file = files.get(i);
-
-            File sampleFile = new File(sampleFolder.getAbsolutePath() + File.separator + file.getName() + ".shg");
-
-            if (sampleFile.exists() && sampleFile.length() > 0) {
-                System.out.println(String.format(Locale.US, "Skipping: %s: %2.2f", file.getName(), ((i + 1) * 100.0 / files.size())));
-                continue;
-            }
-
-            System.out.println(String.format(Locale.US, "%s: %2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
-
-            Set<Long> shingles = readShdFromFile(new File(shdFolder.getAbsolutePath() + File.separator + file.getName() + ".shg"));
-
-            FileOutputStream fout = new FileOutputStream(sampleFile);
-            ObjectOutputStream oos = new ObjectOutputStream(fout);
-            //TODO SAMPLE_PROBE
-            oos.writeObject(shingles.stream().filter(s -> s % 16 == 0).collect(Collectors.toSet()));
-            oos.close();
-            fout.close();
-        }*/
 
         System.out.println("\nCalculating diff...");
 
@@ -153,7 +74,33 @@ public class Main {
             }
         }*/
 
-        kx[0] = 1;
+        // sample
+
+        System.out.println("\nGetting samples...");
+
+        for (int i = 0; i < files.size(); i++) {
+            File file = files.get(i);
+
+            File sampleFile = new File(sampleFolder.getAbsolutePath() + File.separator + file.getName() + ".shg");
+
+            if (sampleFile.exists() && sampleFile.length() > 0) {
+                System.out.println(String.format(Locale.US, "Skipping: %s: %2.2f", file.getName(), ((i + 1) * 100.0 / files.size())));
+                continue;
+            }
+
+            System.out.println(String.format(Locale.US, "%s: %2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
+
+            Set<Long> shingles = readShdFromFile(new File(shdFolder.getAbsolutePath() + File.separator + file.getName() + ".shg"));
+
+            FileOutputStream fout = new FileOutputStream(sampleFile);
+            ObjectOutputStream oos = new ObjectOutputStream(fout);
+            oos.writeObject(shingles.stream().filter(s -> s % SAMPLE_PROBE == 0).collect(Collectors.toSet()));
+            oos.close();
+            fout.close();
+        }
+
+
+        int[] kx = {0};
 
         files.parallelStream().forEach(file1 -> {
             try {
