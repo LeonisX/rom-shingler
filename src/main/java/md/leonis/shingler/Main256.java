@@ -64,8 +64,8 @@ public class Main256 {
 
                 s1intersect.retainAll(s2Set);
                 s1union.addAll(s2Set);
-                double relative = s1intersect.size() * 1.0 / s1Set.size();
-                double jakkard = s1intersect.size() * 1.0 / s1union.size();
+                double relative = s1intersect.size() * 100.0 / s1Set.size();
+                double jakkard = s1intersect.size() * 100.0 / s1union.size();
 
                 Result result = new Result(file1.getName(), file2.getName(), relative, jakkard);
                 out.println(result.toString());
@@ -123,8 +123,8 @@ public class Main256 {
 
                         s1intersect.retainAll(s2Set);
                         s1union.addAll(s2Set);
-                        double relative = s1intersect.size() * 1.0 / s1Set.size();
-                        double jakkard = s1intersect.size() * 1.0 / s1union.size();
+                        double relative = s1intersect.size() * 100.0 / s1Set.size();
+                        double jakkard = s1intersect.size() * 100.0 / s1union.size();
 
                         Result result = new Result(file1.getName(), file2.getName(), relative, jakkard);
                         out.println(result.toString());

@@ -6,7 +6,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.CRC32;
 
-public class Main2 {
+public class Main64 {
 
     private static final int SHINGLE_LENGTH = 8;
     private static final int SAMPLE_PROBE = 64;
@@ -64,8 +64,8 @@ public class Main2 {
 
                 s1intersect.retainAll(s2Set);
                 s1union.addAll(s2Set);
-                double relative = s1intersect.size() * 1.0 / s1Set.size();
-                double jakkard = s1intersect.size() * 1.0 / s1union.size();
+                double relative = s1intersect.size() * 100.0 / s1Set.size();
+                double jakkard = s1intersect.size() * 100.0 / s1union.size();
 
                 Result result = new Result(file1.getName(), file2.getName(), relative, jakkard);
                 out.println(result.toString());
@@ -123,8 +123,8 @@ public class Main2 {
 
                         s1intersect.retainAll(s2Set);
                         s1union.addAll(s2Set);
-                        double relative = s1intersect.size() * 1.0 / s1Set.size();
-                        double jakkard = s1intersect.size() * 1.0 / s1union.size();
+                        double relative = s1intersect.size() * 100.0 / s1Set.size();
+                        double jakkard = s1intersect.size() * 100.0 / s1union.size();
 
                         Result result = new Result(file1.getName(), file2.getName(), relative, jakkard);
                         out.println(result.toString());

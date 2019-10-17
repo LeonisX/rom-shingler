@@ -9,7 +9,7 @@ import java.util.zip.CRC32;
 public class Main {
 
     private static final int SHINGLE_LENGTH = 8;
-    private static final int SAMPLE_PROBE = 1;
+    private static final int SAMPLE_PROBE = 16;
 
     @SuppressWarnings("all")
     public static void main(String[] args) throws IOException, ClassNotFoundException {
@@ -143,8 +143,8 @@ public class Main {
 
                 s1intersect.retainAll(s2Set);
                 s1union.addAll(s2Set);
-                double relative = s1intersect.size() * 1.0 / s1Set.size();
-                double jakkard = s1intersect.size() * 1.0 / s1union.size();
+                double relative = s1intersect.size() * 100.0 / s1Set.size();
+                double jakkard = s1intersect.size() * 100.0 / s1union.size();
 
                 Result result = new Result(file1.getName(), file2.getName(), relative, jakkard);
                 out.println(result.toString());
@@ -174,10 +174,10 @@ public class Main {
                         Set<Long> s1intersect = new HashSet<>(s1Set);
                         Set<Long> s1union = new HashSet<>(s1Set);
 
-                        s1intersect.retainAll(s2Set);
-                        s1union.addAll(s2Set);
-                        double relative = s1intersect.size() * 1.0 / s1Set.size();
-                        double jakkard = s1intersect.size() * 1.0 / s1union.size();
+                            s1intersect.retainAll(s2Set);
+                            s1union.addAll(s2Set);
+                            double relative = s1intersect.size() * 100.0 / s1Set.size();
+                            double jakkard = s1intersect.size() * 100.0 / s1union.size();
 
                         Result result = new Result(file1.getName(), file2.getName(), relative, jakkard);
                         out.println(result.toString());
@@ -221,7 +221,6 @@ public class Main {
         return result;
     }
 
-    @SuppressWarnings("all")
     private static Set<Long> toShingles(byte[] bytes) {
         Set<Long> hashes = new HashSet<>();
 
