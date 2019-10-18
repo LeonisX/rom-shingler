@@ -8,18 +8,17 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.zip.CRC32;
 
+//TODO list[], write direct, read direct
+//TODO fast intersect/union operations. TreeMap?
 public class Main1024 {
 
     private static final int SHINGLE_LENGTH = 8;
-    private static final int SAMPLE_PROBE = 256;
 
     private static final String GAMES_DIR = "D:\\Downloads\\games\\";
 
-    private static final File SHD_FOLDER = new File(GAMES_DIR + "shd");
-
     private static final int SHINGLE_MAP_THRESHOLD = 128;
 
-    private static final List<Integer> SAMPLES = Arrays.asList(16, 64, 256, 1024);
+    private static final List<Integer> SAMPLES = Arrays.asList(1, 16, 64, 256, 1024);
 
     private static final Map<Integer, File> SAMPLE_DIRS_MAP =
             SAMPLES.stream().collect(Collectors.toMap(Function.identity(), s -> new File(GAMES_DIR + "sample" + s)));
@@ -27,6 +26,7 @@ public class Main1024 {
     private static final Map<Integer, Map<String, Set<Long>>> SHINGLE_MAP =
             SAMPLES.stream().collect(Collectors.toMap(Function.identity(), HashMap::new));
 
+    @SuppressWarnings("all")
     public static void main(String[] args) throws IOException {
         final File folder = new File(GAMES_DIR);
 
@@ -36,12 +36,13 @@ public class Main1024 {
 
         generateShingles(files);
 
-        getSamples(files);
+        //TODO revert
+        //getSamples(files);
 
         List<Name> names = files.stream().map(f -> new Name(f, false)).collect(Collectors.toList());
 
-        generateFamilies(names, 1024, 20); // generate families
-
+        //TODO revert 1 or 16, 1 is the better solution
+        generateFamilies(names, 64, 20); // generate families
     }
 
     @SuppressWarnings("all")
@@ -49,12 +50,10 @@ public class Main1024 {
 
         System.out.println("Generating shingles...");
 
-        SHD_FOLDER.mkdir();
-
         for (int i = 0; i < files.size(); i++) {
             File file = files.get(i);
 
-            File shdFile = new File(SHD_FOLDER.getAbsolutePath() + File.separator + file.getName() + ".shg");
+            File shdFile = new File(SAMPLE_DIRS_MAP.get(1).getAbsolutePath() + File.separator + file.getName() + ".shg");
 
             if (shdFile.exists() && shdFile.length() > 0) {
                 System.out.println(String.format(Locale.US, "Skipping: %s: %2.2f", file.getName(), ((i + 1) * 100.0 / files.size())));
@@ -84,132 +83,277 @@ public class Main1024 {
 
     @SuppressWarnings("all")
     private static void getSamples(List<File> files) throws IOException {
-        System.out.println("\nGetting samples from disk...");
 
         SHINGLE_MAP.forEach((key, value) -> {
             int index = key;
-            File shinglesMapFile = new File("shinglesMap" + SAMPLE_PROBE);
-            Map<String, Set<Long>> shinglesMap = (!shinglesMapFile.exists()) ? new HashMap<>() : readShingleMapFromFile(shinglesMapFile);
-            if (index > SHINGLE_MAP_THRESHOLD && shinglesMap.isEmpty()) {
-                for (int i = 0; i < files.size(); i++) {
-                    File file = files.get(i);
+            if (index > 1) {
 
-                    /*if (sampleFile.exists() && sampleFile.length() > 0) {
-                        System.out.println(String.format(Locale.US, "Skipping: %s: %2.2f", file.getName(), ((i + 1) * 100.0 / files.size())));
+                File shinglesMapFile = new File("shinglesMap" + index);
+
+                Map<String, Set<Long>> shinglesMap = new HashMap<>();
+
+
+                if (index > SHINGLE_MAP_THRESHOLD) {
+
+                    if (shinglesMapFile.exists()) {
+                        System.out.println(String.format("Getting sample%s from disk...", index));
+                        shinglesMap = readShingleMapFromFile(shinglesMapFile);
+                    } else {
+                        System.out.println(String.format("Generating sample%s...", index));
+                        for (int i = 0; i < files.size(); i++) {
+                            File file = files.get(i);
+
+                            File sampleFile = new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + file.getName() + ".shg");
+
+                            if (!sampleFile.exists()) {
+
+                                System.out.println(String.format(Locale.US, "%s: %2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
+
+                                File srcSampleFolder = SAMPLE_DIRS_MAP.get(index - 1);
+
+                                Set<Long> shingles = readShdFromFile(new File(srcSampleFolder.getAbsolutePath() + File.separator + file.getName() + ".shg"));
+                                Set<Long> filteredShingles = shingles.stream().filter(s -> s % index == 0).collect(Collectors.toSet());
+
+                                shinglesMap.put(file.getName(), filteredShingles);
+
+                                if (!sampleFile.exists()) {
+                                    serialize(sampleFile, shingles.stream().filter(s -> s % index == 0).collect(Collectors.toSet()));
+                                }
+                            } else {
+                                System.out.println(String.format(Locale.US, "Skipping: %s: %2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
+                                Set<Long> filteredShingles = readShdFromFile(sampleFile);
+                                shinglesMap.put(file.getName(), filteredShingles);
+                            }
+                        }
+                        serialize(shinglesMapFile, shinglesMap);
+                        SHINGLE_MAP.replace(index, shinglesMap);
+                    }
+                }
+            }
+        });
+    }
+
+    private static void generateFamilies(List<Name> names, int index, int jakkardIndex) {
+
+        names = names.subList(500, 1500);
+
+        File familyFile = new File("family");
+
+        Map<String, Family> families;
+        if (familyFile.exists()) {
+            System.out.println("\nReading families from file...");
+            families = readFamiliesFromFile(familyFile);
+        } else {
+            System.out.println("\nGenerating families...");
+            Map<String, List<Name>> namesList = names.stream().collect(Collectors.groupingBy(Name::getCleanName));
+
+            families = namesList.entrySet().stream().filter(e -> e.getValue().size() != 1)
+                    .collect(Collectors.toMap(Map.Entry::getKey, e -> new Family(e.getValue())));
+
+            calculateRelations(families, index);
+
+            serialize(new File("family"), families);
+        }
+
+        int inFamily = families.values().stream().map(Family::size).mapToInt(Integer::intValue).sum();
+
+        System.out.println("In family: " + inFamily);
+        System.out.println("Not in family: " + (names.size() - inFamily));
+
+        //TODO jakkardIndex
+        drop(families, 30);
+
+        System.out.println("In family: " + inFamily);
+        System.out.println("Not in family: " + (names.size() - inFamily));
+
+        //TODO merge jakkardIndex 20
+        //TODO index 1 or 16. Better 1
+        families = mergeFamilies(families, 30, 64);
+
+        //TODO проходиться сиротами и смотреть куда пристроить.
+    }
+
+    private static Map<String, Family> mergeFamilies(Map<String, Family> families, double jakkardIndex, int index) {
+
+        Map<Family, Family> mapping = new HashMap<>();
+
+        List<Family> familyList = new ArrayList<>(families.values());
+
+        int[] k = {0};
+        for (int i = 0; i < familyList.size() - 1; i++) {
+            Family family = familyList.get(i);
+
+            if (family.isSkip()) {
+                System.out.println(String.format("Skipping: %s... %2.2f%%", family.getName(), k[0] * 100.0 / families.size()));
+                continue;
+            }
+
+            System.out.println(String.format("Comparing: %s... %2.2f%%", family.getName(), k[0] * 100.0 / families.size()));
+
+            Name name1 = family.get(0);
+
+            Set<Long> s1Set;
+            if (index > SHINGLE_MAP_THRESHOLD) {
+                s1Set = SHINGLE_MAP.get(index).get(name1.getName());
+            } else {
+                s1Set = readShdFromFile(new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name1.getName() + ".shg"));
+            }
+
+            for (int j = i + 1; j < familyList.size(); j++) {
+
+                Family family2 = familyList.get(j);
+                Name name2 = family2.get(0);
+
+                if (family2.isSkip()) {
+                    continue;
+                }
+
+                Set<Long> s2Set;
+                if (index > SHINGLE_MAP_THRESHOLD) {
+                    s2Set = SHINGLE_MAP.get(index).get(name2.getName());
+                } else {
+                    s2Set = readShdFromFile(new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name2.getName() + ".shg"));
+                }
+
+                Set<Long> s1intersect = new HashSet<>(s1Set);
+                Set<Long> s1union = new HashSet<>(s1Set);
+
+                s1intersect.retainAll(s2Set);
+                s1union.addAll(s2Set);
+                double relative = s1intersect.size() * 100.0 / s1Set.size();
+                double jakkard = s1intersect.size() * 100.0 / s1union.size();
+
+                Result result = new Result(name1, name2, relative, jakkard);
+                //System.out.println(result);
+
+                if (jakkard >= jakkardIndex) {
+                    mapping.put(family2, family);
+                }
+            }
+            k[0]++;
+        }
+
+        System.out.println(mapping);
+
+        mapping.forEach((key, value) -> {
+            value.getMembers().addAll(key.getMembers());
+            familyList.remove(key);
+        });
+
+        Map<String, Family> families2 = familyList.stream().collect(Collectors.toMap(Family::getName, Function.identity()));
+
+        calculateRelations(families2, 64);
+        families2.values().forEach(f -> f.setName(f.getMother().getCleanName()));
+        families2.values().forEach(Main1024::recalculateJakkard);
+
+        return families2;
+    }
+
+    private static void calculateRelations(Map<String, Family> families, int index) {
+
+        int[] k = {0};
+        families.values().forEach(family -> {
+            System.out.println(String.format("%nComparing: %s... [%s] %2.3f", family.getName(), family.size(), k[0] * 100.0 / families.size()));
+
+            family.getRelations().clear();
+            for (int i = 0; i < family.size() - 1; i++) {
+
+                Name name1 = family.get(i);
+
+                Set<Long> s1Set;
+                if (index > SHINGLE_MAP_THRESHOLD) {
+                    s1Set = SHINGLE_MAP.get(index).get(name1.getName());
+                } else {
+                    s1Set = readShdFromFile(new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name1.getName() + ".shg"));
+                }
+
+                for (int j = i + 1; j < family.size(); j++) {
+
+                    Name name2 = family.get(j);
+
+                    /*if (name2.isDone()) {
                         continue;
                     }*/
 
-                    System.out.println(String.format(Locale.US, "%s: %2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
-
-                    File srcSampleFolder = (index == SAMPLES.get(0)) ? SHD_FOLDER : SAMPLE_DIRS_MAP.get(index - 1);
-
-                    Set<Long> shingles = readShdFromFile(new File(srcSampleFolder.getAbsolutePath() + File.separator + file.getName() + ".shg"));
-                    Set<Long> filteredShingles = shingles.stream().filter(s -> s % index == 0).collect(Collectors.toSet());
-
-                    shinglesMap.put(file.getName(), filteredShingles);
-
-                    File sampleFile = new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + file.getName() + ".shg");
-                    if (!sampleFile.exists()) {
-                        serialize(sampleFile, shingles.stream().filter(s -> s % SAMPLE_PROBE == 0).collect(Collectors.toSet()));
-                    }
-                }
-
-                serialize(shinglesMapFile, shinglesMap);
-                SHINGLE_MAP.replace(index, shinglesMap);
-            }
-        });
-    }
-
-    private static void generateFamilies(List<Name> names, int index, int jakkardIndex) throws IOException {
-
-        System.out.println("\nComparing...");
-        PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("result.csv", true)));
-
-        Map<String, List<Name>> families = names.stream().collect(Collectors.groupingBy(Name::getCleanName));
-
-        ///TODO every family verify by SHD, drop < 80
-
-        names.forEach(name1 -> {
-            List<Result> res = new ArrayList<>();
-
-            int i = names.indexOf(name1);
-
-            if (!name1.isDone()) {
-
-                try {
-                    List<Name> toCopy = new ArrayList<>();
-                    toCopy.add(name1);
-
-                    Set<Long> s1Set;
+                    Set<Long> s2Set;
                     if (index > SHINGLE_MAP_THRESHOLD) {
-                        s1Set = SHINGLE_MAP.get(index).get(name1.getName());
+                        s2Set = SHINGLE_MAP.get(index).get(name2.getName());
                     } else {
-                        s1Set = readShdFromFile(new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name1.getName() + ".shg"));
+                        s2Set = readShdFromFile(new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name2.getName() + ".shg"));
                     }
 
-                    if (i != names.size() - 1) {
-                        for (int j = i + 1; j < names.size(); j++) {
+                    Set<Long> s1intersect = new HashSet<>(s1Set);
+                    Set<Long> s1union = new HashSet<>(s1Set);
 
-                            Name name2 = names.get(j);
+                    s1intersect.retainAll(s2Set);
+                    s1union.addAll(s2Set);
+                    double relative = s1intersect.size() * 100.0 / s1Set.size();
+                    double jakkard = s1intersect.size() * 100.0 / s1union.size();
 
-                            if (name2.isDone()) {
-                                continue;
-                            }
+                    name1.addRelativeStatus(relative);
+                    name2.addRelativeStatus(relative);
 
-                            Set<Long> s2Set;
-                            if (index > SHINGLE_MAP_THRESHOLD) {
-                                s2Set = SHINGLE_MAP.get(index).get(name2.getName());
-                            } else {
-                                s2Set = readShdFromFile(new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name2.getName() + ".shg"));
-                            }
+                    name1.addJakkardStatus(jakkard);
+                    name2.addJakkardStatus(jakkard);
 
-                            Set<Long> s1intersect = new HashSet<>(s1Set);
-                            Set<Long> s1union = new HashSet<>(s1Set);
+                    Result result = new Result(name1, name2, relative, jakkard);
+                    System.out.println(result);
 
-                            s1intersect.retainAll(s2Set);
-                            s1union.addAll(s2Set);
-                            double relative = s1intersect.size() * 100.0 / s1Set.size();
-                            double jakkard = s1intersect.size() * 100.0 / s1union.size();
-
-                            Result result = new Result(name1.getName(), name2.getName(), relative, jakkard);
-
-                            if (jakkard > jakkardIndex) { // 35
-                                name2.setDone(true);
-                                System.out.println(result);
-                                toCopy.add(name2);
-                            }
-
-                            res.add(result);
-                            out.println(result.toString());
-                            out.flush();
-                        }
-                    }
-                    name1.setDone(true);
-
-                    String catName = getCleanTitle(toCopy);
-
-                    File cat = Paths.get("D:\\Downloads\\games\\gata", catName).toFile();
-
-                    if (cat.exists()) {
-                        catName = getTitle(toCopy);
-                        cat = Paths.get("D:\\Downloads\\games\\gata", catName).toFile();
-                    }
-
-                    cat.mkdir();
-                    for (Name name : toCopy) {
-                        Files.move(name.getFile().toPath(), Paths.get("D:\\Downloads\\games\\gata", catName, name.getFile().getName()));
-                    }
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    family.addRelation(result);
                 }
-            } else {
-                System.out.println("Skipping: " + name1.getName());
+                name1.setDone(true);
             }
+            family.setMother(family.getMembers().stream().max(Comparator.comparing(Name::getJakkardStatus)).orElse(null));
+            k[0]++;
         });
-
-        out.close();
     }
 
+    private static List<Name> deleteNonSiblings(Family fam, double jakkardIndex) {
+        Family family = new Family(fam);
+
+        List<Name> deleted = new ArrayList<>();
+
+        double status = family.getJakkardStatus(family.size() - 1);
+
+        while (status < jakkardIndex && family.size() > 1) {
+            Name name = family.get(family.size() - 1);
+            deleted.add(name);
+            family.getMembers().remove(family.size() - 1);
+            // recalculate jakkard
+            family.setRelations(family.getRelations().stream().filter(r -> !r.getName1().equals(name) && !r.getName2().equals(name)).collect(Collectors.toList()));
+
+            recalculateJakkard(family);
+
+            status = family.getJakkardStatus(family.size() - 1);
+        }
+
+        /*if (!deleted.isEmpty()) {
+            toDelete.addAll(deleted);
+        }*/
+        return deleted;
+    }
+
+    private static void drop(Map<String, Family> families, double jakkardIndex) {
+
+        families.values().forEach(family -> {
+            List<Name> toDelete = deleteNonSiblings(family, jakkardIndex);
+
+            toDelete.forEach(td -> System.out.println(String.format("Dropping: %s (%2.4f)", td.getName(), td.jakkardStatus / family.size())));
+            family.setRelations(family.getRelations().stream().filter(r -> toDelete.contains(r.getName1()) || toDelete.contains(r.getName2())).collect(Collectors.toList()));
+
+            family.getMembers().removeAll(toDelete);
+
+            recalculateJakkard(family);
+        });
+    }
+
+    private static void recalculateJakkard(Family family) {
+        family.getMembers().forEach(m -> {
+            List<Result> results = family.getRelations().stream().filter(r -> r.getName1().equals(m) || r.getName2().equals(m)).collect(Collectors.toList());
+            m.setRelativeStatus(results.stream().mapToDouble(Result::getRelative).sum());
+            m.setJakkardStatus(results.stream().mapToDouble(Result::getJakkard).sum());
+        });
+    }
 
     private static void compareAndCopy(List<Name> names, int index, int jakkardIndex) throws IOException {
 
@@ -258,7 +402,7 @@ public class Main1024 {
                             double relative = s1intersect.size() * 100.0 / s1Set.size();
                             double jakkard = s1intersect.size() * 100.0 / s1union.size();
 
-                            Result result = new Result(name1.getName(), name2.getName(), relative, jakkard);
+                            Result result = new Result(name1, name2, relative, jakkard);
 
                             if (jakkard > jakkardIndex) { // 35
                                 name2.setDone(true);
@@ -346,7 +490,21 @@ public class Main1024 {
         }
     }
 
-    @SuppressWarnings("all")
+    @SuppressWarnings("unchecked")
+    private static Map<String, Family> readFamiliesFromFile(File file) {
+        try {
+            FileInputStream fis = new FileInputStream(file);
+            ObjectInputStream ois = new ObjectInputStream(fis);
+            Map<String, Family> result = (Map<String, Family>) ois.readObject();
+
+            ois.close();
+            fis.close();
+            return result;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private static Set<Long> toShingles(byte[] bytes) {
         Set<Long> hashes = new HashSet<>();
 
@@ -354,9 +512,7 @@ public class Main1024 {
             CRC32 crc = new CRC32();
             crc.update(Arrays.copyOfRange(bytes, i, i + SHINGLE_LENGTH));
             long value = crc.getValue();
-            if (value % SAMPLE_PROBE == 0) {
-                hashes.add(crc.getValue());
-            }
+            hashes.add(crc.getValue());
         }
 
         return hashes;
@@ -372,11 +528,109 @@ public class Main1024 {
     }
 
 
-    private static class Name {
+    private static class Family implements Serializable, Cloneable {
+
+        private static final long serialVersionUID = -3737249230697805286L;
+
+        private String name;
+        private List<Name> members;
+        private Name mother;
+        private List<Result> relations;
+
+        private boolean skip = false;
+
+        Family(List<Name> members) {
+            this.members = members;
+            name = members.get(0).getCleanName();
+            relations = new ArrayList<>();
+        }
+
+        Family(Family family) {
+            setName(family.getName());
+            setMembers(new ArrayList<>(family.getMembers()));
+            setMother(family.getMother());
+            setRelations(new ArrayList<>(family.getRelations()));
+            setSkip(family.isSkip());
+            this.members.sort((d1, d2) -> Double.compare(d2.getJakkardStatus(), d1.getJakkardStatus()));
+        }
+
+        @Override
+        public String toString() {
+            return name + ": " + members;
+        }
+
+        boolean isSkip() {
+            return skip;
+        }
+
+        void setSkip(boolean skip) {
+            this.skip = skip;
+        }
+
+        String getName() {
+            return name;
+        }
+
+        void setName(String name) {
+            this.name = name;
+        }
+
+        List<Name> getMembers() {
+            return members;
+        }
+
+        void setMembers(List<Name> members) {
+            this.members = members;
+        }
+
+        Name getMother() {
+            return mother;
+        }
+
+        void setMother(Name mother) {
+            this.mother = mother;
+        }
+
+        List<Result> getRelations() {
+            return relations;
+        }
+
+        void setRelations(List<Result> relations) {
+            this.relations = relations;
+        }
+
+        int size() {
+            return members.size();
+        }
+
+        Name get(int i) {
+            return members.get(i);
+        }
+
+        void addRelation(Result result) {
+            relations.add(result);
+        }
+
+        double getJakkardStatus(int index) {
+            if (members.size() < 2) {
+                return 0;
+            }
+            Name name = members.get(index);
+            return name.getJakkardStatus() / (members.size() - 1);
+        }
+
+    }
+
+    private static class Name implements Serializable {
+
+        private static final long serialVersionUID = 292207904602980582L;
 
         private File file;
         private boolean done;
         private int index = 100;
+
+        private double jakkardStatus = 0;
+        private double relativeStatus = 0;
 
         Name(File file, boolean done) {
             this.file = file;
@@ -435,27 +689,32 @@ public class Main1024 {
             }
         }
 
-        public int getIndex() {
+        @Override
+        public String toString() {
+            return file.getName() + ": " + jakkardStatus;
+        }
+
+        int getIndex() {
             return index;
         }
 
-        public void setIndex(int index) {
+        void setIndex(int index) {
             this.index = index;
         }
 
-        public File getFile() {
+        File getFile() {
             return file;
         }
 
-        public void setFile(File file) {
+        void setFile(File file) {
             this.file = file;
         }
 
-        public String getName() {
+        String getName() {
             return file.getName();
         }
 
-        public String getCleanName() {
+        String getCleanName() {
             String result = file.getName();
             int braceIndex = result.indexOf("(");
             if (braceIndex > 0) {
@@ -468,48 +727,74 @@ public class Main1024 {
             return result.trim();
         }
 
-        public boolean isDone() {
+        boolean isDone() {
             return done;
         }
 
-        public void setDone(boolean done) {
+        void setDone(boolean done) {
             this.done = done;
+        }
+
+        double getJakkardStatus() {
+            return jakkardStatus;
+        }
+
+        void setJakkardStatus(double jakkardStatus) {
+            this.jakkardStatus = jakkardStatus;
+        }
+
+        public double getRelativeStatus() {
+            return relativeStatus;
+        }
+
+        void setRelativeStatus(double relativeStatus) {
+            this.relativeStatus = relativeStatus;
+        }
+
+        void addRelativeStatus(double status) {
+            relativeStatus += status;
+        }
+
+        void addJakkardStatus(double status) {
+            jakkardStatus += status;
         }
     }
 
-    private static class Result {
+    private static class Result implements Serializable {
 
-        private String file1;
-        private String file2;
+        private static final long serialVersionUID = -472204242580854693L;
+
+        private Name name1;
+        private Name name2;
         private double relative;
         private double jakkard;
 
-        Result(String file1, String file2, double relative, double jakkard) {
-            this.file1 = file1;
-            this.file2 = file2;
+        Result(Name name1, Name name2, double relative, double jakkard) {
+            this.name1 = name1;
+            this.name2 = name2;
             this.relative = relative;
             this.jakkard = jakkard;
         }
 
-        public String getFile1() {
-            return file1;
+        Name getName1() {
+            return name1;
         }
 
-        public String getFile2() {
-            return file2;
+        Name getName2() {
+            return name2;
         }
 
-        public double getRelative() {
+        double getRelative() {
             return relative;
         }
 
-        public double getJakkard() {
+        double getJakkard() {
             return jakkard;
         }
 
         @Override
         public String toString() {
-            return "\"" + file1 + "\",\"" + file2 + "\",\"" + relative + "\",\"" + jakkard + "\"";
+            return "\"" + name1.getName() + "\",\"" + name2.getName() + "\",\"" + relative + "\",\"" + jakkard + "\"";
         }
     }
 }
