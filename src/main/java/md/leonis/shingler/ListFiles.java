@@ -23,7 +23,7 @@ public class ListFiles {
         List<String> lines = new ArrayList<>();
 
         map.forEach((key, value) -> {
-            List<String> names = value.stream().filter(ListFiles::nonHack).map(ListFiles::normalize).distinct().collect(Collectors.toList());
+            List<String> names = value.stream().filter(ListFiles::nonHack).map(ListFiles::normalize).distinct().filter(v -> !v.equals(normalize(key.getName().replace(".7z", "")))).collect(Collectors.toList());
             map.replace(key, names);
         });
 
