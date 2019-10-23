@@ -1,5 +1,7 @@
 package md.leonis.shingler;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -11,7 +13,7 @@ import java.util.zip.CRC32;
 
 //TODO list[], write direct, read direct
 //TODO fast intersect/union operations. TreeMap?
-public class Main1024 {
+public class Main1024a {
 
     private static final int SHINGLE_LENGTH = 8;
 
@@ -22,14 +24,14 @@ public class Main1024 {
     private static final List<Integer> SAMPLES = Arrays.asList(1, 16, 64, 256, 1024);
 
     private static final Map<Integer, File> SAMPLE_DIRS_MAP =
-            SAMPLES.stream().collect(Collectors.toMap(Function.identity(), s -> new File(GAMES_DIR + "sample" + s)));
+            SAMPLES.stream().collect(Collectors.toMap(Function.identity(), s -> new File(GAMES_DIR + "ssample" + s)));
 
-    private static final Map<Integer, Map<String, Set<Long>>> SHINGLE_MAP =
+    private static final Map<Integer, Map<String, long[]>> SHINGLE_MAP =
             SAMPLES.stream().collect(Collectors.toMap(Function.identity(), HashMap::new));
 
-    private static final Cache<File, Set<Long>> cache = new Cache<>(0, 0, 1600);
+    private static final Cache<File, long[]> cache = new Cache<>(0, 0, 1600);
     //TODO investigate
-    private static final SimpleCache<Set<Long>> simpleCache = new SimpleCache<>();
+    private static final SimpleCache<long[]> simpleCache = new SimpleCache<>();
 
     @SuppressWarnings("all")
     public static void main(String[] args) throws IOException {
@@ -47,7 +49,7 @@ public class Main1024 {
         List<Name> names = files.stream().map(f -> new Name(f, false)).collect(Collectors.toList());
 
         //TODO revert 1 or 16, 1 is the better solution
-        generateFamilies(names, 64, 20); // generate families
+        //generateFamilies(names, 64, 20); // generate families
     }
 
     @SuppressWarnings("all")
@@ -65,14 +67,14 @@ public class Main1024 {
                 continue;
             }
 
-            Set<Long> shingles = toShingles(readFromFile(file));
+            long[] shingles = toShingles(readFromFile(file));
 
             System.out.println(String.format(Locale.US, "%s: %2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
             serialize(shdFile, shingles);
 
             SAMPLE_DIRS_MAP.entrySet().forEach(e -> {
                 int index = e.getKey();
-                Set<Long> filteredShingles = shingles.stream().filter(s -> s % index == 0).collect(Collectors.toSet());
+                long[] filteredShingles = filterArrays(shingles, index);
 
                 if (index > SHINGLE_MAP_THRESHOLD) {
                     SHINGLE_MAP.get(index).put(file.getName(), filteredShingles);
@@ -80,7 +82,7 @@ public class Main1024 {
 
                 File sampleFile = new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + file.getName() + ".shg");
                 if (!sampleFile.exists()) {
-                    serialize(sampleFile, shingles.stream().filter(s -> s % index == 0).collect(Collectors.toSet()));
+                    serialize(sampleFile, filteredShingles);
                 }
             });
         }
@@ -95,7 +97,7 @@ public class Main1024 {
 
                 File shinglesMapFile = new File("shinglesMap" + index);
 
-                Map<String, Set<Long>> shinglesMap = new HashMap<>();
+                Map<String, long[]> shinglesMap = new HashMap<>();
 
 
                 if (index > SHINGLE_MAP_THRESHOLD) {
@@ -116,17 +118,17 @@ public class Main1024 {
 
                                 File srcSampleFolder = SAMPLE_DIRS_MAP.get(index - 1);
 
-                                Set<Long> shingles = readShdFromFile(new File(srcSampleFolder.getAbsolutePath() + File.separator + file.getName() + ".shg"));
-                                Set<Long> filteredShingles = shingles.stream().filter(s -> s % index == 0).collect(Collectors.toSet());
+                                long[] shingles = readShdFromFile(new File(srcSampleFolder.getAbsolutePath() + File.separator + file.getName() + ".shg"));
+                                long[] filteredShingles = filterArrays(shingles, index);
 
                                 shinglesMap.put(file.getName(), filteredShingles);
 
                                 if (!sampleFile.exists()) {
-                                    serialize(sampleFile, shingles.stream().filter(s -> s % index == 0).collect(Collectors.toSet()));
+                                    serialize(sampleFile, filteredShingles);
                                 }
                             } else {
                                 System.out.println(String.format(Locale.US, "Skipping: %s: %2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
-                                Set<Long> filteredShingles = readShdFromFile(sampleFile);
+                                long[] filteredShingles = readShdFromFile(sampleFile);
                                 shinglesMap.put(file.getName(), filteredShingles);
                             }
                         }
@@ -197,7 +199,7 @@ public class Main1024 {
 
             Name name1 = family.get(0);
 
-            Set<Long> s1Set;
+            long[] s1Set;
             if (index > SHINGLE_MAP_THRESHOLD) {
                 s1Set = SHINGLE_MAP.get(index).get(name1.getName());
             } else {
@@ -213,20 +215,17 @@ public class Main1024 {
                     continue;
                 }
 
-                Set<Long> s2Set;
+                long[] s2Set;
                 if (index > SHINGLE_MAP_THRESHOLD) {
                     s2Set = SHINGLE_MAP.get(index).get(name2.getName());
                 } else {
                     s2Set = readShdFromFile(new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name2.getName() + ".shg"));
                 }
 
-                Set<Long> s1intersect = new HashSet<>(s1Set);
-                Set<Long> s1union = new HashSet<>(s1Set);
-
-                s1intersect.retainAll(s2Set);
-                s1union.addAll(s2Set);
-                double relative = s1intersect.size() * 100.0 / s1Set.size();
-                double jakkard = s1intersect.size() * 100.0 / s1union.size();
+                long[] s1intersect = intersectArrays(s1Set, s2Set);
+                long[] s1union = mergeArrays(s1Set, s2Set);
+                double relative = s1intersect.length * 100.0 / s1Set.length;
+                double jakkard = s1intersect.length * 100.0 / s1union.length;
 
                 Result result = new Result(name1, name2, relative, jakkard);
                 //System.out.println(result);
@@ -249,7 +248,7 @@ public class Main1024 {
 
         calculateRelations(families2, 64, new File("family"));
         families2.values().forEach(f -> f.setName(f.getMother().getCleanName()));
-        families2.values().forEach(Main1024::recalculateJakkard);
+        families2.values().forEach(Main1024a::recalculateJakkard);
 
         return families2;
     }
@@ -281,7 +280,7 @@ public class Main1024 {
 
                     Name name1 = family.get(i);
 
-                    Set<Long> s1Set;
+                    long[] s1Set;
                     if (index > SHINGLE_MAP_THRESHOLD) {
                         s1Set = SHINGLE_MAP.get(index).get(name1.getName());
                     } else {
@@ -296,24 +295,21 @@ public class Main1024 {
                             continue;
                         }
 
-                        /*if (name2.isDone()) {
+                        if (name2.isDone()) {
                             continue;
-                        }*/
+                        }
 
-                        Set<Long> s2Set;
+                        long[] s2Set;
                         if (index > SHINGLE_MAP_THRESHOLD) {
                             s2Set = SHINGLE_MAP.get(index).get(name2.getName());
                         } else {
                             s2Set = readShdFromFile(new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name2.getName() + ".shg"));
                         }
 
-                        Set<Long> s1intersect = new HashSet<>(s1Set);
-                        Set<Long> s1union = new HashSet<>(s1Set);
-
-                        s1intersect.retainAll(s2Set);
-                        s1union.addAll(s2Set);
-                        double relative = s1intersect.size() * 100.0 / s1Set.size();
-                        double jakkard = s1intersect.size() * 100.0 / s1union.size();
+                        long[] s1intersect = intersectArrays(s1Set, s2Set);
+                        long[] s1union = mergeArrays(s1Set, s2Set);
+                        double relative = s1intersect.length * 100.0 / s1Set.length;
+                        double jakkard = s1intersect.length * 100.0 / s1union.length;
 
                         name1.addRelativeStatus(relative);
                         name2.addRelativeStatus(relative);
@@ -382,7 +378,7 @@ public class Main1024 {
         });
     }
 
-    private static void compareAndCopy(List<Name> names, int index, int jakkardIndex) throws IOException {
+    /*private static void compareAndCopy(List<Name> names, int index, int jakkardIndex) throws IOException {
 
         System.out.println("\nComparing...");
         PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("result.csv", true)));
@@ -466,7 +462,7 @@ public class Main1024 {
         });
 
         out.close();
-    }
+    }*/
 
 
     private static String getTitle(List<Name> names) {
@@ -487,12 +483,12 @@ public class Main1024 {
 
     //TODO unify
     @SuppressWarnings("unchecked")
-    private static Map<String, Set<Long>> readShingleMapFromFile(File file) {
+    private static Map<String, long[]> readShingleMapFromFile(File file) {
 
         try {
             FileInputStream fis = new FileInputStream(file);
             ObjectInputStream ois = new ObjectInputStream(fis);
-            Map<String, Set<Long>> shinglesMap = (Map<String, Set<Long>>) ois.readObject();
+            Map<String, long[]> shinglesMap = (Map<String, long[]>) ois.readObject();
 
             ois.close();
             fis.close();
@@ -503,9 +499,8 @@ public class Main1024 {
     }
 
     //TODO unify
-    @SuppressWarnings("unchecked")
-    private static Set<Long> readShdFromFile(File file) {
-        Set<Long> cachedValue = cache.get(file);
+    private static long[] readShdFromFile(File file) {
+        long[] cachedValue = cache.get(file);
         if (cachedValue != null) {
             return cachedValue;
         }
@@ -513,7 +508,7 @@ public class Main1024 {
         try {
             FileInputStream fis = new FileInputStream(file);
             ObjectInputStream ois = new ObjectInputStream(fis);
-            Set<Long> result = (Set<Long>) ois.readObject();
+            long[] result = (long[]) ois.readObject();
             if (getFreeMemory() < 250) {
                 System.out.println(String.format("We have only %s Mb of RAM", getFreeMemory()));
                 System.out.println("Cleaning Cache...");
@@ -552,17 +547,96 @@ public class Main1024 {
         }
     }
 
-    private static Set<Long> toShingles(byte[] bytes) {
+    private static long[] toShingles(byte[] bytes) {
         Set<Long> hashes = new HashSet<>();
 
         for (int i = 0; i < bytes.length - SHINGLE_LENGTH + 1; i++) {
             CRC32 crc = new CRC32();
             crc.update(Arrays.copyOfRange(bytes, i, i + SHINGLE_LENGTH));
-            long value = crc.getValue();
             hashes.add(crc.getValue());
         }
 
-        return hashes;
+        return hashes.stream().sorted().mapToLong(l -> l).toArray();
+    }
+
+    //TODO use mergeArrays
+    /*static long[] unionArrays(long[] a, long[] b) {
+        long[] c = new long[a.length + b.length];
+        int k = 0;
+        for (long n : a) {
+            c[k++] = n;
+        }
+        for (long n : b) {
+            c[k++] = n;
+        }
+        Arrays.sort(c);
+        return removeDuplicates(c);
+    }*/
+
+    static long[] mergeArrays(long arr1[], long arr2[]) {
+        long[] merge = new long[arr1.length + arr2.length];
+        int i = 0, j = 0, k = 0;
+        while (i < arr1.length && j < arr2.length) {
+            if (arr1[i] < arr2[j]) {
+                merge[k++] = arr1[i++];
+            } else {
+                merge[k++] = arr2[j++];
+            }
+        }
+        while (i < arr1.length)
+            merge[k++] = arr1[i++];
+        while (j < arr2.length)
+            merge[k++] = arr2[j++];
+        return ArrayUtils.subarray(removeDuplicates(merge), 0, k);
+    }
+
+    static long[] intersectArrays(long[] arr1, long[] arr2) {
+        long[] intersect = new long[Math.max(arr1.length, arr2.length)];
+        int i = 0, j = 0, k = 0;
+        while (i < arr1.length && j < arr2.length) {
+            if (arr1[i] < arr2[j]) {
+                i++;
+            } else if (arr2[j] < arr1[i]) {
+                j++;
+            } else {
+                intersect[k++] = arr1[i++];
+            }
+        }
+        return ArrayUtils.subarray(intersect, 0, k);
+    }
+
+    /*static long[] intersectArrays0(long[] a, long[] b) {
+        long[] c = new long[Math.max(a.length, b.length)];
+        int k = 0;
+        for (long n : b) {
+            if (ArrayUtils.contains(a, n)) {
+                c[k++] = n;
+            }
+        }
+
+        return ArrayUtils.subarray(c, 0, k);
+    }*/
+
+    static long[] filterArrays(long[] a, int index) {
+        long[] c = new long[a.length];
+        int k = 0;
+        for (long n : a) {
+            if (n % index == 0) {
+                c[k++] = n;
+            }
+        }
+        return ArrayUtils.subarray(c, 0, k);
+    }
+
+    static long[] removeDuplicates(long[] arr) { // Only for sorted arrays
+        int j = 0;
+        for (int i = 0; i < arr.length - 1; i++) {
+            if (arr[i] != arr[i + 1]) {
+                arr[j++] = arr[i];
+            }
+        }
+        arr[j++] = arr[arr.length - 1];
+        return ArrayUtils.subarray(arr, 0, j);
     }
 
     @SuppressWarnings("all")

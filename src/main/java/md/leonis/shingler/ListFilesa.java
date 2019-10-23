@@ -12,19 +12,19 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-public class ListFiles {
+public class ListFilesa {
 
     public static void main(String[] args) throws IOException {
 
         List<File> files = Arrays.asList(Objects.requireNonNull(new File("D:\\Downloads\\Nintendo Famicom - GoodNES ROMS v3.23b Merged").listFiles()));
 
-        Map<File, List<String>> map = files.stream().collect(Collectors.toMap(Function.identity(), ListFiles::listFiles));
+        Map<File, List<String>> map = files.stream().collect(Collectors.toMap(Function.identity(), ListFilesa::listFiles));
 
         Map<File, List<String>> filtereMap = new HashMap<>();
 
         // really unique
         map.forEach((key, value) -> {
-            List<String> names = value.stream().filter(ListFiles::nonHack).map(s -> s.substring(0, s.lastIndexOf('.'))).map(ListFiles::normalize).distinct().filter(v -> !v.equals(normalize(key.getName().replace(".7z", "")))).collect(Collectors.toList());
+            List<String> names = value.stream().filter(ListFilesa::nonHack).map(s -> s.substring(0, s.lastIndexOf('.'))).map(ListFilesa::normalize).distinct().filter(v -> !v.equals(normalize(key.getName().replace(".7z", "")))).collect(Collectors.toList());
             filtereMap.put(key, names);
         });
 
@@ -47,30 +47,30 @@ public class ListFiles {
 
         File familyFile = new File("list-family");
 
-        Map<String, Main1024.Family> families;
+        Map<String, Main1024a.Family> families;
         if (familyFile.exists()) {
             System.out.println("\nReading families from file...");
-            families = Main1024.readFamiliesFromFile(familyFile);
+            families = Main1024a.readFamiliesFromFile(familyFile);
         } else {
             System.out.println("\nGenerating families...");
-            Map<String, List<Main1024.Name>> namesList = new HashMap<>();
-            map.forEach((key, value) -> namesList.put(key.getName(), value.stream().map(v -> new Main1024.Name(new File(v), false)).collect(Collectors.toList())));
+            Map<String, List<Main1024a.Name>> namesList = new HashMap<>();
+            map.forEach((key, value) -> namesList.put(key.getName(), value.stream().map(v -> new Main1024a.Name(new File(v), false)).collect(Collectors.toList())));
 
             families = namesList.entrySet().stream()/*.filter(e -> e.getValue().size() != 1)*/
-                    .collect(Collectors.toMap(Map.Entry::getKey, e -> new Main1024.Family(e.getKey(), e.getValue())));
+                    .collect(Collectors.toMap(Map.Entry::getKey, e -> new Main1024a.Family(e.getKey(), e.getValue())));
         }
 
-        Main1024.calculateRelations(families, index, familyFile);
+        Main1024a.calculateRelations(families, index, familyFile);
 
-        Main1024.serialize(familyFile, families);
+        Main1024a.serialize(familyFile, families);
 
-        int inFamily = families.values().stream().map(Main1024.Family::size).mapToInt(Integer::intValue).sum();
+        int inFamily = families.values().stream().map(Main1024a.Family::size).mapToInt(Integer::intValue).sum();
 
         System.out.println("In family: " + inFamily);
         System.out.println("Not in family: " + (map.size() - inFamily));
 
         //TODO jakkardIndex
-        Main1024.drop(families, 30);
+        Main1024a.drop(families, 30);
 
         System.out.println("In family: " + inFamily);
         System.out.println("Not in family: " + (map.size() - inFamily));
