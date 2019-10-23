@@ -1,14 +1,10 @@
 package md.leonis.shingler;
 
-import org.apache.commons.lang3.ArrayUtils;
-
 import java.io.*;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.LongStream;
 import java.util.zip.CRC32;
 
 //TODO list[], write direct, read direct
@@ -587,7 +583,7 @@ public class Main1024a {
             merge[k++] = arr1[i++];
         while (j < arr2.length)
             merge[k++] = arr2[j++];
-        return ArrayUtils.subarray(removeDuplicates(merge), 0, k);
+        return removeDuplicates(Arrays.copyOfRange(merge, 0, k));
     }
 
     static long[] intersectArrays(long[] arr1, long[] arr2) {
@@ -602,7 +598,7 @@ public class Main1024a {
                 intersect[k++] = arr1[i++];
             }
         }
-        return ArrayUtils.subarray(intersect, 0, k);
+        return Arrays.copyOfRange(intersect, 0, k);
     }
 
     /*static long[] intersectArrays0(long[] a, long[] b) {
@@ -614,7 +610,7 @@ public class Main1024a {
             }
         }
 
-        return ArrayUtils.subarray(c, 0, k);
+        return Arrays.copyOfRange(c, 0, k);
     }*/
 
     static long[] filterArrays(long[] a, int index) {
@@ -625,7 +621,7 @@ public class Main1024a {
                 c[k++] = n;
             }
         }
-        return ArrayUtils.subarray(c, 0, k);
+        return Arrays.copyOfRange(c, 0, k);
     }
 
     static long[] removeDuplicates(long[] arr) { // Only for sorted arrays
@@ -636,7 +632,7 @@ public class Main1024a {
             }
         }
         arr[j++] = arr[arr.length - 1];
-        return ArrayUtils.subarray(arr, 0, j);
+        return Arrays.copyOfRange(arr, 0, j);
     }
 
     @SuppressWarnings("all")
