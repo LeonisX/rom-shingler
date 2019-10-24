@@ -1,7 +1,10 @@
 package md.leonis.shingler;
 
 import java.io.*;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -17,10 +20,10 @@ public class Main1024a {
 
     private static final int SHINGLE_MAP_THRESHOLD = 128;
 
-    private static final List<Integer> SAMPLES = Arrays.asList(1, 16, 64, 256, 1024);
+    private static final List<Integer> SAMPLES = Arrays.asList(1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024);
 
     private static final Map<Integer, File> SAMPLE_DIRS_MAP =
-            SAMPLES.stream().collect(Collectors.toMap(Function.identity(), s -> new File(GAMES_DIR + "ssample" + s)));
+            SAMPLES.stream().collect(Collectors.toMap(Function.identity(), s -> new File(GAMES_DIR + "sample" + s)));
 
     private static final Map<Integer, Map<String, long[]>> SHINGLE_MAP =
             SAMPLES.stream().collect(Collectors.toMap(Function.identity(), HashMap::new));
@@ -58,27 +61,27 @@ public class Main1024a {
 
             File shdFile = new File(SAMPLE_DIRS_MAP.get(1).getAbsolutePath() + File.separator + file.getName() + ".shg");
 
-            if (shdFile.exists() && shdFile.length() > 0) {
+            long[] shingles;
+
+            if (shdFile.exists() && shdFile.length() > 0 && shdFile.length() % 8 == 0) {
                 System.out.println(String.format(Locale.US, "Skipping: %s: %2.2f", file.getName(), ((i + 1) * 100.0 / files.size())));
-                continue;
+                shingles = loadShinglesFromFile(shdFile);
+            } else {
+                System.out.println(String.format(Locale.US, "%s: %2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
+                shingles = toShingles(readFromFile(file));
+                writeShinglesToFile(shingles, shdFile);
             }
-
-            long[] shingles = toShingles(readFromFile(file));
-
-            System.out.println(String.format(Locale.US, "%s: %2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
-            serialize(shdFile, shingles);
 
             SAMPLE_DIRS_MAP.entrySet().forEach(e -> {
                 int index = e.getKey();
-                long[] filteredShingles = filterArrays(shingles, index);
-
-                if (index > SHINGLE_MAP_THRESHOLD) {
-                    SHINGLE_MAP.get(index).put(file.getName(), filteredShingles);
-                }
-
                 File sampleFile = new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + file.getName() + ".shg");
-                if (!sampleFile.exists()) {
-                    serialize(sampleFile, filteredShingles);
+                if (index > 1 && (!sampleFile.exists() || sampleFile.length() == 0 || sampleFile.length() % 8 != 0)) {
+                    long[] filteredShingles = filterArrays(shingles, index);
+
+                    if (index > SHINGLE_MAP_THRESHOLD) {
+                        SHINGLE_MAP.get(index).put(file.getName(), filteredShingles);
+                    }
+                    writeShinglesToFile(filteredShingles, sampleFile);
                 }
             });
         }
@@ -120,7 +123,7 @@ public class Main1024a {
                                 shinglesMap.put(file.getName(), filteredShingles);
 
                                 if (!sampleFile.exists()) {
-                                    serialize(sampleFile, filteredShingles);
+                                    writeShinglesToFile(filteredShingles, sampleFile);
                                 }
                             } else {
                                 System.out.println(String.format(Locale.US, "Skipping: %s: %2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
@@ -460,7 +463,6 @@ public class Main1024a {
         out.close();
     }*/
 
-
     private static String getTitle(List<Name> names) {
         return names.stream().max(Comparator.comparing(Name::getIndex)).orElse(null).getName();
     }
@@ -540,6 +542,32 @@ public class Main1024a {
             return result;
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    static long[] loadShinglesFromFile(File file) {
+        int count = (int) file.length() / 8;
+        long[] shingles = new long[count];
+        try (FileChannel fc = FileChannel.open(file.toPath())) {
+            MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_ONLY, 0, file.length());
+            for (int i = 0; i < count; i++) {
+                shingles[i] = mbb.getLong();
+            }
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+        return shingles;
+    }
+
+    static void writeShinglesToFile(long[] shingles, File file) {
+        int count = shingles.length;
+        try (FileChannel fc = FileChannel.open(file.toPath(), EnumSet.of(StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING))) {
+            MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_WRITE, 0, count * 8);
+            for (long shingle : shingles) {
+                mbb.putLong(shingle);
+            }
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
         }
     }
 
