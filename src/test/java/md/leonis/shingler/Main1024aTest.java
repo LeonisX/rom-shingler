@@ -56,7 +56,7 @@ class Main1024aTest {
         long[] a = {1, 2, 3, 4};
         long[] b = {2, 3, 4, 5};
 
-        long[] result = Main1024a.mergeArrays(a, b);
+        long[] result = Main1024a.unionArrays(a, b);
         System.out.println(Arrays.stream(result).boxed().collect(Collectors.toList()));
         assertArrayEquals(new long[]{1, 2, 3, 4, 5}, result);
     }
@@ -66,7 +66,7 @@ class Main1024aTest {
         long[] a = {1, 2, 6};
         long[] b = {2, 3, 4, 5};
 
-        long[] result = Main1024a.mergeArrays(a, b);
+        long[] result = Main1024a.unionArrays(a, b);
         System.out.println(Arrays.stream(result).boxed().collect(Collectors.toList()));
         assertArrayEquals(new long[]{1, 2, 3, 4, 5, 6}, result);
     }
@@ -76,7 +76,7 @@ class Main1024aTest {
         long[] a = {1, 2, 2};
         long[] b = {2, 3, 4, 5};
 
-        long[] result = Main1024a.mergeArrays(a, b);
+        long[] result = Main1024a.unionArrays(a, b);
         System.out.println(Arrays.stream(result).boxed().collect(Collectors.toList()));
         assertArrayEquals(new long[]{1, 2, 3, 4, 5}, result);
     }
@@ -86,7 +86,7 @@ class Main1024aTest {
         long[] a = {1, 2, 3};
         long[] b = {4, 5};
 
-        long[] result = Main1024a.mergeArrays(a, b);
+        long[] result = Main1024a.unionArrays(a, b);
         System.out.println(Arrays.stream(result).boxed().collect(Collectors.toList()));
         assertArrayEquals(new long[]{1, 2, 3, 4, 5}, result);
     }
@@ -96,7 +96,7 @@ class Main1024aTest {
         long[] a = {6, 7, 8};
         long[] b = {2, 3};
 
-        long[] result = Main1024a.mergeArrays(a, b);
+        long[] result = Main1024a.unionArrays(a, b);
         System.out.println(Arrays.stream(result).boxed().collect(Collectors.toList()));
         assertArrayEquals(new long[]{2, 3, 6, 7, 8}, result);
     }

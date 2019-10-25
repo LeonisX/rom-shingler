@@ -7,25 +7,21 @@ import org.apache.commons.collections4.map.LRUMap;
 
 import java.util.ArrayList;
 
-/**
- * @author Crunchify.com
- */
-
 public class Cache<K, T> {
 
     private long timeToLive;
     private final LRUMap cacheMap;
 
     protected class CacheObject {
-        public long lastAccessed = System.currentTimeMillis();
-        public T value;
+        long lastAccessed = System.currentTimeMillis();
+        T value;
 
-        protected CacheObject(T value) {
+        CacheObject(T value) {
             this.value = value;
         }
     }
 
-    public Cache(long timeToLive, final long timerInterval, int maxItems) {
+    Cache(long timeToLive, final long timerInterval, int maxItems) {
         this.timeToLive = timeToLive * 1000;
 
         cacheMap = new LRUMap(maxItems);
@@ -49,7 +45,7 @@ public class Cache<K, T> {
     }
 
     @SuppressWarnings("unchecked")
-    public void put(K key, T value) {
+    void put(K key, T value) {
         synchronized (cacheMap) {
             cacheMap.put(key, new CacheObject(value));
         }
@@ -82,7 +78,7 @@ public class Cache<K, T> {
     }
 
     @SuppressWarnings("unchecked")
-    public void cleanup() {
+    void cleanup() {
 
         long now = System.currentTimeMillis();
         ArrayList<K> deleteKey;

@@ -16,6 +16,8 @@ public class ListFilesa {
 
     public static void main(String[] args) throws IOException {
 
+        MeasureMethodTest.premain();
+
         List<File> files = Arrays.asList(Objects.requireNonNull(new File("D:\\Downloads\\Nintendo Famicom - GoodNES ROMS v3.23b Merged").listFiles()));
 
         Map<File, List<String>> map = files.stream().collect(Collectors.toMap(Function.identity(), ListFilesa::listFiles));
