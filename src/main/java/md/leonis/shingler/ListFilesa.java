@@ -34,7 +34,7 @@ public class ListFilesa {
 
         filtereMap.entrySet().stream().sorted(Comparator.comparing(e -> e.getKey().getName())).forEach(e -> {
             lines.add(e.getKey().getName().replace(".7z", ""));
-            if (e.getValue().size() > 1) {
+            if (e.getValue().size() >= 1) {
                 e.getValue().forEach(v -> lines.add("    " + v));
             }
             lines.add("");
