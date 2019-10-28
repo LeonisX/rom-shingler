@@ -108,4 +108,8 @@ public class Cache<K, T> {
             Thread.yield();
         }
     }
+
+    void fullCleanup() {
+        cacheMap.clear();
+    }
 }

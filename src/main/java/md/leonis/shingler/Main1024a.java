@@ -3,7 +3,9 @@ package md.leonis.shingler;
 import java.io.*;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.function.Function;
@@ -20,7 +22,7 @@ public class Main1024a {
 
     private static final int SHINGLE_MAP_THRESHOLD = 128;
 
-    private static final List<Integer> SAMPLES = Arrays.asList(1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024);
+    static final List<Integer> SAMPLES = Arrays.asList(1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024);
 
     private static final Map<Integer, File> SAMPLE_DIRS_MAP =
             SAMPLES.stream().collect(Collectors.toMap(Function.identity(), s -> new File(GAMES_DIR + "sample" + s)));
@@ -28,7 +30,7 @@ public class Main1024a {
     private static final Map<Integer, Map<String, long[]>> SHINGLE_MAP =
             SAMPLES.stream().collect(Collectors.toMap(Function.identity(), HashMap::new));
 
-    private static final Cache<File, long[]> cache = new Cache<>(0, 0, 1600);
+    static final Cache<File, long[]> cache = new Cache<>(0, 0, 1600);
     //TODO investigate
     private static final SimpleCache<long[]> simpleCache = new SimpleCache<>();
 
@@ -146,7 +148,7 @@ public class Main1024a {
 
         names = names.subList(500, 1500);
 
-        File familyFile = new File("family");
+        File familyFile = new File("family" + index);
 
         Map<String, Family> families;
         if (familyFile.exists()) {
@@ -264,11 +266,11 @@ public class Main1024a {
         families.values().forEach(family -> {
             int relationsCount = family.getMembers().size() * (family.getMembers().size() - 1) / 2;
             if (family.getRelations().size() == relationsCount) { // x * (x - 1) / 2
-                System.out.println(String.format("%nSkipping: %s... [%s] %2.3f", family.getName(), family.size(), k[0] * 100.0 / families.size()));
+                System.out.println(String.format("%nSkipping: %s... [%s] %2.3f%%", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size()));
                 k[0]++;
             } else {
 
-                System.out.println(String.format("%nComparing: %s... [%s] %2.3f%%", family.getName(), family.size(), k[0] * 100.0 / families.size()));
+                System.out.println(String.format("%nComparing: %s... [%s] %2.3f%%", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size()));
 
                 //family.getRelations().clear();
 
@@ -345,23 +347,21 @@ public class Main1024a {
 
         List<Name> deleted = new ArrayList<>();
 
-        double status = family.getJakkardStatus(family.size() - 1);
-
-        while (status < jakkardIndex && family.size() > 1) {
-            Name name = family.get(family.size() - 1);
-            deleted.add(name);
-            family.getMembers().remove(family.size() - 1);
-            // recalculate jakkard
-            family.setRelations(family.getRelations().stream().filter(r -> !r.getName1().equals(name) && !r.getName2().equals(name)).collect(Collectors.toList()));
-
-            recalculateJakkard(family);
-
-            status = family.getJakkardStatus(family.size() - 1);
+        //TODO revert
+        if (family.getName().equals("Public Domain.7z") || family.getName().equals("Multicarts Collection.7z")
+        || family.getName().equals("Wxn Collection.7z") || family.getName().equals("VT03 Collection.7z")) {
+            return deleted;
         }
 
-        /*if (!deleted.isEmpty()) {
-            toDelete.addAll(deleted);
-        }*/
+        double status = family.getJakkardStatus(0);
+        double k = 100 / status;
+
+        for (int i = 1; i < family.size(); i++) {
+            if (family.getJakkardStatus(i) * k < jakkardIndex) {
+                deleted.add(family.get(i));
+            }
+        }
+
         return deleted;
     }
 
@@ -370,14 +370,54 @@ public class Main1024a {
         families.values().forEach(family -> {
             List<Name> toDelete = deleteNonSiblings(family, jakkardIndex);
 
-            toDelete.forEach(td -> System.out.println(String.format("Dropping: %s (%2.4f)", td.getName(), td.jakkardStatus / family.size())));
+            toDelete.forEach(td -> System.out.println(String.format("Dropping: %s (%2.4f%%)", td.getName(), td.jakkardStatus / family.size())));
+
             family.setRelations(family.getRelations().stream().filter(r -> toDelete.contains(r.getName1()) || toDelete.contains(r.getName2())).collect(Collectors.toList()));
+            family.getRelationsCount().forEach((key, value) ->
+                    family.getRelationsCount().replace(key, (int) family.getRelations().stream().filter(r -> r.getName1().getName().equals(key)).count())
+            );
+            family.setIndividualRelations(family.getIndividualRelations().stream().filter(r -> toDelete.stream().anyMatch(d -> r.startsWith(d.getName()))).collect(Collectors.toSet()));
 
             family.getMembers().removeAll(toDelete);
 
             recalculateJakkard(family);
         });
     }
+
+    static void saveDropCsv(Map<String, Family> families, int index, double jakkardIndex) {
+
+        List<String> toDelete = families.values().stream().flatMap(family -> getNonSiblings(family, jakkardIndex).stream()
+                .sorted(Comparator.comparing(Name::getJakkardStatus))
+                .map(n -> String.format("\"%s\";\"%s\";\"%2.4f\"", family.getName().replace(".7z", ""), n.getName(), n.jakkardStatus / family.size()))).collect(Collectors.toList());
+
+        try {
+            Files.write(Paths.get("low-jakkard" + index + ".csv"), toDelete, Charset.defaultCharset());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static List<Name> getNonSiblings(Family family, double jakkardIndex) {
+
+        List<Name> deleted = new ArrayList<>();
+
+        if (family.getName().equals("Public Domain.7z") || family.getName().equals("Multicarts Collection.7z")
+                || family.getName().equals("Wxn Collection.7z") || family.getName().equals("VT03 Collection.7z")) {
+            return deleted;
+        }
+
+        double status = family.getJakkardStatus(0);
+        double k = 100 / status;
+
+        for (int i = 1; i < family.size(); i++) {
+            if (family.getJakkardStatus(i) * k < jakkardIndex) {
+                deleted.add(family.get(i));
+            }
+        }
+
+        return deleted;
+    }
+
 
     @Measured
     private static void recalculateJakkard(Family family) {

@@ -42,16 +42,22 @@ public class ListFilesa {
 
         Files.write(Paths.get("unique.txt"), lines);
 
-        generateFamilies(map, 1, 30);
+        //generateFamilies(map, 1, 30);
+
+        Main1024a.SAMPLES.forEach(index -> generateFamilies(map, index, 30));
+
+        //TODO calculate medium Jakkard deviations, max deviations, %
     }
 
     private static void generateFamilies(Map<File, List<String>> map, int index, int jakkardIndex) {
 
-        File familyFile = new File("list-family");
+        Main1024a.cache.fullCleanup();
+
+        File familyFile = new File("list-family" + index);
 
         Map<String, Main1024a.Family> families;
         if (familyFile.exists()) {
-            System.out.println("\nReading families from file...");
+            System.out.println(String.format("%nReading families from file %s...", familyFile));
             families = Main1024a.readFamiliesFromFile(familyFile);
         } else {
             System.out.println("\nGenerating families...");
@@ -64,19 +70,27 @@ public class ListFilesa {
 
         Main1024a.calculateRelations(families, index, familyFile);
 
+        System.out.println("Saving family...");
         Main1024a.serialize(familyFile, families);
 
+        int total = (int) map.values().stream().mapToLong(Collection::size).sum();
         int inFamily = families.values().stream().map(Main1024a.Family::size).mapToInt(Integer::intValue).sum();
 
+        System.out.println("Total: " + total);
         System.out.println("In family: " + inFamily);
-        System.out.println("Not in family: " + (map.size() - inFamily));
+        System.out.println("Not in family: " + (total - inFamily));
+
+        Main1024a.saveDropCsv(families, index, 50);
 
         //TODO jakkardIndex
-        Main1024a.drop(families, 30);
+        /*Main1024a.drop(families, 50);
+        inFamily = families.values().stream().map(Main1024a.Family::size).mapToInt(Integer::intValue).sum();
 
+        System.out.println("Total: " + total);
         System.out.println("In family: " + inFamily);
-        System.out.println("Not in family: " + (map.size() - inFamily));
+        System.out.println("Not in family: " + (total - inFamily));*/
 
+        System.out.println("==");
         //TODO merge jakkardIndex 20
         //TODO index 1 or 16. Better 1
         //families = mergeFamilies(families, 30, 64);
