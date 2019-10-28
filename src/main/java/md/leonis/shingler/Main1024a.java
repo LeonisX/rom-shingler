@@ -268,13 +268,13 @@ public class Main1024a {
                 k[0]++;
             } else {
 
-                System.out.println(String.format("%nComparing: %s... [%s] %2.3f", family.getName(), family.size(), k[0] * 100.0 / families.size()));
+                System.out.println(String.format("%nComparing: %s... [%s] %2.3f%%", family.getName(), family.size(), k[0] * 100.0 / families.size()));
 
                 //family.getRelations().clear();
 
                 for (int i = 0; i < family.size() - 1; i++) {
 
-                    if (save[0] > 100) {
+                    if (save[0] > 100000) {
                         System.out.println("Saving family...");
                         serialize(familyFile, families);
                         save[0] = 0;
@@ -330,9 +330,9 @@ public class Main1024a {
                         System.out.println(i + "->" + j + ": " + result);
 
                         family.addRelation(result);
+                        save[0]++;
                     }
                     name1.setDone(true);
-                    save[0]++;
                 }
                 family.setMother(family.getMembers().stream().max(Comparator.comparing(Name::getJakkardStatus)).orElse(null));
                 k[0]++;
