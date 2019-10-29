@@ -18,10 +18,16 @@ public class ListFilesa {
 
         MeasureMethodTest.premain();
 
+        System.out.println("Reading list of games...");
         List<File> files = Arrays.asList(Objects.requireNonNull(new File("D:\\Downloads\\Nintendo Famicom - GoodNES ROMS v3.23b Merged").listFiles()));
 
+        System.out.println("Get file names from archives...");
         Map<File, List<String>> map = files.stream().collect(Collectors.toMap(Function.identity(), ListFilesa::listFiles));
 
+        System.out.println("Preparing cache...");
+        Main1024a.getSamples(map.values().stream().flatMap(v -> v.stream().map(File::new)).collect(Collectors.toList()));
+
+        System.out.println("Creating list of unique games...");
         Map<File, List<String>> filtereMap = new HashMap<>();
 
         // really unique
@@ -44,9 +50,58 @@ public class ListFilesa {
 
         //generateFamilies(map, 1, 30);
 
-        Main1024a.SAMPLES.forEach(index -> generateFamilies(map, index, 30));
+        System.out.println("Generating families...");
+        Main1024a.SAMPLES.forEach(index -> {
+            if (!new File("low-jakkard" + index + ".csv").exists())
+                generateFamilies(map, index, 30);
+        });
 
-        //TODO calculate medium Jakkard deviations, max deviations, %
+        System.out.println("Calculating Jakkard deviations for families...");
+        Map<String, Main1024a.Family> families1 = Main1024a.readFamiliesFromFile(new File("list-family" + 1));
+
+        for (int i = 1; i < Main1024a.SAMPLES.size(); i++) {
+            measureJakkard(Main1024a.SAMPLES.get(i), families1);
+        }
+    }
+
+    private static void measureJakkard(Integer index, Map<String, Main1024a.Family> fams1) {
+
+        List<Main1024a.Family> families1 = new ArrayList<>(fams1.values());
+
+        Map<String, Main1024a.Family> families = Main1024a.readFamiliesFromFile(new File("list-family" + index));
+        List<Main1024a.Family> familiesX = new ArrayList<>(families.values());
+
+        double maxDeviation = 0;
+        double medDeviation = 0;
+
+        for (int i = 0; i < families1.size(); i++) {
+            Main1024a.Family family1 = families1.get(i);
+            Main1024a.Family familyX = familiesX.get(i);
+
+            double sumDeviation = 0;
+
+            for (int j = 0; j < family1.size(); j++) {
+
+                double j1 = family1.getJakkardStatus(j);
+                double jX = familyX.getJakkardStatus(j);
+                double deviation = deviation(j1, jX);
+                if (Double.valueOf(deviation).isNaN()) {
+                    deviation = 0;
+                }
+                if (deviation > 10 && j1 > 3) {
+                    System.out.println(String.format("%s:%s %2.2f->%2.2f(%2.4f%%)", family1.getName(), family1.get(j).getName(), j1, jX, deviation));
+                }
+                maxDeviation = Math.max(maxDeviation, deviation);
+                sumDeviation += deviation;
+            }
+            medDeviation += sumDeviation / family1.size();
+        }
+        System.out.println(String.format("%s. Max: %2.4f%%; Med: %2.4f%%", index, maxDeviation, medDeviation / families.size()));
+    }
+
+    // a < b = ((b-a)/a) * 100
+    static double deviation(double d1, double d2) {
+        return Math.abs(d2 - d1)/d1 * 100;
     }
 
     private static void generateFamilies(Map<File, List<String>> map, int index, int jakkardIndex) {

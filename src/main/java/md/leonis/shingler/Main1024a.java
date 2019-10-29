@@ -12,6 +12,11 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.zip.CRC32;
 
+// NES (256 Kb) Up to 8 100% SAVE, Up to 32 SAFE, 64 relative SAFE, 256+ nonSAFE
+// В любом случае, даже 1024 подходит для быстрой идентификации игры если она принадлежит группе
+// Всё, что ниже 3-5 видимо можно отноисть в несовпадениям.
+
+
 //TODO list[], write direct, read direct
 //TODO fast intersect/union operations. TreeMap?
 public class Main1024a {
@@ -20,7 +25,7 @@ public class Main1024a {
 
     private static final String GAMES_DIR = "D:\\Downloads\\games\\";
 
-    private static final int SHINGLE_MAP_THRESHOLD = 128;
+    private static final int SHINGLE_MAP_THRESHOLD = 127;
 
     static final List<Integer> SAMPLES = Arrays.asList(1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024);
 
@@ -93,7 +98,7 @@ public class Main1024a {
     }
 
     @SuppressWarnings("all")
-    private static void getSamples(List<File> files) throws IOException {
+    static void getSamples(List<File> files) throws IOException {
 
         SHINGLE_MAP.forEach((key, value) -> {
             int index = key;
@@ -102,7 +107,6 @@ public class Main1024a {
                 File shinglesMapFile = new File("shinglesMap" + index);
 
                 Map<String, long[]> shinglesMap = new HashMap<>();
-
 
                 if (index > SHINGLE_MAP_THRESHOLD) {
 
@@ -120,7 +124,7 @@ public class Main1024a {
 
                                 System.out.println(String.format(Locale.US, "%s: %2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
 
-                                File srcSampleFolder = SAMPLE_DIRS_MAP.get(index - 1);
+                                File srcSampleFolder = SAMPLE_DIRS_MAP.get(index);
 
                                 long[] shingles = loadShinglesFromCacheFile(new File(srcSampleFolder.getAbsolutePath() + File.separator + file.getName() + ".shg"));
                                 long[] filteredShingles = filterArrays(shingles, index);
@@ -131,14 +135,14 @@ public class Main1024a {
                                     writeShinglesToFile(filteredShingles, sampleFile);
                                 }
                             } else {
-                                System.out.println(String.format(Locale.US, "Skipping: %s: %2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
+                                System.out.println(String.format(Locale.US, "Reading: %s: %2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
                                 long[] filteredShingles = loadShinglesFromCacheFile(sampleFile);
                                 shinglesMap.put(file.getName(), filteredShingles);
                             }
                         }
                         serialize(shinglesMapFile, shinglesMap);
-                        SHINGLE_MAP.replace(index, shinglesMap);
                     }
+                    SHINGLE_MAP.replace(index, shinglesMap);
                 }
             }
         });
@@ -276,7 +280,7 @@ public class Main1024a {
 
                 for (int i = 0; i < family.size() - 1; i++) {
 
-                    if (save[0] > 100000) {
+                    if (save[0] > 100000 * index) {
                         System.out.println("Saving family...");
                         serialize(familyFile, families);
                         save[0] = 0;
@@ -696,6 +700,9 @@ public class Main1024a {
 
     @Measured
     static long[] removeDuplicates(long[] arr) { // Only for sorted arrays
+        if (arr.length < 2) {
+            return arr;
+        }
         int j = 0;
         for (int i = 0; i < arr.length - 1; i++) {
             if (arr[i] != arr[i + 1]) {
