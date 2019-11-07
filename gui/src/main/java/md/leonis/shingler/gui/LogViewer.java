@@ -1,262 +1,24 @@
 package md.leonis.shingler.gui;
 
-import javafx.animation.Animation;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.beans.binding.Bindings;
-import javafx.beans.property.*;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.collections.transformation.FilteredList;
-import javafx.css.PseudoClass;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import javafx.util.Duration;
+import md.leonis.shingler.InternalLogger;
+import md.leonis.shingler.Level;
+import md.leonis.shingler.Log;
+import md.leonis.shingler.LogRecord;
 
-import java.text.SimpleDateFormat;
-import java.util.Collection;
-import java.util.Date;
 import java.util.Random;
-import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.LinkedBlockingDeque;
-
-class Log {
-    private static final int MAX_LOG_ENTRIES = 1_000_000;
-
-    private final BlockingDeque<LogRecord> log = new LinkedBlockingDeque<>(MAX_LOG_ENTRIES);
-
-    void drainTo(Collection<? super LogRecord> collection) {
-        log.drainTo(collection);
-    }
-
-    void offer(LogRecord record) {
-        log.offer(record);
-    }
-}
-
-class Logger {
-    private final Log log;
-    private final String context;
-
-    Logger(Log log, String context) {
-        this.log = log;
-        this.context = context;
-    }
-
-    void log(LogRecord record) {
-        log.offer(record);
-    }
-
-    void debug(String msg) {
-        log(new LogRecord(Level.DEBUG, context, msg));
-    }
-
-    void info(String msg) {
-        log(new LogRecord(Level.INFO, context, msg));
-    }
-
-    void warn(String msg) {
-        log(new LogRecord(Level.WARN, context, msg));
-    }
-
-    void error(String msg) {
-        log(new LogRecord(Level.ERROR, context, msg));
-    }
-
-    Log getLog() {
-        return log;
-    }
-}
-
-enum Level {TRACE, DEBUG, INFO, WARN, ERROR}
-
-class LogRecord {
-    private Date timestamp;
-    private Level level;
-    private String context;
-    private String message;
-
-    LogRecord(Level level, String context, String message) {
-        this.timestamp = new Date();
-        this.level = level;
-        this.context = context;
-        this.message = message;
-    }
-
-    Date getTimestamp() {
-        return timestamp;
-    }
-
-    Level getLevel() {
-        return level;
-    }
-
-    String getContext() {
-        return context;
-    }
-
-    String getMessage() {
-        return message;
-    }
-}
-
-class LogView extends ListView<LogRecord> {
-    private static final int MAX_ENTRIES = 10_000;
-
-    private final static PseudoClass trace = PseudoClass.getPseudoClass("trace");
-    private final static PseudoClass debug = PseudoClass.getPseudoClass("debug");
-    private final static PseudoClass info = PseudoClass.getPseudoClass("info");
-    private final static PseudoClass warn = PseudoClass.getPseudoClass("warn");
-    private final static PseudoClass error = PseudoClass.getPseudoClass("error");
-
-    private final static SimpleDateFormat timestampFormatter = new SimpleDateFormat("HH:mm:ss.SSS");
-
-    private final BooleanProperty showTimestamp = new SimpleBooleanProperty(false);
-    private final ObjectProperty<Level> filterLevel = new SimpleObjectProperty<>(null);
-    private final BooleanProperty tail = new SimpleBooleanProperty(false);
-    private final BooleanProperty paused = new SimpleBooleanProperty(false);
-    private final DoubleProperty refreshRate = new SimpleDoubleProperty(60);
-
-    private final ObservableList<LogRecord> logItems = FXCollections.observableArrayList();
-
-    BooleanProperty showTimeStampProperty() {
-        return showTimestamp;
-    }
-
-    ObjectProperty<Level> filterLevelProperty() {
-        return filterLevel;
-    }
-
-    BooleanProperty tailProperty() {
-        return tail;
-    }
-
-    BooleanProperty pausedProperty() {
-        return paused;
-    }
-
-    DoubleProperty refreshRateProperty() {
-        return refreshRate;
-    }
-
-    LogView(Logger logger) {
-        getStyleClass().add("log-view");
-
-        Timeline logTransfer = new Timeline(
-                new KeyFrame(
-                        Duration.seconds(1),
-                        event -> {
-                            logger.getLog().drainTo(logItems);
-
-                            if (logItems.size() > MAX_ENTRIES) {
-                                logItems.remove(0, logItems.size() - MAX_ENTRIES);
-                            }
-
-                            if (tail.get()) {
-                                scrollTo(logItems.size());
-                            }
-                        }
-                )
-        );
-        logTransfer.setCycleCount(Timeline.INDEFINITE);
-        logTransfer.rateProperty().bind(refreshRateProperty());
-
-        this.pausedProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue && logTransfer.getStatus() == Animation.Status.RUNNING) {
-                logTransfer.pause();
-            }
-
-            if (!newValue && logTransfer.getStatus() == Animation.Status.PAUSED && getParent() != null) {
-                logTransfer.play();
-            }
-        });
-
-        this.parentProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue == null) {
-                logTransfer.pause();
-            } else {
-                if (!paused.get()) {
-                    logTransfer.play();
-                }
-            }
-        });
-
-        filterLevel.addListener((observable, oldValue, newValue) -> setItems(
-                new FilteredList<>(
-                        logItems,
-                        logRecord ->
-                                logRecord.getLevel().ordinal() >=
-                                        filterLevel.get().ordinal()
-                )
-        ));
-        filterLevel.set(Level.DEBUG);
-
-        setCellFactory(param -> new ListCell<LogRecord>() {
-            {
-                showTimestamp.addListener(observable -> updateItem(this.getItem(), this.isEmpty()));
-            }
-
-            @Override
-            protected void updateItem(LogRecord item, boolean empty) {
-                super.updateItem(item, empty);
-
-                pseudoClassStateChanged(trace, false);
-                pseudoClassStateChanged(debug, false);
-                pseudoClassStateChanged(info, false);
-                pseudoClassStateChanged(warn, false);
-                pseudoClassStateChanged(error, false);
-
-                if (item == null || empty) {
-                    setText(null);
-                    return;
-                }
-
-                String context =
-                        (item.getContext() == null)
-                                ? ""
-                                : item.getContext() + " ";
-
-                if (showTimestamp.get()) {
-                    String timestamp =
-                            (item.getTimestamp() == null)
-                                    ? ""
-                                    : timestampFormatter.format(item.getTimestamp()) + " ";
-                    setText(timestamp + context + item.getMessage());
-                } else {
-                    setText(context + item.getMessage());
-                }
-
-                switch (item.getLevel()) {
-                    case TRACE:
-                        pseudoClassStateChanged(trace, true);
-                        break;
-
-                    case DEBUG:
-                        pseudoClassStateChanged(debug, true);
-                        break;
-
-                    case INFO:
-                        pseudoClassStateChanged(info, true);
-                        break;
-
-                    case WARN:
-                        pseudoClassStateChanged(warn, true);
-                        break;
-
-                    case ERROR:
-                        pseudoClassStateChanged(error, true);
-                        break;
-                }
-            }
-        });
-    }
-}
 
 class Lorem {
     private static final String[] IPSUM = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque hendrerit imperdiet mi quis convallis. Pellentesque fringilla imperdiet libero, quis hendrerit lacus mollis et. Maecenas porttitor id urna id mollis. Suspendisse potenti. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Cras lacus tellus, semper hendrerit arcu quis, auctor suscipit ipsum. Vestibulum venenatis ante et nulla commodo, ac ultricies purus fringilla. Aliquam lectus urna, commodo eu quam a, dapibus bibendum nisl. Aliquam blandit a nibh tincidunt aliquam. In tellus lorem, rhoncus eu magna id, ullamcorper dictum tellus. Curabitur luctus, justo a sodales gravida, purus sem iaculis est, eu ornare turpis urna vitae dolor. Nulla facilisi. Proin mattis dignissim diam, id pellentesque sem bibendum sed. Donec venenatis dolor neque, ut luctus odio elementum eget. Nunc sed orci ligula. Aliquam erat volutpat.".split(" ");
@@ -309,8 +71,7 @@ public class LogViewer extends Application {
     @Override
     public void start(Stage stage) {
         Lorem lorem = new Lorem();
-        Log log = new Log();
-        Logger logger = new Logger(log, "main");
+        InternalLogger logger = new InternalLogger("main");
 
         logger.info("Hello");
         logger.warn("Don't pick up alien hitchhickers");
@@ -340,13 +101,12 @@ public class LogViewer extends Application {
             generatorThread.start();
         }
 
-        LogView logView = new LogView(logger);
+        InternalLogger.log = new Log(1_000_000);
+        LogView logView = new LogView();
         logView.setPrefWidth(400);
 
         ChoiceBox<Level> filterLevel = new ChoiceBox<>(
-                FXCollections.observableArrayList(
-                        Level.values()
-                )
+                FXCollections.observableArrayList(Level.values())
         );
         filterLevel.getSelectionModel().select(Level.DEBUG);
         logView.filterLevelProperty().bind(filterLevel.getSelectionModel().selectedItemProperty());

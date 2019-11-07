@@ -1,6 +1,6 @@
-.root {
+/*.root {
     -fx-padding: 10px;
-}
+}*/
 
 .log-view .list-cell {
     -fx-background-color: null; // removes alternating list gray cells.

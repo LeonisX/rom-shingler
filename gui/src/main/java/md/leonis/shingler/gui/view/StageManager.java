@@ -78,7 +78,9 @@ public class StageManager {
         Scene scene = primaryStage.getScene();
 
         if (scene == null) {
-            return new Scene(rootNode);
+            scene = new Scene(rootNode);
+            scene.getStylesheets().add("log-view.css");
+            return scene;
         }
 
         scene.setRoot(rootNode);

@@ -7,7 +7,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
-import md.leonis.shingler.gui.controller.template.TemplateController;
+import md.leonis.shingler.gui.controller.template.LogController;
 import md.leonis.shingler.gui.domain.ScriptWord;
 import md.leonis.shingler.gui.view.StageManager;
 import org.springframework.context.annotation.Lazy;
@@ -42,11 +42,6 @@ public class WindowController {
 
     @FXML
     private void initialize() {
-
-        TemplateController templateController = new TemplateController(stageManager);
-        //templateController.getSelectAllButton().setOnAction(event -> selectAllClick());
-        templateController.getSelectedLevelsListenerHandles().registerListener(event -> refreshWebView());
-        vBox.getChildren().add(templateController);
 
         wordColumn.setCellValueFactory(new PropertyValueFactory<>("word"));
         //transcrColumn.setCellValueFactory(new PropertyValueFactory<>("level"));

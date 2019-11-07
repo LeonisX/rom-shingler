@@ -1,5 +1,8 @@
 package md.leonis.shingler;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.*;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -18,6 +21,8 @@ import java.util.zip.CRC32;
 
 public class Main1024a {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(Main1024a.class);
+
     private static final int SHINGLE_LENGTH = 8;
 
     private static final String GAMES_DIR = "D:\\Downloads\\games\\";
@@ -33,8 +38,6 @@ public class Main1024a {
             SAMPLES.stream().collect(Collectors.toMap(Function.identity(), HashMap::new));
 
     static final Cache<File, long[]> cache = new Cache<>(0, 0, 1600);
-    //TODO investigate
-    private static final SimpleCache<long[]> simpleCache = new SimpleCache<>();
 
     @SuppressWarnings("all")
     public static void main(String[] args) throws IOException {
@@ -61,6 +64,7 @@ public class Main1024a {
     @SuppressWarnings("all")
     private static void generateShingles(List<File> files) throws IOException {
 
+        LOGGER.info("Generating shingles...");
         System.out.println("Generating shingles...");
 
         for (int i = 0; i < files.size(); i++) {
