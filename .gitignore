@@ -1,4 +1,5 @@
 .idea
 target
+*.iml
 rom-shingler.iml
 /result.csv

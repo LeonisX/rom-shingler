@@ -16,9 +16,6 @@ import java.util.zip.CRC32;
 // В любом случае, даже 1024 подходит для быстрой идентификации игры если она принадлежит группе
 // Всё, что ниже 3-5 видимо можно отноисть в несовпадениям.
 
-
-//TODO list[], write direct, read direct
-//TODO fast intersect/union operations. TreeMap?
 public class Main1024a {
 
     private static final int SHINGLE_LENGTH = 8;
