@@ -7,9 +7,9 @@ import java.io.*;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -17,7 +17,7 @@ import java.util.zip.CRC32;
 
 // NES (256 Kb) Up to 8 100% SAVE, Up to 32 SAFE, 64 relative SAFE, 256+ nonSAFE
 // В любом случае, даже 1024 подходит для быстрой идентификации игры если она принадлежит группе
-// Всё, что ниже 3-5 видимо можно отноисть в несовпадениям.
+// Всё, что ниже 3-5 видимо можно относить к несовпадениям.
 
 public class Main1024a {
 
@@ -25,7 +25,8 @@ public class Main1024a {
 
     private static final int SHINGLE_LENGTH = 8;
 
-    private static final String GAMES_DIR = "D:\\Downloads\\games\\";
+    private static String GAMES_DIR = "D:\\Downloads\\games\\";
+    private static String WORK_DIR = "D:\\Downloads\\games\\";
 
     private static final int SHINGLE_MAP_THRESHOLD = 127;
 
@@ -33,6 +34,9 @@ public class Main1024a {
 
     private static final Map<Integer, File> SAMPLE_DIRS_MAP =
             SAMPLES.stream().collect(Collectors.toMap(Function.identity(), s -> new File(GAMES_DIR + "sample" + s)));
+
+    private static final Map<Integer, Path> SAMPLE_DIRS_MAP2 =
+            SAMPLES.stream().collect(Collectors.toMap(Function.identity(), s -> Paths.get(GAMES_DIR).resolve("sample" + s)));
 
     private static final Map<Integer, Map<String, long[]>> SHINGLE_MAP =
             SAMPLES.stream().collect(Collectors.toMap(Function.identity(), HashMap::new));
@@ -52,8 +56,7 @@ public class Main1024a {
 
         generateShingles(files);
 
-        //TODO revert
-        //getSamples(files);
+        loadSamplesInCache(files);
 
         List<Name> names = files.stream().map(f -> new Name(f, false)).collect(Collectors.toList());
 
@@ -61,11 +64,22 @@ public class Main1024a {
         //generateFamilies(names, 64, 20); // generate families
     }
 
+    private static void createDirectory(Path path) {
+        try {
+            Files.createDirectories(path);
+        } catch (IOException e) {
+            LOGGER.error("Can't create directory: {}", path.toString(), e);
+        }
+    }
+
+    public static void createSampleDirs(Path path) {
+        SAMPLES.stream().map(s -> path.resolve("sample" + s)).forEach(Main1024a::createDirectory);
+    }
+
     @SuppressWarnings("all")
     private static void generateShingles(List<File> files) throws IOException {
 
         LOGGER.info("Generating shingles...");
-        System.out.println("Generating shingles...");
 
         for (int i = 0; i < files.size(); i++) {
             File file = files.get(i);
@@ -75,14 +89,15 @@ public class Main1024a {
             long[] shingles;
 
             if (shdFile.exists() && shdFile.length() > 0 && shdFile.length() % 8 == 0) {
-                System.out.println(String.format(Locale.US, "Skipping: %s: %2.2f", file.getName(), ((i + 1) * 100.0 / files.size())));
+                LOGGER.info("Skipping: {}|{}", file.getName(), ((i + 1) * 100.0 / files.size()));
                 shingles = loadShinglesFromFile(shdFile);
             } else {
-                System.out.println(String.format(Locale.US, "%s: %2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
+                LOGGER.info("{}|{}", file.getName(), ((i + 1) * 100.0 / files.size()));
                 shingles = toShingles(readFromFile(file));
                 writeShinglesToFile(shingles, shdFile);
             }
 
+            // Generate samples
             SAMPLE_DIRS_MAP.entrySet().forEach(e -> {
                 int index = e.getKey();
                 File sampleFile = new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + file.getName() + ".shg");
@@ -98,8 +113,60 @@ public class Main1024a {
         }
     }
 
+    public static void generateShinglesNio(Map<String, GID> files, Path romsFolder, Path workDir) throws IOException {
+
+        LOGGER.info("Generating shingles...");
+
+        int i = 0;
+        for (Map.Entry<String, GID> entry: files.entrySet()) {
+            Path file = romsFolder.resolve(entry.getKey());
+
+            Path shdFile = workDir.resolve("sample1").resolve(bytesToHex(entry.getValue().getSha1()) + ".shg");
+
+            long[] shingles = null;
+
+            if (isCorrect(shdFile)) {
+                LOGGER.info("Skipping: {}|{}", file.toString(), ((i + 1) * 100.0 / files.size()));
+
+            } else {
+                LOGGER.info("{}|{}", file.toString(), ((i + 1) * 100.0 / files.size()));
+                shingles = toShingles(readFromFile(file));
+                writeShinglesToFile(shingles, shdFile);
+            }
+
+            // Generate samples
+            for (Integer index : SAMPLES) {
+                Path sampleFile = workDir.resolve("sample" + index).resolve(bytesToHex(entry.getValue().getSha1()) + ".shg");
+                if (index > 1 && !isCorrect(sampleFile)) {
+                    if (shingles == null) {
+                        shingles = loadShinglesFromFile(shdFile);
+                    }
+
+                    // TODO actual some small files (PD) fail (empty) on 256 :(
+                    long[] filteredShingles = filterArrays(shingles, index);
+
+                    if (index > SHINGLE_MAP_THRESHOLD) {
+                        SHINGLE_MAP.get(index).put(file.toString(), filteredShingles);
+                    }
+                    writeShinglesToFile(filteredShingles, sampleFile);
+                }
+            }
+
+            i++;
+        }
+    }
+
+    private static boolean isCorrect(Path path) {
+        try {
+            long size = Files.size(path);
+            return Files.exists(path) && size > 0 && size % 8 == 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     @SuppressWarnings("all")
-    static void getSamples(List<File> files) throws IOException {
+    static void loadSamplesInCache(List<File> files) throws IOException {
 
         SHINGLE_MAP.forEach((key, value) -> {
             int index = key;
@@ -354,7 +421,7 @@ public class Main1024a {
 
         //TODO revert
         if (family.getName().equals("Public Domain.7z") || family.getName().equals("Multicarts Collection.7z")
-        || family.getName().equals("Wxn Collection.7z") || family.getName().equals("VT03 Collection.7z")) {
+                || family.getName().equals("Wxn Collection.7z") || family.getName().equals("VT03 Collection.7z")) {
             return deleted;
         }
 
@@ -576,6 +643,22 @@ public class Main1024a {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    @Measured
+    static Map<String, GID> readGIDsFromFile(File file) {
+        try {
+            FileInputStream fis = new FileInputStream(file);
+            ObjectInputStream ois = new ObjectInputStream(fis);
+            Map<String, GID> result = (Map<String, GID>) ois.readObject();
+
+            ois.close();
+            fis.close();
+            return result;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     //TODO unify
     @Measured
     private static long[] loadShinglesFromCacheFile(File file) {
@@ -613,9 +696,43 @@ public class Main1024a {
     }
 
     @Measured
+    static long[] loadShinglesFromFile(Path file) {
+        long size;
+        try {
+            size = Files.size(file);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        int count = (int) size / 8;
+        long[] shingles = new long[count];
+        try (FileChannel fc = FileChannel.open(file)) {
+            MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_ONLY, 0, size);
+            for (int i = 0; i < count; i++) {
+                shingles[i] = mbb.getLong();
+            }
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+        return shingles;
+    }
+
+    @Measured
     static void writeShinglesToFile(long[] shingles, File file) {
         int count = shingles.length;
         try (FileChannel fc = FileChannel.open(file.toPath(), EnumSet.of(StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING))) {
+            MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_WRITE, 0, count * 8);
+            for (long shingle : shingles) {
+                mbb.putLong(shingle);
+            }
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    @Measured
+    static void writeShinglesToFile(long[] shingles, Path file) {
+        int count = shingles.length;
+        try (FileChannel fc = FileChannel.open(file, EnumSet.of(StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING))) {
             MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_WRITE, 0, count * 8);
             for (long shingle : shingles) {
                 mbb.putLong(shingle);
@@ -630,12 +747,46 @@ public class Main1024a {
         Set<Long> hashes = new HashSet<>();
 
         for (int i = 0; i < bytes.length - SHINGLE_LENGTH + 1; i++) {
-            CRC32 crc = new CRC32();
-            crc.update(Arrays.copyOfRange(bytes, i, i + SHINGLE_LENGTH));
-            hashes.add(crc.getValue());
+            hashes.add(crc32(Arrays.copyOfRange(bytes, i, i + SHINGLE_LENGTH)));
         }
 
         return hashes.stream().sorted().mapToLong(l -> l).toArray();
+    }
+
+    public static long crc32(byte[] bytes) {
+        CRC32 crc = new CRC32();
+        crc.update(bytes);
+        return crc.getValue();
+    }
+
+    public static byte[] md5(byte[] bytes) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            return md.digest(bytes);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static byte[] sha1(byte[] bytes) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-1");
+            return md.digest(bytes);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+
+    public static String bytesToHex(byte[] bytes) {
+        char[] hexChars = new char[bytes.length * 2];
+        for (int j = 0; j < bytes.length; j++) {
+            int v = bytes[j] & 0xFF;
+            hexChars[j * 2] = HEX_ARRAY[v >>> 4];
+            hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
+        }
+        return new String(hexChars);
     }
 
     @Measured
@@ -716,8 +867,24 @@ public class Main1024a {
 
     @SuppressWarnings("all")
     @Measured
-    private static List<File> listFilesForFolder(final File folder) {
+    public static List<File> listFilesForFolder(final File folder) {
         return Arrays.stream(folder.listFiles()).filter(File::isFile).collect(Collectors.toList());
+    }
+
+    @Measured
+    public static List<Path> listFilesForFolder(final Path folder) {
+        LOGGER.info("Getting a list of files...");
+        List<Path> fileList = new ArrayList<>();
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(folder)) {
+            for (Path path : stream) {
+                if (!Files.isDirectory(path)) {
+                    fileList.add(path);
+                }
+            }
+        } catch (IOException e) {
+            LOGGER.error("Can't get list of files from dir: {}", folder.toString(), e);
+        }
+        return fileList;
     }
 
     @Measured
@@ -725,6 +892,43 @@ public class Main1024a {
         return Files.readAllBytes(file.toPath());
     }
 
+    @Measured
+    private static byte[] readFromFile(Path file) throws IOException {
+        return Files.readAllBytes(file);
+    }
+
+    public static Map<String, GID> filesToGid(Path workDir, List<Path> files) {
+
+        //TODO real path (WORKDIR)
+        File gidsFile = workDir.resolve("gids").toFile();
+
+        if (gidsFile.exists()) {
+            LOGGER.info("Reading GIDs from file...");
+            return new LinkedHashMap<>(readGIDsFromFile(gidsFile));
+        } else {
+            LOGGER.info("Generating GIDs...");
+            Map<String, Main1024a.GID> gidMap = new LinkedHashMap<>();
+
+            try {
+                int i = 0;
+                for (Path path : files) {
+                    long size = Files.size(path);
+                    byte[] bytes = readFromFile(path);
+                    long crc32 = crc32(bytes);
+                    byte[] md5 = md5(bytes);
+                    byte[] sha1 = sha1(bytes);
+                    gidMap.put(path.getFileName().toString(), new Main1024a.GID(path.getFileName().toString(), size, crc32, md5, sha1));
+                    LOGGER.info("Calculating hash sums for: {}|{}", path.getFileName(), ((i + 1) * 100.0 / files.size()));
+                    i++;
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            serialize(gidsFile, gidMap);
+            return gidMap;
+        }
+    }
 
     static class Family implements Serializable, Cloneable {
 
@@ -1048,6 +1252,66 @@ public class Main1024a {
         @Override
         public String toString() {
             return "\"" + name1.getName() + "\",\"" + name2.getName() + "\",\"" + relative + "\",\"" + jakkard + "\"";
+        }
+    }
+
+
+    public static class GID implements Serializable {
+
+        private static final long serialVersionUID = -54693L;
+
+        private String name;
+        private long size;
+        private long crc32;
+        private byte[] md5;
+        private byte[] sha1;
+
+        public GID(String name, long size, long crc32, byte[] md5, byte[] sha1) {
+            this.name = name;
+            this.size = size;
+            this.crc32 = crc32;
+            this.md5 = md5;
+            this.sha1 = sha1;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
+        }
+
+        public long getCrc32() {
+            return crc32;
+        }
+
+        public void setCrc32(long crc32) {
+            this.crc32 = crc32;
+        }
+
+        public byte[] getMd5() {
+            return md5;
+        }
+
+        public void setMd5(byte[] md5) {
+            this.md5 = md5;
+        }
+
+        public byte[] getSha1() {
+            return sha1;
+        }
+
+        public void setSha1(byte[] sha1) {
+            this.sha1 = sha1;
         }
     }
 }

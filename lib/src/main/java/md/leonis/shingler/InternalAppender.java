@@ -16,7 +16,12 @@ public class InternalAppender extends AppenderSkeleton {
 
     @Override
     protected void append(LoggingEvent event) {
-        InternalLogger.log.offer(new LogRecord(Level.valueOf(event.getLevel().toString()), event.getLoggerName(), event.getRenderedMessage()));
+        String[] chunks = event.getRenderedMessage().split("\\|");
+        if (chunks.length == 2) {
+            InternalLogger.log.offer(new LogRecord(Level.valueOf(event.getLevel().toString()), event.getLoggerName(), chunks[0], Double.valueOf(chunks[1])));
+        } else {
+            InternalLogger.log.offer(new LogRecord(Level.valueOf(event.getLevel().toString()), event.getLoggerName(), event.getRenderedMessage(), null));
+        }
     }
 
     @Override

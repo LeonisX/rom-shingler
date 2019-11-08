@@ -1,16 +1,23 @@
 package md.leonis.shingler;
 
-import jdk.nashorn.internal.ir.annotations.Ignore;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class Main1024aTest {
 
+    Logger LOGGER = LoggerFactory.getLogger(Main1024aTest.class);
     /*@Test
     void unionArrays() {
         long[] a = {1,2,3,4};
@@ -186,7 +193,7 @@ class Main1024aTest {
         assertArrayEquals(shingles, result);
     }
 
-    @Ignore
+    @Disabled
     @Test
     void writeShinglesToFile2() {
         File file = new File("tmp");
@@ -198,5 +205,20 @@ class Main1024aTest {
         assertArrayEquals(shingles, result);
 
         file.deleteOnExit();
+    }
+
+    @Test
+    void crc32() {
+        assertEquals(3_632_233_996L, Main1024a.crc32("test".getBytes(StandardCharsets.UTF_8)));
+    }
+
+    @Test
+    void md5() {
+        assertEquals("098F6BCD4621D373CADE4E832627B4F6", Main1024a.bytesToHex(Main1024a.md5("test".getBytes(StandardCharsets.UTF_8))));
+    }
+
+    @Test
+    void sha1() {
+        assertEquals("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3", Main1024a.bytesToHex(Main1024a.sha1("test".getBytes(StandardCharsets.UTF_8))));
     }
 }

@@ -3,10 +3,7 @@ package md.leonis.shingler.gui.controller.template;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.Slider;
-import javafx.scene.control.ToggleButton;
+import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -27,6 +24,8 @@ public class LogController extends VBox {
     @FXML
     private ToggleButton showTimestamp;
     @FXML
+    private ToggleButton showSource;
+    @FXML
     private ToggleButton tail;
     @FXML
     private ToggleButton pause;
@@ -36,6 +35,10 @@ public class LogController extends VBox {
     private Label rateLabel;
     @FXML
     private VBox rateLayout;
+    @FXML
+    private Label progressLabel;
+    @FXML
+    private ProgressBar progressBar;
 
     @Lazy
     public LogController(StageManager stageManager) {
@@ -49,11 +52,14 @@ public class LogController extends VBox {
         filterLevel.getSelectionModel().select(Level.DEBUG);
         logView.filterLevelProperty().bind(filterLevel.getSelectionModel().selectedItemProperty());
         logView.showTimeStampProperty().bind(showTimestamp.selectedProperty());
+        logView.showSourceProperty().bind(showSource.selectedProperty());
         logView.tailProperty().bind(tail.selectedProperty());
         logView.pausedProperty().bind(pause.selectedProperty());
         logView.refreshRateProperty().bind(rate.valueProperty());
         rateLabel.textProperty().bind(Bindings.format("Update: %.2f fps", rate.valueProperty()));
         rateLabel.setStyle("-fx-font-family: monospace;");
+        progressBar.progressProperty().bind(Bindings.divide(logView.progressProperty(), 100));
+        progressLabel.textProperty().bind(Bindings.format("%.2f%%", logView.progressProperty()));
         controls.setMinHeight(HBox.USE_PREF_SIZE);
 
         layout.getChildren().add(logView);

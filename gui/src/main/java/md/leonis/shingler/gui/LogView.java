@@ -30,15 +30,21 @@ public class LogView extends ListView<LogRecord> {
     private final static SimpleDateFormat timestampFormatter = new SimpleDateFormat("HH:mm:ss.SSS");
 
     private final BooleanProperty showTimestamp = new SimpleBooleanProperty(false);
+    private final BooleanProperty showSource = new SimpleBooleanProperty(false);
     private final ObjectProperty<Level> filterLevel = new SimpleObjectProperty<>(null);
-    private final BooleanProperty tail = new SimpleBooleanProperty(false);
+    private final BooleanProperty tail = new SimpleBooleanProperty(true);
     private final BooleanProperty paused = new SimpleBooleanProperty(false);
     private final DoubleProperty refreshRate = new SimpleDoubleProperty(60);
+    private final DoubleProperty progress = new SimpleDoubleProperty(0);
 
     private final ObservableList<LogRecord> logItems = FXCollections.observableArrayList();
 
     public BooleanProperty showTimeStampProperty() {
         return showTimestamp;
+    }
+
+    public BooleanProperty showSourceProperty() {
+        return showSource;
     }
 
     public ObjectProperty<Level> filterLevelProperty() {
@@ -57,6 +63,10 @@ public class LogView extends ListView<LogRecord> {
         return refreshRate;
     }
 
+    public DoubleProperty progressProperty() {
+        return progress;
+    }
+
     public LogView() {
         getStyleClass().add("log-view");
 
@@ -72,6 +82,12 @@ public class LogView extends ListView<LogRecord> {
 
                             if (tail.get()) {
                                 scrollTo(logItems.size());
+                            }
+                            Double value = logItems.get(logItems.size() - 1).getProgress();
+                            if (null == value) {
+                                progress.setValue(progress.getValue() / 1.1);
+                            } else {
+                                progress.setValue(value);
                             }
                         }
                 )
@@ -129,20 +145,17 @@ public class LogView extends ListView<LogRecord> {
                     return;
                 }
 
-                String context =
-                        (item.getContext() == null)
-                                ? ""
-                                : item.getContext() + " ";
-
+                String timestamp = "";
                 if (showTimestamp.get()) {
-                    String timestamp =
-                            (item.getTimestamp() == null)
-                                    ? ""
-                                    : timestampFormatter.format(item.getTimestamp()) + " ";
-                    setText(timestamp + context + item.getMessage());
-                } else {
-                    setText(context + item.getMessage());
+                    timestamp = (item.getTimestamp() == null) ? "" : timestampFormatter.format(item.getTimestamp()) + " ";
                 }
+
+                String source = "";
+                if (showSource.get()) {
+                    source = (item.getContext() == null) ? "" : item.getContext() + " ";
+                }
+
+                setText(timestamp + source + item.getMessage());
 
                 switch (item.getLevel()) {
                     case TRACE:

@@ -2,21 +2,27 @@
 
 <?import javafx.scene.control.ChoiceBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.control.Slider?>
 <?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<fx:root fx:id="layout" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" spacing="10.0"
-         type="javafx.scene.layout.VBox" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1">
+<fx:root fx:id="layout" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" spacing="10.0" type="javafx.scene.layout.VBox" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1">
    <HBox fx:id="controls" minHeight="-Infinity" spacing="10.0">
       <ChoiceBox fx:id="filterLevel" />
       <ToggleButton fx:id="showTimestamp" mnemonicParsing="false" text="Show Timestamp" />
-      <ToggleButton fx:id="tail" mnemonicParsing="false" text="Tail" />
+      <ToggleButton fx:id="showSource" mnemonicParsing="false" text="Show Source" />
+      <ToggleButton fx:id="tail" mnemonicParsing="false" selected="true" text="Tail" />
       <ToggleButton fx:id="pause" mnemonicParsing="false" text="Pause" />
       <VBox fx:id="rateLayout" alignment="CENTER">
          <Slider fx:id="rate" max="60.0" min="0.1" value="60.0" />
          <Label fx:id="rateLabel" />
       </VBox>
+      <StackPane>
+         <ProgressBar fx:id="progressBar" opacity="0.41" prefWidth="180.0" progress="0.0" />
+         <Label fx:id="progressLabel" text="Label" />
+      </StackPane>
    </HBox>
 </fx:root>

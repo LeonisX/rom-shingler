@@ -25,7 +25,7 @@ public class ListFilesa {
         Map<File, List<String>> map = files.stream().collect(Collectors.toMap(Function.identity(), ListFilesa::listFiles));
 
         System.out.println("Preparing cache...");
-        Main1024a.getSamples(map.values().stream().flatMap(v -> v.stream().map(File::new)).collect(Collectors.toList()));
+        Main1024a.loadSamplesInCache(map.values().stream().flatMap(v -> v.stream().map(File::new)).collect(Collectors.toList()));
 
         System.out.println("Creating list of unique games...");
         Map<File, List<String>> filtereMap = new HashMap<>();
@@ -101,7 +101,7 @@ public class ListFilesa {
 
     // a < b = ((b-a)/a) * 100
     static double deviation(double d1, double d2) {
-        return Math.abs(d2 - d1)/d1 * 100;
+        return Math.abs(d2 - d1) / d1 * 100;
     }
 
     private static void generateFamilies(Map<File, List<String>> map, int index, int jakkardIndex) {
@@ -278,11 +278,30 @@ public class ListFilesa {
         return s.trim();
     }
 
-    private static List<String> listFiles(File file) {
+    public static List<String> listFiles(File file) {
         try (SevenZFile archiveFile = new SevenZFile(file)) {
             return StreamSupport.stream(archiveFile.getEntries().spliterator(), false).map(SevenZArchiveEntry::getName).collect(Collectors.toList());
         } catch (IOException e) {
             throw new RuntimeException();
         }
     }
+
+    public static Map<String, Main1024a.GID> listFiles2(File file) {
+        Map<String, Main1024a.GID> result = new LinkedHashMap<>();
+
+        try (SevenZFile sevenZFile = new SevenZFile(file)) {
+            SevenZArchiveEntry entry = sevenZFile.getNextEntry();
+            while (entry != null) {
+                byte[] content = new byte[(int) entry.getSize()];
+                sevenZFile.read(content, 0, content.length);
+                result.put(entry.getName(), new Main1024a.GID(entry.getName(), entry.getSize(), entry.getCrcValue(), Main1024a.md5(content), Main1024a.sha1(content)));
+                entry = sevenZFile.getNextEntry();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return result;
+    }
+
+
 }

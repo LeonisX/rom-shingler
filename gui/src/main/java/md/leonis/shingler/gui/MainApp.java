@@ -3,6 +3,7 @@ package md.leonis.shingler.gui;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import md.leonis.shingler.MeasureMethodTest;
 import md.leonis.shingler.gui.view.FxmlView;
 import md.leonis.shingler.gui.view.StageManager;
 import org.slf4j.Logger;
@@ -20,6 +21,7 @@ public class MainApp extends Application {
     private StageManager stageManager;
 
     public static void main(String[] args) {
+        MeasureMethodTest.premain();
         Application.launch(args);
     }
 

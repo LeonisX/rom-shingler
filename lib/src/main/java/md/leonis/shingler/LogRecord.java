@@ -8,12 +8,14 @@ public class LogRecord {
     private Level level;
     private String context;
     private String message;
+    private Double progress;
 
-    public LogRecord(Level level, String context, String message) {
+    public LogRecord(Level level, String context, String message, Double progress) {
         this.timestamp = new Date();
         this.level = level;
         this.context = context;
         this.message = message;
+        this.progress = progress;
     }
 
     public Date getTimestamp() {
@@ -30,5 +32,9 @@ public class LogRecord {
 
     public String getMessage() {
         return message;
+    }
+
+    public Double getProgress() {
+        return progress;
     }
 }

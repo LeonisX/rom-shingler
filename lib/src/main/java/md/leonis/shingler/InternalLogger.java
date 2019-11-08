@@ -24,23 +24,23 @@ public class InternalLogger {
     }
 
     void trace(String msg) {
-        log(new LogRecord(TRACE, context, msg));
+        log(new LogRecord(TRACE, context, msg, null));
     }
 
     void debug(String msg) {
-        log(new LogRecord(DEBUG, context, msg));
+        log(new LogRecord(DEBUG, context, msg, null));
     }
 
     public void info(String msg) {
-        log(new LogRecord(INFO, context, msg));
+        log(new LogRecord(INFO, context, msg, null));
     }
 
     public void warn(String msg) {
-        log(new LogRecord(WARN, context, msg));
+        log(new LogRecord(WARN, context, msg, null));
     }
 
     void error(String msg) {
-        log(new LogRecord(ERROR, context, msg));
+        log(new LogRecord(ERROR, context, msg, null));
     }
 
     public Log getLog() {

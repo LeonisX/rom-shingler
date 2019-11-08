@@ -84,7 +84,8 @@ public class LogViewer extends Application {
                                     new LogRecord(
                                             lorem.nextLevel(),
                                             Thread.currentThread().getName(),
-                                            lorem.nextString()
+                                            lorem.nextString(),
+                                            null
                                     )
                             );
 
