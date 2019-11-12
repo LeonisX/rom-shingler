@@ -1,7 +1,6 @@
 package md.leonis.shingler.gui.controller;
 
 import javafx.collections.FXCollections;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
@@ -10,15 +9,12 @@ import javafx.stage.Stage;
 import md.leonis.shingler.Main1024a;
 import md.leonis.shingler.gui.config.ConfigHolder;
 import md.leonis.shingler.gui.controller.template.LogController;
-import md.leonis.shingler.gui.service.TestService;
 import md.leonis.shingler.gui.view.FxmlView;
 import md.leonis.shingler.gui.view.StageManager;
 import md.leonis.shingler.model.CollectionType;
 import md.leonis.shingler.model.GID;
 import md.leonis.shingler.model.RomsCollection;
 import md.leonis.shingler.utils.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
 
@@ -38,48 +34,40 @@ import static md.leonis.shingler.gui.config.ConfigHolder.*;
 @Controller
 public class DashboardController {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DashboardController.class);
-
-    @FXML
+    //TODO delete or rename
     public Button newProjectButton;
-    @FXML
     public Button openProjectButton;
-    @FXML
     public Button gamesToFamilyButton;
-    @FXML
     public Button goodMergedToFamilyButton;
+    
     public Label workDirLabel;
     public Button changeWorkDirButton;
-    public Button newCollectionButton;
-    public Button openCollectionButton;
-    public TextArea textArea;
-    public Button renameCollectionButton;
+    
     public ListView<String> collectionsView;
+    public TextArea textArea;
+    
+    public Button newCollectionButton;
+    public Button openCollectionButton; //TODO
     public Button deleteCollectionButton;
+    public Button renameCollectionButton;
+    public Button typeButton;
+    
+    public Button selectCollectionFilesButton;
     public Button scanCollectionFilesButton;
     public Button scanCollectionHashesButton;
     public Button generateShinglesButton;
-    public Button selectCollectionFilesButton;
     public Button compareCollectionsButton;
-    public Button typeButton;
 
     @FXML
     private AnchorPane anchorPane;
 
-    /*@FXML
-    public TextArea infoTextArea;*/
-
     private final StageManager stageManager;
-
     private final ConfigHolder configHolder;
 
-    private final TestService testService;
-
     @Lazy
-    public DashboardController(StageManager stageManager, ConfigHolder configHolder, TestService testService) {
+    public DashboardController(StageManager stageManager, ConfigHolder configHolder) {
         this.stageManager = stageManager;
         this.configHolder = configHolder;
-        this.testService = testService;
     }
 
     private LinkedHashMap<String, String> platforms;
@@ -89,19 +77,17 @@ public class DashboardController {
 
     @FXML
     private void initialize() {
-        int count = testService.getDictionaries().size();
-        //infoTextArea.setText(String.format("Dictionaries in DB:\n%s\n\nWords to learn:\n%s", count, configHolder.getWordsToLearnCount()));
         LogController logController = new LogController(stageManager);
         anchorPane.getChildren().add(logController);
         //templateController.getSelectAllButton().setOnAction(event -> selectAllClick());
         //logController.getSelectedLevelsListenerHandles().registerListener(event -> refreshWebView());
-
-
+        
         //TODO config
         userHome = Paths.get(System.getProperty("user.home"));
         rootWorkDir = userHome.resolve("shingler");
         shinglesDir = rootWorkDir.resolve("shingles");
         collectionsDir = rootWorkDir.resolve("collections");
+        
         workDirLabel.setText(rootWorkDir.toString());
 
         //TODO read from disk
@@ -109,8 +95,8 @@ public class DashboardController {
         platforms.put("NES", "nes");
         platforms.put("TEST", "test");
 
-        Main1024a.createDirectory(collectionsDir);
-        platforms.values().forEach(p -> Main1024a.createDirectory(collectionsDir.resolve(p)));
+        IOUtils.createDirectory(collectionsDir);
+        platforms.values().forEach(p -> IOUtils.createDirectory(collectionsDir.resolve(p)));
 
         showPlatforms();
 
@@ -146,8 +132,7 @@ public class DashboardController {
             }
         });
     }
-
-
+    
     private void showPlatforms() {
         level = 0;
         platform = null;
@@ -209,37 +194,24 @@ public class DashboardController {
         textArea.appendText("\nShingles: TODO");
     }
 
-    public void windowShow() {
-        stageManager.showNewWindow(FxmlView.WINDOW);
+    public void newProjectButtonClick() {
     }
 
-    public void showNotification() {
-
-        LOGGER.info("DashboardController|24.15123214");
-        //stageManager.showInformationAlert("Title: selected all", "Header: selected all", "some content");
+    public void openProjectButtonClick() {
     }
 
-
-    public void showNotification2() {
-
-        LOGGER.info("DashboardController");
-        //stageManager.showInformationAlert("Title: selected all", "Header: selected all", "some content");
+    //TODO delete if not need
+    public void gamesToFamilyButtonClick() {
     }
-
-    public void newProjectButtonClick(ActionEvent actionEvent) {
-    }
-
-    public void openProjectButtonClick(ActionEvent actionEvent) {
-    }
-
-    public void goodMergedToFamilyButtonClick(ActionEvent actionEvent) {
+    
+    public void goodMergedToFamilyButtonClick() {
 
     }
 
-    public void changeWorkDirButtonClick(ActionEvent actionEvent) {
+    public void changeWorkDirButtonClick() {
     }
 
-    public void newCollectionClick(ActionEvent actionEvent) {
+    public void newCollectionClick() {
         RomsCollection collection = new RomsCollection();
         collection.setTitle("untitled");
         collection.setPlatform(platform);
@@ -248,7 +220,37 @@ public class DashboardController {
         showCollections(platform);
     }
 
-    public void renameCollectionButtonClick(ActionEvent actionEvent) {
+    //TODO delete???
+    public void openCollectionClick() {
+    }
+
+    public void deleteCollectionButtonClick() {
+        String currentCollection = collectionsView.getSelectionModel().getSelectedItem();
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Confirmation Dialog");
+        alert.setHeaderText("Look, a Confirmation Dialog");
+        alert.setContentText(String.format("Do you really want to delete %s collection?", currentCollection));
+
+        alert.showAndWait().map(result -> {
+            if (result == ButtonType.OK) {
+                Path workCollectionsDir = collectionsDir.resolve(platform);
+
+                try {
+                    Files.delete(workCollectionsDir.resolve(currentCollection));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                showCollections(platform);
+                collection = null;
+                collectionsView.getSelectionModel().select(0);
+                textArea.setText("");
+            }
+            return null;
+        });
+    }
+
+    public void renameCollectionButtonClick() {
         String currentCollection = collectionsView.getSelectionModel().getSelectedItem();
         TextInputDialog dialog = new TextInputDialog(currentCollection);
         dialog.setTitle("Text Input Dialog");
@@ -275,7 +277,7 @@ public class DashboardController {
         }
     }
 
-    public void typeButtonClick(ActionEvent actionEvent) {
+    public void typeButtonClick() {
         CollectionType type = CollectionType.valueOf(typeButton.getText());
         int id = type.ordinal();
         id = (id == CollectionType.values().length - 1) ? 0 : id + 1;
@@ -288,46 +290,18 @@ public class DashboardController {
         showCollection();
     }
 
-    //TODO delete???
-    public void openCollectionClick(ActionEvent actionEvent) {
-    }
-
-    public void deleteCollectionButtonClick(ActionEvent actionEvent) {
-        String currentCollection = collectionsView.getSelectionModel().getSelectedItem();
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Confirmation Dialog");
-        alert.setHeaderText("Look, a Confirmation Dialog");
-        alert.setContentText(String.format("Do you really want to delete %s collection?", currentCollection));
-
-        Optional<ButtonType> result = alert.showAndWait();
-        if (result.get() == ButtonType.OK) {
-            Path workCollectionsDir = collectionsDir.resolve(platform);
-
-            try {
-                Files.delete(workCollectionsDir.resolve(currentCollection));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            showCollections(platform);
-            collection = null;
-            collectionsView.getSelectionModel().select(0);
-            textArea.setText("");
-        }
-    }
-
-    public void selectCollectionFilesButtonClick(ActionEvent actionEvent) {
+    public void selectCollectionFilesButtonClick() {
         Stage stage = (Stage) gamesToFamilyButton.getScene().getWindow();
         DirectoryChooser directoryChooser = configHolder.getDirectoryChooser("Select directory with unpacked games");
         File dir = directoryChooser.showDialog(stage);
         if (dir != null) {
             romsCollection.setRomsPath(dir.getAbsolutePath());
 
-            scanCollectionFilesButtonClick(null);
+            scanCollectionFilesButtonClick();
         }
     }
 
-    public void scanCollectionFilesButtonClick(ActionEvent actionEvent) {
+    public void scanCollectionFilesButtonClick() {
 
         Thread thread = new Thread(() -> {
             switch (romsCollection.getType()) {
@@ -352,7 +326,7 @@ public class DashboardController {
         thread.start();
     }
 
-    public void scanCollectionHashesButtonClick(ActionEvent actionEvent) {
+    public void scanCollectionHashesButtonClick() {
 
         Thread thread = new Thread(() -> {
             try {
@@ -380,7 +354,7 @@ public class DashboardController {
         thread.start();
     }
 
-    public void generateShinglesButtonClick(ActionEvent actionEvent) {
+    public void generateShinglesButtonClick() {
         Path workShinglesDir = shinglesDir.resolve(platform);
         Main1024a.createSampleDirs(workShinglesDir);
 
@@ -399,12 +373,8 @@ public class DashboardController {
         thread.start();
     }
 
-    public void compareCollectionsButtonClick(ActionEvent actionEvent) {
+    public void compareCollectionsButtonClick() {
         selectedCollections = collectionsView.getSelectionModel().getSelectedItems();
         stageManager.showNewWindow(FxmlView.COMPARE);
-    }
-
-    //TODO delete if not need
-    public void gamesToFamilyButtonClick(ActionEvent actionEvent) {
     }
 }

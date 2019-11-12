@@ -156,4 +156,12 @@ public class IOUtils {
         }
         return result;
     }
+
+    public static void createDirectory(Path path) {
+        try {
+            Files.createDirectories(path);
+        } catch (IOException e) {
+            LOGGER.error("Can't create directory: {}", path.toString(), e);
+        }
+    }
 }

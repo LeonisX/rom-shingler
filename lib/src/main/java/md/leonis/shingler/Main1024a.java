@@ -69,16 +69,8 @@ public class Main1024a {
         //generateFamilies(names, 64, 20); // generate families
     }
 
-    public static void createDirectory(Path path) {
-        try {
-            Files.createDirectories(path);
-        } catch (IOException e) {
-            LOGGER.error("Can't create directory: {}", path.toString(), e);
-        }
-    }
-
     public static void createSampleDirs(Path path) {
-        SAMPLES.stream().map(s -> path.resolve("sample" + s)).forEach(Main1024a::createDirectory);
+        SAMPLES.stream().map(s -> path.resolve("sample" + s)).forEach(IOUtils::createDirectory);
     }
 
     @SuppressWarnings("all")
