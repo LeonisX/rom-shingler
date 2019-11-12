@@ -1,5 +1,7 @@
 package md.leonis.shingler.utils;
 
+import md.leonis.shingler.Cache;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -9,10 +11,24 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.EnumSet;
-import java.util.Map;
+import java.util.*;
+
+import static md.leonis.shingler.utils.BinaryUtils.crc32;
 
 public class ShingleUtils {
+
+    private static final int SHINGLE_LENGTH = 8;
+
+    @Measured
+    public static long[] toShingles(byte[] bytes) {
+        Set<Long> hashes = new HashSet<>();
+
+        for (int i = 0; i < bytes.length - SHINGLE_LENGTH + 1; i++) {
+            hashes.add(crc32(Arrays.copyOfRange(bytes, i, i + SHINGLE_LENGTH)));
+        }
+
+        return hashes.stream().sorted().mapToLong(l -> l).toArray();
+    }
 
     @SuppressWarnings("unchecked")
     @Measured
@@ -67,6 +83,26 @@ public class ShingleUtils {
     }
 
     @Measured
+    public static long[] loadFromCache(Cache<File, long[]> cache, File file) {
+        long[] cachedValue = cache.get(file);
+        if (cachedValue != null) {
+            return cachedValue;
+        }
+
+        long[] result = ShingleUtils.load(file);
+        if (getFreeMemory() < 250) {
+            System.out.println(String.format("We have only %s Mb of RAM", getFreeMemory()));
+            System.out.println("Cleaning Cache...");
+            cache.cleanup();
+            System.gc();
+            System.out.println(String.format("Now we have %s Mb of RAM", getFreeMemory()));
+        }
+        cache.put(file, result);
+
+        return result;
+    }
+
+    @Measured
     public static void save(long[] shingles, File file) {
 
         int count = shingles.length;
@@ -93,4 +129,11 @@ public class ShingleUtils {
             throw new RuntimeException(ex);
         }
     }
+
+    private static long getFreeMemory() {
+        long allocatedMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        long presumableFreeMemory = Runtime.getRuntime().maxMemory() - allocatedMemory;
+        return presumableFreeMemory / 1024 / 1024;
+    }
+
 }

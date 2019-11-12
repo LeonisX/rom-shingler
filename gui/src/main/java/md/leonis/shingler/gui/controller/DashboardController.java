@@ -333,12 +333,12 @@ public class DashboardController {
             switch (romsCollection.getType()) {
                 case PLAIN:
                     List<Path> romsPaths = IOUtils.listFiles(Paths.get(romsCollection.getRomsPath()));
-                    Map<String, GID> gids = Main1024a.filesToGid(romsPaths);
+                    Map<String, GID> gids = Main1024a.GIDsFromFiles(romsPaths);
                     romsCollection.setGids(gids);
                     break;
                 case MERGED:
                     List<Path> familiesPaths = IOUtils.listFiles(Paths.get(romsCollection.getRomsPath()));
-                    Map<String, GID> mergedGids = Main1024a.mergedFilesToGid(familiesPaths.stream().filter(f -> f.getFileName().toString().endsWith(".7z")).collect(Collectors.toList()));
+                    Map<String, GID> mergedGids = Main1024a.GIDsFromMergedFile(familiesPaths.stream().filter(f -> f.getFileName().toString().endsWith(".7z")).collect(Collectors.toList()));
                     romsCollection.setGids(mergedGids);
                     break;
             }

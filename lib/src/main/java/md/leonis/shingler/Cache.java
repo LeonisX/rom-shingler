@@ -45,7 +45,7 @@ public class Cache<K, T> {
     }
 
     @SuppressWarnings("unchecked")
-    void put(K key, T value) {
+    public void put(K key, T value) {
         synchronized (cacheMap) {
             cacheMap.put(key, new CacheObject(value));
         }
@@ -78,7 +78,7 @@ public class Cache<K, T> {
     }
 
     @SuppressWarnings("unchecked")
-    void cleanup() {
+    public void cleanup() {
 
         long now = System.currentTimeMillis();
         ArrayList<K> deleteKey;

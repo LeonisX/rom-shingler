@@ -29,7 +29,6 @@ public class Main1024a {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Main1024a.class);
 
-    private static final int SHINGLE_LENGTH = 8;
 
     private static String GAMES_DIR = "D:\\Downloads\\games\\";
     private static String WORK_DIR = "D:\\Downloads\\games\\";
@@ -99,7 +98,7 @@ public class Main1024a {
                 shingles = ShingleUtils.load(shdFile);
             } else {
                 LOGGER.info("{}|{}", file.getName(), ((i + 1) * 100.0 / files.size()));
-                shingles = toShingles(IOUtils.loadBytes(file));
+                shingles = ShingleUtils.toShingles(IOUtils.loadBytes(file));
                 ShingleUtils.save(shingles, shdFile);
             }
 
@@ -138,12 +137,12 @@ public class Main1024a {
 
                 switch (collection.getType()) {
                     case PLAIN:
-                        shingles = toShingles(IOUtils.loadBytes(file));
+                        shingles = ShingleUtils.toShingles(IOUtils.loadBytes(file));
                         break;
 
                     case MERGED:
                         Path archiveFile = romsFolder.resolve(entry.getValue().getFamily());
-                        shingles = toShingles(IOUtils.loadBytesFromArchive(archiveFile, entry.getKey()));
+                        shingles = ShingleUtils.toShingles(IOUtils.loadBytesFromArchive(archiveFile, entry.getKey()));
                         break;
                 }
 
@@ -210,7 +209,7 @@ public class Main1024a {
 
                                 File srcSampleFolder = SAMPLE_DIRS_MAP.get(index);
 
-                                long[] shingles = loadShinglesFromCacheFile(new File(srcSampleFolder.getAbsolutePath() + File.separator + file.getName() + ".shg"));
+                                long[] shingles = ShingleUtils.loadFromCache(cache, new File(srcSampleFolder.getAbsolutePath() + File.separator + file.getName() + ".shg"));
                                 long[] filteredShingles = filterArrays(shingles, index);
 
                                 shinglesMap.put(file.getName(), filteredShingles);
@@ -220,7 +219,7 @@ public class Main1024a {
                                 }
                             } else {
                                 System.out.println(String.format(Locale.US, "Reading: %s: %2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
-                                long[] filteredShingles = loadShinglesFromCacheFile(sampleFile);
+                                long[] filteredShingles = ShingleUtils.loadFromCache(cache, sampleFile);
                                 shinglesMap.put(file.getName(), filteredShingles);
                             }
                         }
@@ -295,7 +294,7 @@ public class Main1024a {
             if (index > SHINGLE_MAP_THRESHOLD) {
                 s1Set = SHINGLE_MAP.get(index).get(name1.getName());
             } else {
-                s1Set = loadShinglesFromCacheFile(new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name1.getName() + ".shg"));
+                s1Set = ShingleUtils.loadFromCache(cache, new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name1.getName() + ".shg"));
             }
 
             for (int j = i + 1; j < familyList.size(); j++) {
@@ -311,7 +310,7 @@ public class Main1024a {
                 if (index > SHINGLE_MAP_THRESHOLD) {
                     s2Set = SHINGLE_MAP.get(index).get(name2.getName());
                 } else {
-                    s2Set = loadShinglesFromCacheFile(new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name2.getName() + ".shg"));
+                    s2Set = ShingleUtils.loadFromCache(cache, new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name2.getName() + ".shg"));
                 }
 
                 long[] s1intersect = intersectArrays(s1Set, s2Set);
@@ -382,7 +381,7 @@ public class Main1024a {
                     if (index > SHINGLE_MAP_THRESHOLD) {
                         s1Set = SHINGLE_MAP.get(index).get(name1.getName());
                     } else {
-                        s1Set = loadShinglesFromCacheFile(new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name1.getName() + ".shg"));
+                        s1Set = ShingleUtils.loadFromCache(cache, new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name1.getName() + ".shg"));
                     }
 
                     for (int j = i + 1; j < family.size(); j++) {
@@ -402,7 +401,7 @@ public class Main1024a {
                         if (index > SHINGLE_MAP_THRESHOLD) {
                             s2Set = SHINGLE_MAP.get(index).get(name2.getName());
                         } else {
-                            s2Set = loadShinglesFromCacheFile(new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name2.getName() + ".shg"));
+                            s2Set = ShingleUtils.loadFromCache(cache, new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name2.getName() + ".shg"));
                         }
 
                         long[] s1intersect = intersectArrays(s1Set, s2Set);
@@ -610,46 +609,8 @@ public class Main1024a {
         return names.stream().max(Comparator.comparing(Name::getIndex)).orElse(null).getCleanName();
     }
 
-    private static long getFreeMemory() {
-        long allocatedMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-        long presumableFreeMemory = Runtime.getRuntime().maxMemory() - allocatedMemory;
-        return presumableFreeMemory / 1024 / 1024;
-    }
-
-    //TODO unify
     @Measured
-    private static long[] loadShinglesFromCacheFile(File file) {
-        long[] cachedValue = cache.get(file);
-        if (cachedValue != null) {
-            return cachedValue;
-        }
-
-        long[] result = ShingleUtils.load(file);
-        if (getFreeMemory() < 250) {
-            System.out.println(String.format("We have only %s Mb of RAM", getFreeMemory()));
-            System.out.println("Cleaning Cache...");
-            cache.cleanup();
-            System.gc();
-            System.out.println(String.format("Now we have %s Mb of RAM", getFreeMemory()));
-        }
-        cache.put(file, result);
-
-        return result;
-    }
-
-    @Measured
-    private static long[] toShingles(byte[] bytes) {
-        Set<Long> hashes = new HashSet<>();
-
-        for (int i = 0; i < bytes.length - SHINGLE_LENGTH + 1; i++) {
-            hashes.add(crc32(Arrays.copyOfRange(bytes, i, i + SHINGLE_LENGTH)));
-        }
-
-        return hashes.stream().sorted().mapToLong(l -> l).toArray();
-    }
-
-    @Measured
-    public static Map<String, GID> filesToGid(List<Path> files) {
+    public static Map<String, GID> GIDsFromFiles(List<Path> files) {
 
         LOGGER.info("Creating GIDs...");
         Map<String, GID> gidMap = new LinkedHashMap<>();
@@ -667,7 +628,7 @@ public class Main1024a {
     }
 
     @Measured
-    public static Map<String, GID> mergedFilesToGid(List<Path> files) {
+    public static Map<String, GID> GIDsFromMergedFile(List<Path> files) {
 
         LOGGER.info("Creating GIDs...");
         try {
