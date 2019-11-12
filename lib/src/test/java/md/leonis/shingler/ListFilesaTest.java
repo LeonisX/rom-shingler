@@ -1,5 +1,6 @@
 package md.leonis.shingler;
 
+import md.leonis.shingler.model.GID;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;

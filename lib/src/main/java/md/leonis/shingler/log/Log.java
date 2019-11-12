@@ -1,4 +1,4 @@
-package md.leonis.shingler;
+package md.leonis.shingler.log;
 
 import java.util.Collection;
 import java.util.concurrent.BlockingDeque;

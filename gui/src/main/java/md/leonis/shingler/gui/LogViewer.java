@@ -13,10 +13,10 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import md.leonis.shingler.InternalLogger;
-import md.leonis.shingler.Level;
-import md.leonis.shingler.Log;
-import md.leonis.shingler.LogRecord;
+import md.leonis.shingler.log.InternalLogger;
+import md.leonis.shingler.log.Level;
+import md.leonis.shingler.log.Log;
+import md.leonis.shingler.log.LogRecord;
 
 import java.util.Random;
 

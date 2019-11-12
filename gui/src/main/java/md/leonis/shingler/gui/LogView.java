@@ -11,9 +11,9 @@ import javafx.css.PseudoClass;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.util.Duration;
-import md.leonis.shingler.InternalLogger;
-import md.leonis.shingler.Level;
-import md.leonis.shingler.LogRecord;
+import md.leonis.shingler.log.InternalLogger;
+import md.leonis.shingler.log.Level;
+import md.leonis.shingler.log.LogRecord;
 
 import java.text.SimpleDateFormat;
 

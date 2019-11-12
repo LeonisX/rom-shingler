@@ -11,7 +11,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.util.Callback;
 import javafx.util.Pair;
-import md.leonis.shingler.GID;
+import md.leonis.shingler.model.GID;
 import md.leonis.shingler.Main1024a;
 import md.leonis.shingler.gui.config.ConfigHolder;
 import md.leonis.shingler.gui.view.StageManager;

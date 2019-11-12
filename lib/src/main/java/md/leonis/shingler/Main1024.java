@@ -28,8 +28,6 @@ public class Main1024 {
             SAMPLES.stream().collect(Collectors.toMap(Function.identity(), HashMap::new));
 
     private static final Cache<File, Set<Long>> cache = new Cache<>(0, 0, 1600);
-    //TODO investigate
-    private static final SimpleCache<Set<Long>> simpleCache = new SimpleCache<>();
 
     @SuppressWarnings("all")
     public static void main(String[] args) throws IOException {

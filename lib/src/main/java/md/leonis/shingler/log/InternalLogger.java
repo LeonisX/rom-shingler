@@ -1,6 +1,6 @@
-package md.leonis.shingler;
+package md.leonis.shingler.log;
 
-import static md.leonis.shingler.Level.*;
+import static md.leonis.shingler.log.Level.*;
 
 public class InternalLogger {
 

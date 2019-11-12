@@ -1,4 +1,4 @@
-package md.leonis.shingler;
+package md.leonis.shingler.utils;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -1,5 +1,7 @@
 package md.leonis.shingler;
 
+import md.leonis.shingler.model.GID;
+import md.leonis.shingler.utils.MeasureMethodTest;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 

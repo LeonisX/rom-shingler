@@ -3,7 +3,7 @@ package md.leonis.shingler.gui;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import md.leonis.shingler.MeasureMethodTest;
+import md.leonis.shingler.utils.MeasureMethodTest;
 import md.leonis.shingler.gui.view.FxmlView;
 import md.leonis.shingler.gui.view.StageManager;
 import org.slf4j.Logger;
