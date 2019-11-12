@@ -1,5 +1,6 @@
 package md.leonis.shingler;
 
+import md.leonis.shingler.model.Family;
 import md.leonis.shingler.model.GID;
 import md.leonis.shingler.model.Name;
 import md.leonis.shingler.utils.MeasureMethodTest;
@@ -60,26 +61,26 @@ public class ListFilesa {
         });
 
         System.out.println("Calculating Jakkard deviations for families...");
-        Map<String, Main1024a.Family> families1 = Main1024a.readFamiliesFromFile(new File("list-family" + 1));
+        Map<String, Family> families1 = Main1024a.readFamiliesFromFile(new File("list-family" + 1));
 
         for (int i = 1; i < Main1024a.SAMPLES.size(); i++) {
             measureJakkard(Main1024a.SAMPLES.get(i), families1);
         }
     }
 
-    private static void measureJakkard(Integer index, Map<String, Main1024a.Family> fams1) {
+    private static void measureJakkard(Integer index, Map<String, Family> fams1) {
 
-        List<Main1024a.Family> families1 = new ArrayList<>(fams1.values());
+        List<Family> families1 = new ArrayList<>(fams1.values());
 
-        Map<String, Main1024a.Family> families = Main1024a.readFamiliesFromFile(new File("list-family" + index));
-        List<Main1024a.Family> familiesX = new ArrayList<>(families.values());
+        Map<String, Family> families = Main1024a.readFamiliesFromFile(new File("list-family" + index));
+        List<Family> familiesX = new ArrayList<>(families.values());
 
         double maxDeviation = 0;
         double medDeviation = 0;
 
         for (int i = 0; i < families1.size(); i++) {
-            Main1024a.Family family1 = families1.get(i);
-            Main1024a.Family familyX = familiesX.get(i);
+            Family family1 = families1.get(i);
+            Family familyX = familiesX.get(i);
 
             double sumDeviation = 0;
 
@@ -113,7 +114,7 @@ public class ListFilesa {
 
         File familyFile = new File("list-family" + index);
 
-        Map<String, Main1024a.Family> families;
+        Map<String, Family> families;
         if (familyFile.exists()) {
             System.out.println(String.format("%nReading families from file %s...", familyFile));
             families = Main1024a.readFamiliesFromFile(familyFile);
@@ -123,7 +124,7 @@ public class ListFilesa {
             map.forEach((key, value) -> namesList.put(key.getName(), value.stream().map(v -> new Name(new File(v), false)).collect(Collectors.toList())));
 
             families = namesList.entrySet().stream()/*.filter(e -> e.getValue().size() != 1)*/
-                    .collect(Collectors.toMap(Map.Entry::getKey, e -> new Main1024a.Family(e.getKey(), e.getValue())));
+                    .collect(Collectors.toMap(Map.Entry::getKey, e -> new Family(e.getKey(), e.getValue())));
         }
 
         Main1024a.calculateRelations(families, index, familyFile);
@@ -132,7 +133,7 @@ public class ListFilesa {
         Main1024a.serialize(familyFile, families);
 
         int total = (int) map.values().stream().mapToLong(Collection::size).sum();
-        int inFamily = families.values().stream().map(Main1024a.Family::size).mapToInt(Integer::intValue).sum();
+        int inFamily = families.values().stream().map(Family::size).mapToInt(Integer::intValue).sum();
 
         System.out.println("Total: " + total);
         System.out.println("In family: " + inFamily);
