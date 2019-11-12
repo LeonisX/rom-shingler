@@ -16,6 +16,7 @@ import md.leonis.shingler.gui.view.StageManager;
 import md.leonis.shingler.model.CollectionType;
 import md.leonis.shingler.model.GID;
 import md.leonis.shingler.model.RomsCollection;
+import md.leonis.shingler.utils.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
@@ -160,7 +161,7 @@ public class DashboardController {
 
     private void showPlatform(String selectedItem) {
         platform = selectedItem;
-        List<Path> collections = Main1024a.listFilesForFolder(collectionsDir.resolve(platform));
+        List<Path> collections = IOUtils.listFiles(collectionsDir.resolve(platform));
         textArea.setText("Collections: " + collections.size());
     }
 
@@ -170,7 +171,7 @@ public class DashboardController {
         collectionsView.setItems(FXCollections.observableArrayList(".."));
 
         Path workCollectionsDir = collectionsDir.resolve(platform);
-        List<Path> collections = Main1024a.listFilesForFolder(workCollectionsDir);
+        List<Path> collections = IOUtils.listFiles(workCollectionsDir);
         collectionsView.getItems().addAll(FXCollections.observableArrayList(collections.stream().map(c -> c.getFileName().toString()).collect(Collectors.toList())));
         collectionsView.getSelectionModel().selectFirst();
         textArea.setText("");
@@ -180,7 +181,7 @@ public class DashboardController {
         collection = selectedItem;
 
         Path workCollectionsDir = collectionsDir.resolve(platform);
-        romsCollection = Main1024a.readCollectionFromFile(workCollectionsDir.resolve(collection).toFile());
+        romsCollection = IOUtils.loadCollection(workCollectionsDir.resolve(collection).toFile());
 
         showCollection();
     }
@@ -242,7 +243,7 @@ public class DashboardController {
         RomsCollection collection = new RomsCollection();
         collection.setTitle("untitled");
         collection.setPlatform(platform);
-        Main1024a.serialize(collectionsDir.resolve(platform).resolve(collection.getTitle()).toFile(), collection);
+        IOUtils.serialize(collectionsDir.resolve(platform).resolve(collection.getTitle()).toFile(), collection);
 
         showCollections(platform);
     }
@@ -260,7 +261,7 @@ public class DashboardController {
             romsCollection.setTitle(collection);
 
             Path workCollectionsDir = collectionsDir.resolve(platform);
-            Main1024a.serialize(workCollectionsDir.resolve(collection).toFile(), romsCollection);
+            IOUtils.serialize(workCollectionsDir.resolve(collection).toFile(), romsCollection);
 
             try {
                 Files.delete(workCollectionsDir.resolve(currentCollection));
@@ -283,7 +284,7 @@ public class DashboardController {
         romsCollection.setType(type);
 
         Path workCollectionsDir = collectionsDir.resolve(platform);
-        Main1024a.serialize(workCollectionsDir.resolve(collection).toFile(), romsCollection);
+        IOUtils.serialize(workCollectionsDir.resolve(collection).toFile(), romsCollection);
         showCollection();
     }
 
@@ -331,19 +332,19 @@ public class DashboardController {
         Thread thread = new Thread(() -> {
             switch (romsCollection.getType()) {
                 case PLAIN:
-                    List<Path> romsPaths = Main1024a.listFilesForFolder(Paths.get(romsCollection.getRomsPath()));
+                    List<Path> romsPaths = IOUtils.listFiles(Paths.get(romsCollection.getRomsPath()));
                     Map<String, GID> gids = Main1024a.filesToGid(romsPaths);
                     romsCollection.setGids(gids);
                     break;
                 case MERGED:
-                    List<Path> familiesPaths = Main1024a.listFilesForFolder(Paths.get(romsCollection.getRomsPath()));
+                    List<Path> familiesPaths = IOUtils.listFiles(Paths.get(romsCollection.getRomsPath()));
                     Map<String, GID> mergedGids = Main1024a.mergedFilesToGid(familiesPaths.stream().filter(f -> f.getFileName().toString().endsWith(".7z")).collect(Collectors.toList()));
                     romsCollection.setGids(mergedGids);
                     break;
             }
 
             Path workCollectionsDir = collectionsDir.resolve(platform);
-            Main1024a.serialize(workCollectionsDir.resolve(collection).toFile(), romsCollection);
+            IOUtils.serialize(workCollectionsDir.resolve(collection).toFile(), romsCollection);
 
             showCollection();
         });
@@ -357,18 +358,18 @@ public class DashboardController {
             try {
                 switch (romsCollection.getType()) {
                     case PLAIN:
-                        List<Path> romsPaths = Main1024a.listFilesForFolder(Paths.get(romsCollection.getRomsPath()));
+                        List<Path> romsPaths = IOUtils.listFiles(Paths.get(romsCollection.getRomsPath()));
                         Map<String, GID> gids = Main1024a.calculateHashes(romsPaths);
                         romsCollection.setGids(gids);
                     case MERGED:
-                        List<Path> familiesPaths = Main1024a.listFilesForFolder(Paths.get(romsCollection.getRomsPath()));
+                        List<Path> familiesPaths = IOUtils.listFiles(Paths.get(romsCollection.getRomsPath()));
                         Map<String, GID> mergedGids = Main1024a.calculateMergedHashes(familiesPaths.stream().filter(f -> f.getFileName().toString().endsWith(".7z")).collect(Collectors.toList()));
                         romsCollection.setGids(mergedGids);
                         break;
                 }
 
                 Path workCollectionsDir = collectionsDir.resolve(platform);
-                Main1024a.serialize(workCollectionsDir.resolve(collection).toFile(), romsCollection);
+                IOUtils.serialize(workCollectionsDir.resolve(collection).toFile(), romsCollection);
 
                 showCollection();
             } catch (Exception e) {

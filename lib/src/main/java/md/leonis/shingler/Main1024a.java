@@ -1,26 +1,25 @@
 package md.leonis.shingler;
 
 import md.leonis.shingler.model.*;
+import md.leonis.shingler.utils.IOUtils;
 import md.leonis.shingler.utils.MeasureMethodTest;
 import md.leonis.shingler.utils.Measured;
-import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
-import org.apache.commons.compress.archivers.sevenz.SevenZFile;
+import md.leonis.shingler.utils.ShingleUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
+import java.io.File;
+import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.file.*;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-import java.util.zip.CRC32;
+
+import static md.leonis.shingler.Main1024.serialize;
+import static md.leonis.shingler.utils.BinaryUtils.*;
 
 // NES (256 Kb) Up to 8 100% SAVE, Up to 32 SAFE, 64 relative SAFE, 256+ nonSAFE
 // В любом случае, даже 1024 подходит для быстрой идентификации игры если она принадлежит группе
@@ -59,7 +58,7 @@ public class Main1024a {
 
         SAMPLE_DIRS_MAP.values().forEach(File::mkdirs);
 
-        List<File> files = listFilesForFolder(folder);
+        List<File> files = IOUtils.listFiles(folder);
 
         generateShingles(files);
 
@@ -97,11 +96,11 @@ public class Main1024a {
 
             if (shdFile.exists() && shdFile.length() > 0 && shdFile.length() % 8 == 0) {
                 LOGGER.debug("Skipping: {}|{}", file.getName(), ((i + 1) * 100.0 / files.size()));
-                shingles = loadShinglesFromFile(shdFile);
+                shingles = ShingleUtils.load(shdFile);
             } else {
                 LOGGER.info("{}|{}", file.getName(), ((i + 1) * 100.0 / files.size()));
-                shingles = toShingles(readFromFile(file));
-                writeShinglesToFile(shingles, shdFile);
+                shingles = toShingles(IOUtils.loadBytes(file));
+                ShingleUtils.save(shingles, shdFile);
             }
 
             // Generate samples
@@ -114,7 +113,7 @@ public class Main1024a {
                     if (index > SHINGLE_MAP_THRESHOLD) {
                         SHINGLE_MAP.get(index).put(file.getName(), filteredShingles);
                     }
-                    writeShinglesToFile(filteredShingles, sampleFile);
+                    ShingleUtils.save(filteredShingles, sampleFile);
                 }
             });
         }
@@ -139,16 +138,16 @@ public class Main1024a {
 
                 switch (collection.getType()) {
                     case PLAIN:
-                        shingles = toShingles(readFromFile(file));
+                        shingles = toShingles(IOUtils.loadBytes(file));
                         break;
 
                     case MERGED:
                         Path archiveFile = romsFolder.resolve(entry.getValue().getFamily());
-                        shingles = toShingles(getFileFromArchive(archiveFile, entry.getKey()));
+                        shingles = toShingles(IOUtils.loadBytesFromArchive(archiveFile, entry.getKey()));
                         break;
                 }
 
-                writeShinglesToFile(shingles, shdFile);
+                ShingleUtils.save(shingles, shdFile);
             }
 
             // Generate samples
@@ -156,7 +155,7 @@ public class Main1024a {
                 Path sampleFile = workDir.resolve("sample" + index).resolve(bytesToHex(entry.getValue().getSha1()) + ".shg");
                 if (index > 1 && !isCorrect(sampleFile)) {
                     if (shingles == null) {
-                        shingles = loadShinglesFromFile(shdFile);
+                        shingles = ShingleUtils.load(shdFile);
                     }
 
                     // TODO actual some small files (PD) fail (empty) on 256 :(
@@ -165,7 +164,7 @@ public class Main1024a {
                     if (index > SHINGLE_MAP_THRESHOLD) {
                         SHINGLE_MAP.get(index).put(file.toString(), filteredShingles);
                     }
-                    writeShinglesToFile(filteredShingles, sampleFile);
+                    ShingleUtils.save(filteredShingles, sampleFile);
                 }
             }
 
@@ -197,7 +196,7 @@ public class Main1024a {
 
                     if (shinglesMapFile.exists()) {
                         System.out.println(String.format("Getting sample%s from disk...", index));
-                        shinglesMap = readShingleMapFromFile(shinglesMapFile);
+                        shinglesMap = ShingleUtils.loadMap(shinglesMapFile);
                     } else {
                         System.out.println(String.format("Generating sample%s...", index));
                         for (int i = 0; i < files.size(); i++) {
@@ -217,7 +216,7 @@ public class Main1024a {
                                 shinglesMap.put(file.getName(), filteredShingles);
 
                                 if (!sampleFile.exists()) {
-                                    writeShinglesToFile(filteredShingles, sampleFile);
+                                    ShingleUtils.save(filteredShingles, sampleFile);
                                 }
                             } else {
                                 System.out.println(String.format(Locale.US, "Reading: %s: %2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
@@ -242,7 +241,7 @@ public class Main1024a {
         Map<String, Family> families;
         if (familyFile.exists()) {
             System.out.println("\nReading families from file...");
-            families = readFamiliesFromFile(familyFile);
+            families = IOUtils.loadFamilies(familyFile);
         } else {
             System.out.println("\nGenerating families...");
             Map<String, List<Name>> namesList = names.stream().collect(Collectors.groupingBy(Name::getCleanName));
@@ -252,7 +251,7 @@ public class Main1024a {
 
             calculateRelations(families, index, familyFile);
 
-            serialize(familyFile, families);
+            IOUtils.serialize(familyFile, families);
         }
 
         int inFamily = families.values().stream().map(Family::size).mapToInt(Integer::intValue).sum();
@@ -367,7 +366,7 @@ public class Main1024a {
 
                     if (save[0] > 100000 * index) {
                         System.out.println("Saving family...");
-                        serialize(familyFile, families);
+                        IOUtils.serialize(familyFile, families);
                         save[0] = 0;
                     }
 
@@ -611,85 +610,10 @@ public class Main1024a {
         return names.stream().max(Comparator.comparing(Name::getIndex)).orElse(null).getCleanName();
     }
 
-    @Measured
-    public static void serialize(File file, Object object) {
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
-            oos.writeObject(object);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    //TODO unify
-    @SuppressWarnings("unchecked")
-    @Measured
-    private static Map<String, long[]> readShingleMapFromFile(File file) {
-
-        try {
-            FileInputStream fis = new FileInputStream(file);
-            ObjectInputStream ois = new ObjectInputStream(fis);
-            Map<String, long[]> shinglesMap = (Map<String, long[]>) ois.readObject();
-
-            ois.close();
-            fis.close();
-            return shinglesMap;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private static long getFreeMemory() {
         long allocatedMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         long presumableFreeMemory = Runtime.getRuntime().maxMemory() - allocatedMemory;
         return presumableFreeMemory / 1024 / 1024;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Measured
-    static Map<String, Family> readFamiliesFromFile(File file) {
-        try {
-            FileInputStream fis = new FileInputStream(file);
-            ObjectInputStream ois = new ObjectInputStream(fis);
-            Map<String, Family> result = (Map<String, Family>) ois.readObject();
-
-            ois.close();
-            fis.close();
-            return result;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    @Measured
-    static Map<String, GID> readGIDsFromFile(File file) {
-        try {
-            FileInputStream fis = new FileInputStream(file);
-            ObjectInputStream ois = new ObjectInputStream(fis);
-            Map<String, GID> result = (Map<String, GID>) ois.readObject();
-
-            ois.close();
-            fis.close();
-            return result;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    @Measured
-    public static RomsCollection readCollectionFromFile(File file) {
-        try {
-            FileInputStream fis = new FileInputStream(file);
-            ObjectInputStream ois = new ObjectInputStream(fis);
-            RomsCollection result = (RomsCollection) ois.readObject();
-
-            ois.close();
-            fis.close();
-            return result;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     //TODO unify
@@ -700,7 +624,7 @@ public class Main1024a {
             return cachedValue;
         }
 
-        long[] result = loadShinglesFromFile(file);
+        long[] result = ShingleUtils.load(file);
         if (getFreeMemory() < 250) {
             System.out.println(String.format("We have only %s Mb of RAM", getFreeMemory()));
             System.out.println("Cleaning Cache...");
@@ -714,68 +638,6 @@ public class Main1024a {
     }
 
     @Measured
-    static long[] loadShinglesFromFile(File file) {
-        int count = (int) file.length() / 8;
-        long[] shingles = new long[count];
-        try (FileChannel fc = FileChannel.open(file.toPath())) {
-            MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_ONLY, 0, file.length());
-            for (int i = 0; i < count; i++) {
-                shingles[i] = mbb.getLong();
-            }
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
-        return shingles;
-    }
-
-    @Measured
-    static long[] loadShinglesFromFile(Path file) {
-        long size;
-        try {
-            size = Files.size(file);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        int count = (int) size / 8;
-        long[] shingles = new long[count];
-        try (FileChannel fc = FileChannel.open(file)) {
-            MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_ONLY, 0, size);
-            for (int i = 0; i < count; i++) {
-                shingles[i] = mbb.getLong();
-            }
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
-        return shingles;
-    }
-
-    @Measured
-    static void writeShinglesToFile(long[] shingles, File file) {
-        int count = shingles.length;
-        try (FileChannel fc = FileChannel.open(file.toPath(), EnumSet.of(StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING))) {
-            MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_WRITE, 0, count * 8);
-            for (long shingle : shingles) {
-                mbb.putLong(shingle);
-            }
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
-    @Measured
-    static void writeShinglesToFile(long[] shingles, Path file) {
-        int count = shingles.length;
-        try (FileChannel fc = FileChannel.open(file, EnumSet.of(StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING))) {
-            MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_WRITE, 0, count * 8);
-            for (long shingle : shingles) {
-                mbb.putLong(shingle);
-            }
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
-    @Measured
     private static long[] toShingles(byte[] bytes) {
         Set<Long> hashes = new HashSet<>();
 
@@ -784,150 +646,6 @@ public class Main1024a {
         }
 
         return hashes.stream().sorted().mapToLong(l -> l).toArray();
-    }
-
-    public static long crc32(byte[] bytes) {
-        CRC32 crc = new CRC32();
-        crc.update(bytes);
-        return crc.getValue();
-    }
-
-    public static byte[] md5(byte[] bytes) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            return md.digest(bytes);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static byte[] sha1(byte[] bytes) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-1");
-            return md.digest(bytes);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
-
-    public static String bytesToHex(byte[] bytes) {
-        char[] hexChars = new char[bytes.length * 2];
-        for (int j = 0; j < bytes.length; j++) {
-            int v = bytes[j] & 0xFF;
-            hexChars[j * 2] = HEX_ARRAY[v >>> 4];
-            hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
-        }
-        return new String(hexChars);
-    }
-
-    @Measured
-    static long[] unionArrays(long[] arr1, long[] arr2) {
-        long[] merge = new long[arr1.length + arr2.length];
-        int i = 0, j = 0, k = 0;
-        while (i < arr1.length && j < arr2.length) {
-            if (arr1[i] < arr2[j]) {
-                merge[k++] = arr1[i++];
-            } else {
-                merge[k++] = arr2[j++];
-            }
-        }
-        while (i < arr1.length) {
-            merge[k++] = arr1[i++];
-        }
-        while (j < arr2.length) {
-            merge[k++] = arr2[j++];
-        }
-        return removeDuplicates(Arrays.copyOfRange(merge, 0, k));
-    }
-
-    @Measured
-    static long[] intersectArrays(long[] arr1, long[] arr2) {
-        long[] intersect = new long[Math.max(arr1.length, arr2.length)];
-        int i = 0, j = 0, k = 0;
-        while (i < arr1.length && j < arr2.length) {
-            if (arr1[i] < arr2[j]) {
-                i++;
-            } else if (arr2[j] < arr1[i]) {
-                j++;
-            } else {
-                intersect[k++] = arr1[i++];
-            }
-        }
-        return Arrays.copyOfRange(intersect, 0, k);
-    }
-
-    /*@Measured
-    static long[] intersectArrays0(long[] a, long[] b) {
-        long[] c = new long[Math.max(a.length, b.length)];
-        int k = 0;
-        for (long n : b) {
-            if (ArrayUtils.contains(a, n)) {
-                c[k++] = n;
-            }
-        }
-
-        return Arrays.copyOfRange(c, 0, k);
-    }*/
-
-    @Measured
-    static long[] filterArrays(long[] a, int index) {
-        long[] c = new long[a.length];
-        int k = 0;
-        for (long n : a) {
-            if (n % index == 0) {
-                c[k++] = n;
-            }
-        }
-        return Arrays.copyOfRange(c, 0, k);
-    }
-
-    @Measured
-    static long[] removeDuplicates(long[] arr) { // Only for sorted arrays
-        if (arr.length < 2) {
-            return arr;
-        }
-        int j = 0;
-        for (int i = 0; i < arr.length - 1; i++) {
-            if (arr[i] != arr[i + 1]) {
-                arr[j++] = arr[i];
-            }
-        }
-        arr[j++] = arr[arr.length - 1];
-        return Arrays.copyOfRange(arr, 0, j);
-    }
-
-    @SuppressWarnings("all")
-    @Measured
-    public static List<File> listFilesForFolder(final File folder) {
-        return Arrays.stream(folder.listFiles()).filter(File::isFile).collect(Collectors.toList());
-    }
-
-    @Measured
-    public static List<Path> listFilesForFolder(final Path folder) {
-        LOGGER.info("Getting a list of files...");
-        List<Path> fileList = new ArrayList<>();
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(folder)) {
-            for (Path path : stream) {
-                if (!Files.isDirectory(path)) {
-                    fileList.add(path);
-                }
-            }
-        } catch (IOException e) {
-            LOGGER.error("Can't get list of files from dir: {}", folder.toString(), e);
-        }
-        return fileList;
-    }
-
-    @Measured
-    private static byte[] readFromFile(File file) throws IOException {
-        return Files.readAllBytes(file.toPath());
-    }
-
-    @Measured
-    private static byte[] readFromFile(Path file) throws IOException {
-        return Files.readAllBytes(file);
     }
 
     @Measured
@@ -953,20 +671,12 @@ public class Main1024a {
 
         LOGGER.info("Creating GIDs...");
         try {
-            return files.stream().flatMap(Main1024a::listFiles).collect(Collectors.toMap(GID::getTitle, Function.identity()));
+            return files.stream().flatMap(IOUtils::loadGIDsFromArchive).collect(Collectors.toMap(GID::getTitle, Function.identity()));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private static Stream<GID> listFiles(Path file) {
-        try (SevenZFile archiveFile = new SevenZFile(file.toFile())) {
-            return StreamSupport.stream(archiveFile.getEntries().spliterator(), false)
-                    .map(e -> new GID(e.getName(), e.getSize(), e.getCrcValue(), null, null, null, null, null, file.getFileName().toString()));
-        } catch (IOException e) {
-            throw new RuntimeException();
-        }
-    }
 
     public static Map<String, GID> calculateHashes(List<Path> files) {
 
@@ -977,7 +687,7 @@ public class Main1024a {
             int i = 0;
             for (Path path : files) {
                 LOGGER.info("Calculating hash sums for: {}|{}", path.getFileName(), ((i + 1) * 100.0 / files.size()));
-                byte[] bytes = readFromFile(path);
+                byte[] bytes = IOUtils.loadBytes(path);
                 byte[] byteswh = Arrays.copyOfRange(bytes, 16, bytes.length);
                 gidMap.put(path.getFileName().toString(), new GID(path.getFileName().toString(), Files.size(path), crc32(bytes), md5(bytes), sha1(bytes), crc32(byteswh), md5(byteswh), sha1(byteswh), null));
 
@@ -999,7 +709,7 @@ public class Main1024a {
             int i = 0;
             for (Path path : files) {
                 LOGGER.info("Calculating hash sums for: {}|{}", path.getFileName(), ((i + 1) * 100.0 / files.size()));
-                List<GID> gids = listFiles2(path);
+                List<GID> gids = IOUtils.loadHashedGIDsFromArchive(path);
                 gids.forEach(gid -> gidMap.put(gid.getTitle(), gid));
                 i++;
             }
@@ -1008,42 +718,5 @@ public class Main1024a {
         }
 
         return gidMap;
-    }
-
-    @Measured
-    public static byte[] getFileFromArchive(Path file, String fileName) {
-
-        try (SevenZFile sevenZFile = new SevenZFile(file.toFile())) {
-            SevenZArchiveEntry entry = sevenZFile.getNextEntry();
-            while (entry != null) {
-                if (entry.getName().equals(fileName)) {
-                    byte[] content = new byte[(int) entry.getSize()];
-                    sevenZFile.read(content, 0, content.length);
-                    return content;
-                }
-                entry = sevenZFile.getNextEntry();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        throw new RuntimeException(String.format("File %s not found in %s archive", fileName, file));
-    }
-
-    public static List<GID> listFiles2(Path file) {
-        List<GID> result = new ArrayList<>();
-
-        try (SevenZFile sevenZFile = new SevenZFile(file.toFile())) {
-            SevenZArchiveEntry entry = sevenZFile.getNextEntry();
-            while (entry != null) {
-                byte[] content = new byte[(int) entry.getSize()];
-                byte[] contentwh = Arrays.copyOfRange(content, 16, content.length);
-                sevenZFile.read(content, 0, content.length);
-                result.add(new GID(entry.getName(), entry.getSize(), entry.getCrcValue(), md5(content), sha1(content), crc32(contentwh), md5(contentwh), sha1(contentwh), file.getFileName().toString()));
-                entry = sevenZFile.getNextEntry();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return result;
     }
 }

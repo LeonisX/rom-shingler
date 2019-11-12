@@ -11,11 +11,11 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.util.Callback;
 import javafx.util.Pair;
-import md.leonis.shingler.Main1024a;
 import md.leonis.shingler.gui.config.ConfigHolder;
 import md.leonis.shingler.gui.view.StageManager;
 import md.leonis.shingler.model.GID;
 import md.leonis.shingler.model.RomsCollection;
+import md.leonis.shingler.utils.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
@@ -27,6 +27,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static md.leonis.shingler.gui.config.ConfigHolder.*;
+import static md.leonis.shingler.utils.BinaryUtils.bytesToHex;
 
 @Controller
 public class CompareController {
@@ -133,12 +134,12 @@ public class CompareController {
 
             LOGGER.info("Reading from disk...");
             Path workCollectionsDir = collectionsDir.resolve(platform);
-            RomsCollection romsCollection1 = Main1024a.readCollectionFromFile(workCollectionsDir.resolve(collection1).toFile());
-            RomsCollection romsCollection2 = Main1024a.readCollectionFromFile(workCollectionsDir.resolve(collection2).toFile());
+            RomsCollection romsCollection1 = IOUtils.loadCollection(workCollectionsDir.resolve(collection1).toFile());
+            RomsCollection romsCollection2 = IOUtils.loadCollection(workCollectionsDir.resolve(collection2).toFile());
 
             LOGGER.info("Prepare hashes...");
-            Set<String> hashes1 = romsCollection1.getGids().values().stream().map(h -> Main1024a.bytesToHex(h.getSha1())).collect(Collectors.toSet());
-            Set<String> hashes2 = romsCollection2.getGids().values().stream().map(h -> Main1024a.bytesToHex(h.getSha1())).collect(Collectors.toSet());
+            Set<String> hashes1 = romsCollection1.getGids().values().stream().map(h -> bytesToHex(h.getSha1())).collect(Collectors.toSet());
+            Set<String> hashes2 = romsCollection2.getGids().values().stream().map(h -> bytesToHex(h.getSha1())).collect(Collectors.toSet());
 
             LOGGER.info("Processing hashes...");
             Set<String> hashes1new = new HashSet<>(hashes1);
@@ -148,8 +149,8 @@ public class CompareController {
             Set<String> hashesSame = new HashSet<>(hashes1);
             hashesSame.retainAll(hashes2);
 
-            Map<String, GID> byHash1 = romsCollection1.getGids().values().stream().collect(Collectors.toMap(h -> Main1024a.bytesToHex(h.getSha1()), Function.identity()));
-            Map<String, GID> byHash2 = romsCollection2.getGids().values().stream().collect(Collectors.toMap(h -> Main1024a.bytesToHex(h.getSha1()), Function.identity()));
+            Map<String, GID> byHash1 = romsCollection1.getGids().values().stream().collect(Collectors.toMap(h -> bytesToHex(h.getSha1()), Function.identity()));
+            Map<String, GID> byHash2 = romsCollection2.getGids().values().stream().collect(Collectors.toMap(h -> bytesToHex(h.getSha1()), Function.identity()));
 
             LOGGER.info("Preparing added/deleted/modified collections...");
 
@@ -190,12 +191,12 @@ public class CompareController {
             GID c1 = p1.getKey().getTitle().isEmpty() ? p1.getValue() : p1.getKey();
             GID c2 = p2.getKey().getTitle().isEmpty() ? p2.getValue() : p2.getKey();
             if (woHeaders) {
-                String s1 = Main1024a.bytesToHex(c1.getSha1wh());
-                String s2 = Main1024a.bytesToHex(c2.getSha1wh());
+                String s1 = bytesToHex(c1.getSha1wh());
+                String s2 = bytesToHex(c2.getSha1wh());
                 return s1.compareTo(s2);
             } else {
-                String s1 = Main1024a.bytesToHex(c1.getSha1());
-                String s2 = Main1024a.bytesToHex(c2.getSha1());
+                String s1 = bytesToHex(c1.getSha1());
+                String s2 = bytesToHex(c2.getSha1());
                 return s1.compareTo(s2);
             }
         }).collect(Collectors.toList());
@@ -266,14 +267,14 @@ public class CompareController {
     static class PairKeyFactory2 implements Callback<TableColumn.CellDataFeatures<Pair<GID, GID>, String>, ObservableValue<String>> {
         @Override
         public ObservableValue<String> call(TableColumn.CellDataFeatures<Pair<GID, GID>, String> data) {
-            return new ReadOnlyObjectWrapper<>(data.getValue().getKey().getSha1() == null ? "" : Main1024a.bytesToHex(data.getValue().getKey().getSha1()));
+            return new ReadOnlyObjectWrapper<>(data.getValue().getKey().getSha1() == null ? "" : bytesToHex(data.getValue().getKey().getSha1()));
         }
     }
 
     static class PairValueFactory2 implements Callback<TableColumn.CellDataFeatures<Pair<GID, GID>, String>, ObservableValue<String>> {
         @Override
         public ObservableValue<String> call(TableColumn.CellDataFeatures<Pair<GID, GID>, String> data) {
-            return new ReadOnlyObjectWrapper<>(data.getValue().getValue().getSha1() == null ? "" : Main1024a.bytesToHex(data.getValue().getValue().getSha1()));
+            return new ReadOnlyObjectWrapper<>(data.getValue().getValue().getSha1() == null ? "" : bytesToHex(data.getValue().getValue().getSha1()));
         }
     }
 }

@@ -3,6 +3,7 @@ package md.leonis.shingler;
 import md.leonis.shingler.model.Family;
 import md.leonis.shingler.model.GID;
 import md.leonis.shingler.model.Name;
+import md.leonis.shingler.utils.IOUtils;
 import md.leonis.shingler.utils.MeasureMethodTest;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
@@ -15,6 +16,8 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+
+import static md.leonis.shingler.utils.BinaryUtils.*;
 
 public class ListFilesa {
 
@@ -61,7 +64,7 @@ public class ListFilesa {
         });
 
         System.out.println("Calculating Jakkard deviations for families...");
-        Map<String, Family> families1 = Main1024a.readFamiliesFromFile(new File("list-family" + 1));
+        Map<String, Family> families1 = IOUtils.loadFamilies(new File("list-family" + 1));
 
         for (int i = 1; i < Main1024a.SAMPLES.size(); i++) {
             measureJakkard(Main1024a.SAMPLES.get(i), families1);
@@ -72,7 +75,7 @@ public class ListFilesa {
 
         List<Family> families1 = new ArrayList<>(fams1.values());
 
-        Map<String, Family> families = Main1024a.readFamiliesFromFile(new File("list-family" + index));
+        Map<String, Family> families = IOUtils.loadFamilies(new File("list-family" + index));
         List<Family> familiesX = new ArrayList<>(families.values());
 
         double maxDeviation = 0;
@@ -117,7 +120,7 @@ public class ListFilesa {
         Map<String, Family> families;
         if (familyFile.exists()) {
             System.out.println(String.format("%nReading families from file %s...", familyFile));
-            families = Main1024a.readFamiliesFromFile(familyFile);
+            families = IOUtils.loadFamilies(familyFile);
         } else {
             System.out.println("\nGenerating families...");
             Map<String, List<Name>> namesList = new HashMap<>();
@@ -130,7 +133,7 @@ public class ListFilesa {
         Main1024a.calculateRelations(families, index, familyFile);
 
         System.out.println("Saving family...");
-        Main1024a.serialize(familyFile, families);
+        IOUtils.serialize(familyFile, families);
 
         int total = (int) map.values().stream().mapToLong(Collection::size).sum();
         int inFamily = families.values().stream().map(Family::size).mapToInt(Integer::intValue).sum();
@@ -299,7 +302,7 @@ public class ListFilesa {
                 byte[] content = new byte[(int) entry.getSize()];
                 byte[] contentwh = Arrays.copyOfRange(content,16, content.length);
                 sevenZFile.read(content, 0, content.length);
-                result.put(entry.getName(), new GID(entry.getName(), entry.getSize(), entry.getCrcValue(), Main1024a.md5(content), Main1024a.sha1(content), Main1024a.crc32(contentwh), Main1024a.md5(contentwh), Main1024a.sha1(contentwh), null));
+                result.put(entry.getName(), new GID(entry.getName(), entry.getSize(), entry.getCrcValue(), md5(content), sha1(content), crc32(contentwh), md5(contentwh), sha1(contentwh), null));
                 entry = sevenZFile.getNextEntry();
             }
         } catch (IOException e) {

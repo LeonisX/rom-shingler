@@ -7,6 +7,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Map;
 
+import static md.leonis.shingler.utils.BinaryUtils.bytesToHex;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ListFilesaTest {
@@ -38,7 +39,7 @@ class ListFilesaTest {
         assertEquals("text.txt", gid.getTitle());
         assertEquals(4, gid.getSize());
         assertEquals(3_632_233_996L, gid.getCrc32());
-        assertEquals("098F6BCD4621D373CADE4E832627B4F6", Main1024a.bytesToHex(gid.getMd5()));
-        assertEquals("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3", Main1024a.bytesToHex(gid.getSha1()));
+        assertEquals("098F6BCD4621D373CADE4E832627B4F6", bytesToHex(gid.getMd5()));
+        assertEquals("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3", bytesToHex(gid.getSha1()));
     }
 }
