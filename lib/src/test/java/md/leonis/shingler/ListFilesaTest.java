@@ -1,11 +1,9 @@
 package md.leonis.shingler;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,10 +31,10 @@ class ListFilesaTest {
     //@Disabled
     @Test
     void listFiles2() {
-        Map<String, Main1024a.GID> gids = ListFilesa.listFiles2(new File("D:\\Downloads\\text.7z"));
-        Main1024a.GID gid = new ArrayList<>(gids.values()).get(0);
+        Map<String, GID> gids = ListFilesa.listFiles2(new File("D:\\Downloads\\text.7z"));
+        GID gid = new ArrayList<>(gids.values()).get(0);
 
-        assertEquals("text.txt", gid.getName());
+        assertEquals("text.txt", gid.getTitle());
         assertEquals(4, gid.getSize());
         assertEquals(3_632_233_996L, gid.getCrc32());
         assertEquals("098F6BCD4621D373CADE4E832627B4F6", Main1024a.bytesToHex(gid.getMd5()));

@@ -5,13 +5,25 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Data
 @NoArgsConstructor
 // A shared object that stores general application settings
 public class ConfigHolder {
+
+    public static Path userHome;
+    public static Path rootWorkDir;
+    public static Path shinglesDir;
+    public static Path collectionsDir;
+
+    public static String platform;
+    public static String collection;
+
+    public static List<String> selectedCollections;
 
     private final int wordsToLearnCount = 20;
 

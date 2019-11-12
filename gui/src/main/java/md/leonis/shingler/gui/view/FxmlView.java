@@ -6,7 +6,8 @@ public enum FxmlView {
 
     SPLASH("splash.title", "splash"),
     DASHBOARD("dashboard.title", "dashboard"),
-    WINDOW("window.title", "window");
+    WINDOW("window.title", "window"),
+    COMPARE("compare.title", "compare");
 
     private static String fxmlPath = "/fxml/%s.fxml";
 

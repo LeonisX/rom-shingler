@@ -1,5 +1,9 @@
 package md.leonis.shingler;
 
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
+import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,6 +17,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import java.util.zip.CRC32;
 
 // NES (256 Kb) Up to 8 100% SAVE, Up to 32 SAFE, 64 relative SAFE, 256+ nonSAFE
@@ -64,7 +70,7 @@ public class Main1024a {
         //generateFamilies(names, 64, 20); // generate families
     }
 
-    private static void createDirectory(Path path) {
+    public static void createDirectory(Path path) {
         try {
             Files.createDirectories(path);
         } catch (IOException e) {
@@ -89,7 +95,7 @@ public class Main1024a {
             long[] shingles;
 
             if (shdFile.exists() && shdFile.length() > 0 && shdFile.length() % 8 == 0) {
-                LOGGER.info("Skipping: {}|{}", file.getName(), ((i + 1) * 100.0 / files.size()));
+                LOGGER.debug("Skipping: {}|{}", file.getName(), ((i + 1) * 100.0 / files.size()));
                 shingles = loadShinglesFromFile(shdFile);
             } else {
                 LOGGER.info("{}|{}", file.getName(), ((i + 1) * 100.0 / files.size()));
@@ -113,24 +119,34 @@ public class Main1024a {
         }
     }
 
-    public static void generateShinglesNio(Map<String, GID> files, Path romsFolder, Path workDir) throws IOException {
+    public static void generateShinglesNio(RomsCollection collection, Path romsFolder, Path workDir) throws IOException {
 
+        Map<String, GID> files = collection.getGids();
         LOGGER.info("Generating shingles...");
 
         int i = 0;
-        for (Map.Entry<String, GID> entry: files.entrySet()) {
-            Path file = romsFolder.resolve(entry.getKey());
-
-            Path shdFile = workDir.resolve("sample1").resolve(bytesToHex(entry.getValue().getSha1()) + ".shg");
+        for (Map.Entry<String, GID> entry : files.entrySet()) {
 
             long[] shingles = null;
+            Path file = romsFolder.resolve(entry.getKey());
+            Path shdFile = workDir.resolve("sample1").resolve(bytesToHex(entry.getValue().getSha1()) + ".shg");
 
             if (isCorrect(shdFile)) {
-                LOGGER.info("Skipping: {}|{}", file.toString(), ((i + 1) * 100.0 / files.size()));
-
+                LOGGER.debug("Skipping: {}|{}", file.toString(), ((i + 1) * 100.0 / files.size()));
             } else {
                 LOGGER.info("{}|{}", file.toString(), ((i + 1) * 100.0 / files.size()));
-                shingles = toShingles(readFromFile(file));
+
+                switch (collection.type) {
+                    case PLAIN:
+                        shingles = toShingles(readFromFile(file));
+                        break;
+
+                    case MERGED:
+                        Path archiveFile = romsFolder.resolve(entry.getValue().getFamily());
+                        shingles = toShingles(getFileFromArchive(archiveFile, entry.getKey()));
+                        break;
+                }
+
                 writeShinglesToFile(shingles, shdFile);
             }
 
@@ -595,7 +611,7 @@ public class Main1024a {
     }
 
     @Measured
-    static void serialize(File file, Object object) {
+    public static void serialize(File file, Object object) {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
             oos.writeObject(object);
         } catch (Exception e) {
@@ -650,6 +666,22 @@ public class Main1024a {
             FileInputStream fis = new FileInputStream(file);
             ObjectInputStream ois = new ObjectInputStream(fis);
             Map<String, GID> result = (Map<String, GID>) ois.readObject();
+
+            ois.close();
+            fis.close();
+            return result;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Measured
+    public static RomsCollection readCollectionFromFile(File file) {
+        try {
+            FileInputStream fis = new FileInputStream(file);
+            ObjectInputStream ois = new ObjectInputStream(fis);
+            RomsCollection result = (RomsCollection) ois.readObject();
 
             ois.close();
             fis.close();
@@ -897,37 +929,121 @@ public class Main1024a {
         return Files.readAllBytes(file);
     }
 
-    public static Map<String, GID> filesToGid(Path workDir, List<Path> files) {
+    @Measured
+    public static Map<String, GID> filesToGid(List<Path> files) {
 
-        //TODO real path (WORKDIR)
-        File gidsFile = workDir.resolve("gids").toFile();
+        LOGGER.info("Creating GIDs...");
+        Map<String, GID> gidMap = new LinkedHashMap<>();
 
-        if (gidsFile.exists()) {
-            LOGGER.info("Reading GIDs from file...");
-            return new LinkedHashMap<>(readGIDsFromFile(gidsFile));
-        } else {
-            LOGGER.info("Generating GIDs...");
-            Map<String, Main1024a.GID> gidMap = new LinkedHashMap<>();
-
-            try {
-                int i = 0;
-                for (Path path : files) {
-                    long size = Files.size(path);
-                    byte[] bytes = readFromFile(path);
-                    long crc32 = crc32(bytes);
-                    byte[] md5 = md5(bytes);
-                    byte[] sha1 = sha1(bytes);
-                    gidMap.put(path.getFileName().toString(), new Main1024a.GID(path.getFileName().toString(), size, crc32, md5, sha1));
-                    LOGGER.info("Calculating hash sums for: {}|{}", path.getFileName(), ((i + 1) * 100.0 / files.size()));
-                    i++;
-                }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+        try {
+            for (Path path : files) {
+                long size = Files.size(path);
+                gidMap.put(path.getFileName().toString(), new GID(path.getFileName().toString(), size, null, null, null, null, null, null, null));
             }
-
-            serialize(gidsFile, gidMap);
-            return gidMap;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
+
+        return gidMap;
+    }
+
+    @Measured
+    public static Map<String, GID> mergedFilesToGid(List<Path> files) {
+
+        LOGGER.info("Creating GIDs...");
+        try {
+            return files.stream().flatMap(Main1024a::listFiles).collect(Collectors.toMap(GID::getTitle, Function.identity()));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Stream<GID> listFiles(Path file) {
+        try (SevenZFile archiveFile = new SevenZFile(file.toFile())) {
+            return StreamSupport.stream(archiveFile.getEntries().spliterator(), false)
+                    .map(e -> new GID(e.getName(), e.getSize(), e.getCrcValue(), null, null, null, null, null, file.getFileName().toString()));
+        } catch (IOException e) {
+            throw new RuntimeException();
+        }
+    }
+
+    public static Map<String, GID> calculateHashes(List<Path> files) {
+
+        LOGGER.info("Generating hashes...");
+        Map<String, GID> gidMap = new LinkedHashMap<>();
+
+        try {
+            int i = 0;
+            for (Path path : files) {
+                LOGGER.info("Calculating hash sums for: {}|{}", path.getFileName(), ((i + 1) * 100.0 / files.size()));
+                byte[] bytes = readFromFile(path);
+                byte[] byteswh = Arrays.copyOfRange(bytes, 16, bytes.length);
+                gidMap.put(path.getFileName().toString(), new GID(path.getFileName().toString(), Files.size(path), crc32(bytes), md5(bytes), sha1(bytes), crc32(byteswh), md5(byteswh), sha1(byteswh), null));
+
+                i++;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return gidMap;
+    }
+
+    public static Map<String, GID> calculateMergedHashes(List<Path> files) {
+
+        LOGGER.info("Generating hashes...");
+        Map<String, GID> gidMap = new LinkedHashMap<>();
+
+        try {
+            int i = 0;
+            for (Path path : files) {
+                LOGGER.info("Calculating hash sums for: {}|{}", path.getFileName(), ((i + 1) * 100.0 / files.size()));
+                List<GID> gids = listFiles2(path);
+                gids.forEach(gid -> gidMap.put(gid.getTitle(), gid));
+                i++;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return gidMap;
+    }
+
+    @Measured
+    public static byte[] getFileFromArchive(Path file, String fileName) {
+
+        try (SevenZFile sevenZFile = new SevenZFile(file.toFile())) {
+            SevenZArchiveEntry entry = sevenZFile.getNextEntry();
+            while (entry != null) {
+                if (entry.getName().equals(fileName)) {
+                    byte[] content = new byte[(int) entry.getSize()];
+                    sevenZFile.read(content, 0, content.length);
+                    return content;
+                }
+                entry = sevenZFile.getNextEntry();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        throw new RuntimeException(String.format("File %s not found in %s archive", fileName, file));
+    }
+
+    public static List<GID> listFiles2(Path file) {
+        List<GID> result = new ArrayList<>();
+
+        try (SevenZFile sevenZFile = new SevenZFile(file.toFile())) {
+            SevenZArchiveEntry entry = sevenZFile.getNextEntry();
+            while (entry != null) {
+                byte[] content = new byte[(int) entry.getSize()];
+                byte[] contentwh = Arrays.copyOfRange(content, 16, content.length);
+                sevenZFile.read(content, 0, content.length);
+                result.add(new GID(entry.getName(), entry.getSize(), entry.getCrcValue(), md5(content), sha1(content), crc32(contentwh), md5(contentwh), sha1(contentwh), file.getFileName().toString()));
+                entry = sevenZFile.getNextEntry();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return result;
     }
 
     static class Family implements Serializable, Cloneable {
@@ -1255,63 +1371,31 @@ public class Main1024a {
         }
     }
 
+    @Data
+    @NoArgsConstructor
+    public static class RomsCollection implements Serializable {
 
-    public static class GID implements Serializable {
+        private static final long serialVersionUID = 424258085469L;
 
-        private static final long serialVersionUID = -54693L;
+        private String title;
+        private String platform;
+        private CollectionType type = CollectionType.PLAIN;
+        private String romsPath;
+        private List<GID> gids = new ArrayList<>();
 
-        private String name;
-        private long size;
-        private long crc32;
-        private byte[] md5;
-        private byte[] sha1;
-
-        public GID(String name, long size, long crc32, byte[] md5, byte[] sha1) {
-            this.name = name;
-            this.size = size;
-            this.crc32 = crc32;
-            this.md5 = md5;
-            this.sha1 = sha1;
+        public void setGids(Map<String, GID> gids) {
+            this.gids = new ArrayList<>(gids.values());
         }
 
-        public String getName() {
-            return name;
+        public Map<String, GID> getGids() {
+            return gids.stream().collect(Collectors.toMap(GID::getTitle, Function.identity(), (e1, e2) -> e2, LinkedHashMap::new));
         }
+    }
 
-        public void setName(String name) {
-            this.name = name;
-        }
 
-        public long getSize() {
-            return size;
-        }
+    public enum CollectionType {
 
-        public void setSize(long size) {
-            this.size = size;
-        }
+        PLAIN, MERGED
 
-        public long getCrc32() {
-            return crc32;
-        }
-
-        public void setCrc32(long crc32) {
-            this.crc32 = crc32;
-        }
-
-        public byte[] getMd5() {
-            return md5;
-        }
-
-        public void setMd5(byte[] md5) {
-            this.md5 = md5;
-        }
-
-        public byte[] getSha1() {
-            return sha1;
-        }
-
-        public void setSha1(byte[] sha1) {
-            this.sha1 = sha1;
-        }
     }
 }

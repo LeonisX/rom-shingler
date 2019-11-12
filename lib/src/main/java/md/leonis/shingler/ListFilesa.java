@@ -286,15 +286,16 @@ public class ListFilesa {
         }
     }
 
-    public static Map<String, Main1024a.GID> listFiles2(File file) {
-        Map<String, Main1024a.GID> result = new LinkedHashMap<>();
+    public static Map<String, GID> listFiles2(File file) {
+        Map<String, GID> result = new LinkedHashMap<>();
 
         try (SevenZFile sevenZFile = new SevenZFile(file)) {
             SevenZArchiveEntry entry = sevenZFile.getNextEntry();
             while (entry != null) {
                 byte[] content = new byte[(int) entry.getSize()];
+                byte[] contentwh = Arrays.copyOfRange(content,16, content.length);
                 sevenZFile.read(content, 0, content.length);
-                result.put(entry.getName(), new Main1024a.GID(entry.getName(), entry.getSize(), entry.getCrcValue(), Main1024a.md5(content), Main1024a.sha1(content)));
+                result.put(entry.getName(), new GID(entry.getName(), entry.getSize(), entry.getCrcValue(), Main1024a.md5(content), Main1024a.sha1(content), Main1024a.crc32(contentwh), Main1024a.md5(contentwh), Main1024a.sha1(contentwh), null));
                 entry = sevenZFile.getNextEntry();
             }
         } catch (IOException e) {
@@ -302,6 +303,4 @@ public class ListFilesa {
         }
         return result;
     }
-
-
 }
