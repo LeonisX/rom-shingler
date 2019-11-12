@@ -11,10 +11,11 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.util.Callback;
 import javafx.util.Pair;
-import md.leonis.shingler.model.GID;
 import md.leonis.shingler.Main1024a;
 import md.leonis.shingler.gui.config.ConfigHolder;
 import md.leonis.shingler.gui.view.StageManager;
+import md.leonis.shingler.model.GID;
+import md.leonis.shingler.model.RomsCollection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
@@ -132,8 +133,8 @@ public class CompareController {
 
             LOGGER.info("Reading from disk...");
             Path workCollectionsDir = collectionsDir.resolve(platform);
-            Main1024a.RomsCollection romsCollection1 = Main1024a.readCollectionFromFile(workCollectionsDir.resolve(collection1).toFile());
-            Main1024a.RomsCollection romsCollection2 = Main1024a.readCollectionFromFile(workCollectionsDir.resolve(collection2).toFile());
+            RomsCollection romsCollection1 = Main1024a.readCollectionFromFile(workCollectionsDir.resolve(collection1).toFile());
+            RomsCollection romsCollection2 = Main1024a.readCollectionFromFile(workCollectionsDir.resolve(collection2).toFile());
 
             LOGGER.info("Prepare hashes...");
             Set<String> hashes1 = romsCollection1.getGids().values().stream().map(h -> Main1024a.bytesToHex(h.getSha1())).collect(Collectors.toSet());

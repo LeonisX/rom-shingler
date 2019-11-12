@@ -1,6 +1,7 @@
 package md.leonis.shingler;
 
 import md.leonis.shingler.model.GID;
+import md.leonis.shingler.model.Name;
 import md.leonis.shingler.utils.MeasureMethodTest;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
@@ -118,8 +119,8 @@ public class ListFilesa {
             families = Main1024a.readFamiliesFromFile(familyFile);
         } else {
             System.out.println("\nGenerating families...");
-            Map<String, List<Main1024a.Name>> namesList = new HashMap<>();
-            map.forEach((key, value) -> namesList.put(key.getName(), value.stream().map(v -> new Main1024a.Name(new File(v), false)).collect(Collectors.toList())));
+            Map<String, List<Name>> namesList = new HashMap<>();
+            map.forEach((key, value) -> namesList.put(key.getName(), value.stream().map(v -> new Name(new File(v), false)).collect(Collectors.toList())));
 
             families = namesList.entrySet().stream()/*.filter(e -> e.getValue().size() != 1)*/
                     .collect(Collectors.toMap(Map.Entry::getKey, e -> new Main1024a.Family(e.getKey(), e.getValue())));

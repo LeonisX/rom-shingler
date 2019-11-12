@@ -1,8 +1,9 @@
 package md.leonis.shingler;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import md.leonis.shingler.model.GID;
+import md.leonis.shingler.model.Name;
+import md.leonis.shingler.model.Result;
+import md.leonis.shingler.model.RomsCollection;
 import md.leonis.shingler.utils.MeasureMethodTest;
 import md.leonis.shingler.utils.Measured;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
@@ -139,7 +140,7 @@ public class Main1024a {
             } else {
                 LOGGER.info("{}|{}", file.toString(), ((i + 1) * 100.0 / files.size()));
 
-                switch (collection.type) {
+                switch (collection.getType()) {
                     case PLAIN:
                         shingles = toShingles(readFromFile(file));
                         break;
@@ -461,7 +462,7 @@ public class Main1024a {
         families.values().forEach(family -> {
             List<Name> toDelete = deleteNonSiblings(family, jakkardIndex);
 
-            toDelete.forEach(td -> System.out.println(String.format("Dropping: %s (%2.4f%%)", td.getName(), td.jakkardStatus / family.size())));
+            toDelete.forEach(td -> System.out.println(String.format("Dropping: %s (%2.4f%%)", td.getName(), td.getJakkardStatus() / family.size())));
 
             family.setRelations(family.getRelations().stream().filter(r -> toDelete.contains(r.getName1()) || toDelete.contains(r.getName2())).collect(Collectors.toList()));
             family.getRelationsCount().forEach((key, value) ->
@@ -479,7 +480,7 @@ public class Main1024a {
 
         List<String> toDelete = families.values().stream().flatMap(family -> getNonSiblings(family, jakkardIndex).stream()
                 .sorted(Comparator.comparing(Name::getJakkardStatus))
-                .map(n -> String.format("\"%s\";\"%s\";\"%2.4f\"", family.getName().replace(".7z", ""), n.getName(), n.jakkardStatus / family.size()))).collect(Collectors.toList());
+                .map(n -> String.format("\"%s\";\"%s\";\"%2.4f\"", family.getName().replace(".7z", ""), n.getName(), n.getJakkardStatus() / family.size()))).collect(Collectors.toList());
 
         try {
             Files.write(Paths.get("low-jakkard" + index + ".csv"), toDelete, Charset.defaultCharset());
@@ -1195,210 +1196,5 @@ public class Main1024a {
             Name name = members.get(index);
             return name.getJakkardStatus() / (members.size() - 1);
         }
-    }
-
-    static class Name implements Serializable {
-
-        private static final long serialVersionUID = 292207904602980582L;
-
-        private File file;
-        private boolean done;
-        private int index = 100;
-
-        private double jakkardStatus = 0;
-        private double relativeStatus = 0;
-
-        Name(File file, boolean done) {
-            this.file = file;
-            this.done = done;
-
-            if (file.getName().contains("(U)")) {
-                index += 100;
-            }
-            if (file.getName().contains("(W)")) {
-                index += 99;
-            }
-            if (file.getName().contains("(E)")) {
-                index += 80;
-            }
-            if (file.getName().contains("(F)")) {
-                index += 70;
-            }
-            if (file.getName().contains("(G)")) {
-                index += 70;
-            }
-            if (file.getName().contains("(J)")) {
-                index += 60;
-            }
-            if (file.getName().contains("[b")) {
-                index -= 50;
-            }
-            if (file.getName().contains("[a")) {
-                index -= 5;
-            }
-            if (file.getName().contains("[h")) {
-                index -= 20;
-            }
-            if (file.getName().contains("[t")) {
-                index -= 10;
-            }
-            if (file.getName().contains("[p")) {
-                index -= 10;
-            }
-            if (file.getName().contains("[f")) {
-                index -= 10;
-            }
-            if (file.getName().contains("[T")) {
-                index -= 10;
-            }
-            if (file.getName().contains("[!]")) {
-                index += 10;
-            }
-            if (file.getName().contains("(PD)")) {
-                index -= 45;
-            }
-            if (file.getName().contains("(Hack") || file.getName().contains("Hack)")) {
-                index -= 45;
-            }
-            if (file.getName().contains("+")) {
-                index -= 2;
-            }
-        }
-
-        @Override
-        public String toString() {
-            return file.getName() + ": " + jakkardStatus;
-        }
-
-        int getIndex() {
-            return index;
-        }
-
-        void setIndex(int index) {
-            this.index = index;
-        }
-
-        File getFile() {
-            return file;
-        }
-
-        void setFile(File file) {
-            this.file = file;
-        }
-
-        String getName() {
-            return file.getName();
-        }
-
-        String getCleanName() {
-            String result = file.getName();
-            int braceIndex = result.indexOf("(");
-            if (braceIndex > 0) {
-                result = result.substring(0, braceIndex);
-            }
-            braceIndex = result.indexOf("[");
-            if (braceIndex > 0) {
-                result = result.substring(0, braceIndex);
-            }
-            return result.trim();
-        }
-
-        boolean isDone() {
-            return done;
-        }
-
-        void setDone(boolean done) {
-            this.done = done;
-        }
-
-        double getJakkardStatus() {
-            return jakkardStatus;
-        }
-
-        void setJakkardStatus(double jakkardStatus) {
-            this.jakkardStatus = jakkardStatus;
-        }
-
-        public double getRelativeStatus() {
-            return relativeStatus;
-        }
-
-        void setRelativeStatus(double relativeStatus) {
-            this.relativeStatus = relativeStatus;
-        }
-
-        void addRelativeStatus(double status) {
-            relativeStatus += status;
-        }
-
-        void addJakkardStatus(double status) {
-            jakkardStatus += status;
-        }
-    }
-
-    private static class Result implements Serializable {
-
-        private static final long serialVersionUID = -472204242580854693L;
-
-        private Name name1;
-        private Name name2;
-        private double relative;
-        private double jakkard;
-
-        Result(Name name1, Name name2, double relative, double jakkard) {
-            this.name1 = name1;
-            this.name2 = name2;
-            this.relative = relative;
-            this.jakkard = jakkard;
-        }
-
-        Name getName1() {
-            return name1;
-        }
-
-        Name getName2() {
-            return name2;
-        }
-
-        double getRelative() {
-            return relative;
-        }
-
-        double getJakkard() {
-            return jakkard;
-        }
-
-        @Override
-        public String toString() {
-            return "\"" + name1.getName() + "\",\"" + name2.getName() + "\",\"" + relative + "\",\"" + jakkard + "\"";
-        }
-    }
-
-    @Data
-    @NoArgsConstructor
-    public static class RomsCollection implements Serializable {
-
-        private static final long serialVersionUID = 424258085469L;
-
-        private String title;
-        private String platform;
-        private CollectionType type = CollectionType.PLAIN;
-        private String romsPath;
-        private List<GID> gids = new ArrayList<>();
-
-        public void setGids(Map<String, GID> gids) {
-            this.gids = new ArrayList<>(gids.values());
-        }
-
-        public Map<String, GID> getGids() {
-            return gids.stream().collect(Collectors.toMap(GID::getTitle, Function.identity(), (e1, e2) -> e2, LinkedHashMap::new));
-        }
-    }
-
-
-    public enum CollectionType {
-
-        PLAIN, MERGED
-
     }
 }

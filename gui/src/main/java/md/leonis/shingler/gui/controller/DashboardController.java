@@ -7,13 +7,15 @@ import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
-import md.leonis.shingler.model.GID;
 import md.leonis.shingler.Main1024a;
 import md.leonis.shingler.gui.config.ConfigHolder;
 import md.leonis.shingler.gui.controller.template.LogController;
 import md.leonis.shingler.gui.service.TestService;
 import md.leonis.shingler.gui.view.FxmlView;
 import md.leonis.shingler.gui.view.StageManager;
+import md.leonis.shingler.model.CollectionType;
+import md.leonis.shingler.model.GID;
+import md.leonis.shingler.model.RomsCollection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
@@ -24,7 +26,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static md.leonis.shingler.gui.config.ConfigHolder.*;
@@ -79,7 +84,7 @@ public class DashboardController {
     private LinkedHashMap<String, String> platforms;
 
     private int level = 0;
-    private Main1024a.RomsCollection romsCollection;
+    private RomsCollection romsCollection;
 
     @FXML
     private void initialize() {
@@ -234,7 +239,7 @@ public class DashboardController {
     }
 
     public void newCollectionClick(ActionEvent actionEvent) {
-        Main1024a.RomsCollection collection = new Main1024a.RomsCollection();
+        RomsCollection collection = new RomsCollection();
         collection.setTitle("untitled");
         collection.setPlatform(platform);
         Main1024a.serialize(collectionsDir.resolve(platform).resolve(collection.getTitle()).toFile(), collection);
@@ -270,10 +275,10 @@ public class DashboardController {
     }
 
     public void typeButtonClick(ActionEvent actionEvent) {
-        Main1024a.CollectionType type = Main1024a.CollectionType.valueOf(typeButton.getText());
+        CollectionType type = CollectionType.valueOf(typeButton.getText());
         int id = type.ordinal();
-        id = (id == Main1024a.CollectionType.values().length - 1) ? 0 : id + 1;
-        type = Main1024a.CollectionType.values()[id];
+        id = (id == CollectionType.values().length - 1) ? 0 : id + 1;
+        type = CollectionType.values()[id];
         typeButton.setText(type.name());
         romsCollection.setType(type);
 
