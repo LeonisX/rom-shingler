@@ -144,4 +144,10 @@ public class StageManager {
             throw new RuntimeException(exc);
         }
     }
+
+    public static void runInBackground(Runnable runnable) {
+        Thread thread = new Thread(runnable);
+        thread.setDaemon(true);
+        thread.start();
+    }
 }

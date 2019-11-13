@@ -145,10 +145,10 @@ public class IOUtils {
         try (SevenZFile sevenZFile = new SevenZFile(file.toFile())) {
             SevenZArchiveEntry entry = sevenZFile.getNextEntry();
             while (entry != null) {
-                byte[] content = new byte[(int) entry.getSize()];
-                byte[] contentwh = Arrays.copyOfRange(content, 16, content.length);
-                sevenZFile.read(content, 0, content.length);
-                result.add(new GID(entry.getName(), entry.getSize(), entry.getCrcValue(), md5(content), sha1(content), crc32(contentwh), md5(contentwh), sha1(contentwh), file.getFileName().toString()));
+                byte[] bytes = new byte[(int) entry.getSize()];
+                sevenZFile.read(bytes, 0, bytes.length);
+                byte[] bytestwh = Arrays.copyOfRange(bytes, 16, bytes.length);
+                result.add(new GID(entry.getName(), entry.getSize(), entry.getCrcValue(), md5(bytes), sha1(bytes), crc32(bytestwh), md5(bytestwh), sha1(bytestwh), file.getFileName().toString()));
                 entry = sevenZFile.getNextEntry();
             }
         } catch (IOException e) {
@@ -157,7 +157,16 @@ public class IOUtils {
         return result;
     }
 
-    public static void createDirectory(Path path) {
+    @Measured
+    public static void deleteFile(Path path) {
+        try {
+            Files.delete(path);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void createDirectories(Path path) {
         try {
             Files.createDirectories(path);
         } catch (IOException e) {

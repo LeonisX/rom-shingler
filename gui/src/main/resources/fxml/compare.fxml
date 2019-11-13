@@ -15,27 +15,27 @@
     <top>
         <HBox alignment="CENTER" prefHeight="46.0" prefWidth="1220.0" spacing="5.0" BorderPane.alignment="CENTER">
             <Label fx:id="waitLabel" text="Please wait"/>
-            <HBox fx:id="hBox" alignment="CENTER" prefHeight="46.0" prefWidth="393.0" spacing="5.0" visible="false">
+            <HBox fx:id="controlsHBox" alignment="CENTER" prefHeight="46.0" prefWidth="393.0" spacing="5.0" visible="false">
                 <Button fx:id="sortButton" mnemonicParsing="false" onAction="#sortButtonClick" text="Sort"/>
-                <RadioButton fx:id="fullHash" mnemonicParsing="false" selected="true" text="Full hash">
+                <RadioButton fx:id="fullHashRadioButton" mnemonicParsing="false" selected="true" text="Full hash">
                     <toggleGroup>
-                        <ToggleGroup fx:id="tg1"/>
+                        <ToggleGroup fx:id="toggleGroup"/>
                     </toggleGroup>
                 </RadioButton>
-                <RadioButton fx:id="woHeader" mnemonicParsing="false" text="W/o header" toggleGroup="$tg1"/>
-                <CheckBox fx:id="good" mnemonicParsing="false" selected="true" text="Good"/>
-                <CheckBox fx:id="pd" mnemonicParsing="false" selected="true" text="PD"/>
-                <CheckBox fx:id="hack" mnemonicParsing="false" selected="true" text="Hack"/>
+                <RadioButton fx:id="headlessRadioButton" mnemonicParsing="false" text="W/o header" toggleGroup="$toggleGroup"/>
+                <CheckBox fx:id="allGoodCheckBox" mnemonicParsing="false" selected="true" text="Good"/>
+                <CheckBox fx:id="pdCheckBox" mnemonicParsing="false" selected="true" text="PD"/>
+                <CheckBox fx:id="hackCheckBox" mnemonicParsing="false" selected="true" text="Hack"/>
             </HBox>
         </HBox>
     </top>
     <center>
-        <TableView fx:id="compareTable" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+        <TableView fx:id="tableView" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
             <columns>
                 <TableColumn fx:id="leftColumn" editable="false" prefWidth="300.0" text="Left" />
                 <TableColumn fx:id="rightColumn" editable="false" minWidth="0.0" prefWidth="300.0" text="Right" />
-            <TableColumn fx:id="leftColumn1" editable="false" minWidth="0.0" prefWidth="300.0" text="Left" />
-            <TableColumn fx:id="rightColumn1" editable="false" minWidth="0.0" prefWidth="300.0" text="Right" />
+            <TableColumn fx:id="leftHashColumn" editable="false" minWidth="0.0" prefWidth="300.0" text="Left" />
+            <TableColumn fx:id="rightHashColumn" editable="false" minWidth="0.0" prefWidth="300.0" text="Right" />
             </columns>
         </TableView>
     </center>

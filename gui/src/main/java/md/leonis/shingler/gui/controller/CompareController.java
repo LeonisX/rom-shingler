@@ -3,7 +3,6 @@ package md.leonis.shingler.gui.controller;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
@@ -21,12 +20,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
 
-import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static md.leonis.shingler.gui.config.ConfigHolder.*;
+import static md.leonis.shingler.gui.config.ConfigHolder.selectedCollections;
+import static md.leonis.shingler.gui.config.ConfigHolder.workCollectionsDir;
+import static md.leonis.shingler.gui.view.StageManager.runInBackground;
 import static md.leonis.shingler.utils.BinaryUtils.bytesToHex;
 
 @Controller
@@ -36,26 +36,31 @@ public class CompareController {
     @FXML
     public VBox vBox;
 
-    public TableView<Pair<GID, GID>> compareTable;
+    public TableView<Pair<GID, GID>> tableView;
     public TableColumn<Pair<GID, GID>, Pair<GID, GID>> leftColumn;
     public TableColumn<Pair<GID, GID>, Pair<GID, GID>> rightColumn;
-    public TableColumn<Pair<GID, GID>, String> leftColumn1;
-    public TableColumn<Pair<GID, GID>, String> rightColumn1;
+    public TableColumn<Pair<GID, GID>, String> leftHashColumn;
+    public TableColumn<Pair<GID, GID>, String> rightHashColumn;
+
+    public HBox controlsHBox;
     public Button sortButton;
-    public RadioButton fullHash;
-    public ToggleGroup tg1;
-    public RadioButton woHeader;
-    public CheckBox good;
-    public CheckBox pd;
-    public CheckBox hack;
+
+    public ToggleGroup toggleGroup;
+    public RadioButton fullHashRadioButton;
+    public RadioButton headlessRadioButton;
+    
+    public CheckBox allGoodCheckBox;
+    public CheckBox pdCheckBox;
+    public CheckBox hackCheckBox;
+    
     public Label waitLabel;
-    public HBox hBox;
+    
 
     private final StageManager stageManager;
     private final ConfigHolder configHolder;
 
-    private List<Pair<GID, GID>> pairs1;
-    private List<Pair<GID, GID>> pairs2;
+    private List<Pair<GID, GID>> deletedPairs;
+    private List<Pair<GID, GID>> addedPairs;
     private List<Pair<GID, GID>> samePairs;
 
     private static final Color BLUE_GRAY = Color.color(0.4019608f, 0.4019608f, 0.6f);
@@ -69,35 +74,24 @@ public class CompareController {
     @FXML
     private void initialize() {
 
-        hBox.managedProperty().bind(hBox.visibleProperty());
+        controlsHBox.managedProperty().bind(controlsHBox.visibleProperty());
         waitLabel.managedProperty().bind(waitLabel.visibleProperty());
 
-        leftColumn.setCellFactory(new Callback<TableColumn<Pair<GID, GID>, Pair<GID, GID>>, TableCell<Pair<GID, GID>, Pair<GID, GID>>>() {
-            @Override
-            public TableCell<Pair<GID, GID>, Pair<GID, GID>> call(TableColumn<Pair<GID, GID>, Pair<GID, GID>> param) {
-                return new TableCell<Pair<GID, GID>, Pair<GID, GID>>() {
+        //TODO for future - try to use rowFactory again
+        leftColumn.setCellFactory(leftColumnCellFactory());
+        rightColumn.setCellFactory(rightColumnCellFactory());
 
-                    @Override
-                    public void updateItem(Pair<GID, GID> item, boolean empty) {
-                        super.updateItem(item, empty);
-                        if (!isEmpty() && !(null == item)) {
-                            Color color = Color.GRAY;
-                            if (!item.getKey().getTitle().isEmpty() && item.getValue().getTitle().isEmpty()) { // deleted
-                                color = Color.RED;
-                            } else if (!item.getKey().getTitle().equals(item.getValue().getTitle())) { // renamed
-                                color = Color.BLUE;
-                            } else if (!Arrays.equals(item.getKey().getSha1(), item.getValue().getSha1())) {
-                                color = BLUE_GRAY;
-                            }
-                            setText(item.getKey().getTitle());
-                            setTextFill(color);
-                        }
-                    }
-                };
-            }
-        });
+        leftColumn.setCellValueFactory(new PairNameFactory());
+        rightColumn.setCellValueFactory(new PairNameFactory());
+        leftHashColumn.setCellValueFactory(new PairLeftHashFactory());
+        rightHashColumn.setCellValueFactory(new PairRightHashFactory());
 
-        rightColumn.setCellFactory(new Callback<TableColumn<Pair<GID, GID>, Pair<GID, GID>>, TableCell<Pair<GID, GID>, Pair<GID, GID>>>() {
+        preloadCollections();
+    }
+
+    private Callback<TableColumn<Pair<GID, GID>, Pair<GID, GID>>, TableCell<Pair<GID, GID>, Pair<GID, GID>>> rightColumnCellFactory() {
+
+        return new Callback<TableColumn<Pair<GID, GID>, Pair<GID, GID>>, TableCell<Pair<GID, GID>, Pair<GID, GID>>>() {
             @Override
             public TableCell<Pair<GID, GID>, Pair<GID, GID>> call(TableColumn<Pair<GID, GID>, Pair<GID, GID>> param) {
                 return new TableCell<Pair<GID, GID>, Pair<GID, GID>>() {
@@ -120,132 +114,111 @@ public class CompareController {
                     }
                 };
             }
-        });
+        };
+    }
 
-        leftColumn.setCellValueFactory(new PairKeyFactory());
-        rightColumn.setCellValueFactory(new PairKeyFactory());
-        leftColumn1.setCellValueFactory(new PairKeyFactory2());
-        rightColumn1.setCellValueFactory(new PairValueFactory2());
+    private Callback<TableColumn<Pair<GID, GID>, Pair<GID, GID>>, TableCell<Pair<GID, GID>, Pair<GID, GID>>> leftColumnCellFactory() {
 
-        Thread thread = new Thread(() -> {
-            LOGGER.info("Comparing collections...");
+        return new Callback<TableColumn<Pair<GID, GID>, Pair<GID, GID>>, TableCell<Pair<GID, GID>, Pair<GID, GID>>>() {
+            @Override
+            public TableCell<Pair<GID, GID>, Pair<GID, GID>> call(TableColumn<Pair<GID, GID>, Pair<GID, GID>> param) {
+                return new TableCell<Pair<GID, GID>, Pair<GID, GID>>() {
+
+                    @Override
+                    public void updateItem(Pair<GID, GID> item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (!isEmpty() && !(null == item)) {
+                            Color color = Color.GRAY;
+                            if (!item.getKey().getTitle().isEmpty() && item.getValue().getTitle().isEmpty()) { // deleted
+                                color = Color.RED;
+                            } else if (!item.getKey().getTitle().equals(item.getValue().getTitle())) { // renamed
+                                color = Color.BLUE;
+                            } else if (!Arrays.equals(item.getKey().getSha1(), item.getValue().getSha1())) {
+                                color = BLUE_GRAY;
+                            }
+                            setText(item.getKey().getTitle());
+                            setTextFill(color);
+                        }
+                    }
+                };
+            }
+        };
+    }
+
+    private void preloadCollections() {
+
+        runInBackground(() -> {
+            LOGGER.info("Preloading collections...");
             String collection1 = selectedCollections.get(0);
             String collection2 = selectedCollections.get(1);
 
             LOGGER.info("Reading from disk...");
-            Path workCollectionsDir = collectionsDir.resolve(platform);
-            RomsCollection romsCollection1 = IOUtils.loadCollection(workCollectionsDir.resolve(collection1).toFile());
-            RomsCollection romsCollection2 = IOUtils.loadCollection(workCollectionsDir.resolve(collection2).toFile());
+            RomsCollection romsCollection1 = IOUtils.loadCollection(workCollectionsDir().resolve(collection1).toFile());
+            RomsCollection romsCollection2 = IOUtils.loadCollection(workCollectionsDir().resolve(collection2).toFile());
 
             LOGGER.info("Prepare hashes...");
-            Set<String> hashes1 = romsCollection1.getGids().values().stream().map(h -> bytesToHex(h.getSha1())).collect(Collectors.toSet());
-            Set<String> hashes2 = romsCollection2.getGids().values().stream().map(h -> bytesToHex(h.getSha1())).collect(Collectors.toSet());
+            Set<String> hashesLeft = romsCollection1.getGids().values().stream().map(h -> bytesToHex(h.getSha1())).collect(Collectors.toSet());
+            Set<String> hashesRight = romsCollection2.getGids().values().stream().map(h -> bytesToHex(h.getSha1())).collect(Collectors.toSet());
 
             LOGGER.info("Processing hashes...");
-            Set<String> hashes1new = new HashSet<>(hashes1);
-            hashes1new.removeAll(hashes2);
-            Set<String> hashes2new = new HashSet<>(hashes2);
-            hashes2new.removeAll(hashes1);
-            Set<String> hashesSame = new HashSet<>(hashes1);
-            hashesSame.retainAll(hashes2);
+            Set<String> hashesLeftUnique = new HashSet<>(hashesLeft);
+            hashesLeftUnique.removeAll(hashesRight);
+            Set<String> hashesRightUnique = new HashSet<>(hashesRight);
+            hashesRightUnique.removeAll(hashesLeft);
+            Set<String> hashesSame = new HashSet<>(hashesLeft);
+            hashesSame.retainAll(hashesRight);
 
-            Map<String, GID> byHash1 = romsCollection1.getGids().values().stream().collect(Collectors.toMap(h -> bytesToHex(h.getSha1()), Function.identity()));
-            Map<String, GID> byHash2 = romsCollection2.getGids().values().stream().collect(Collectors.toMap(h -> bytesToHex(h.getSha1()), Function.identity()));
+            Map<String, GID> byLeftHash = romsCollection1.getGids().values().stream().collect(Collectors.toMap(h -> bytesToHex(h.getSha1()), Function.identity()));
+            Map<String, GID> byRightHash = romsCollection2.getGids().values().stream().collect(Collectors.toMap(h -> bytesToHex(h.getSha1()), Function.identity()));
 
             LOGGER.info("Preparing added/deleted/modified collections...");
 
-            pairs1 = hashes1new.stream().map(h -> new Pair<>(byHash1.get(h), GID.EMPTY)).collect(Collectors.toList());
-            pairs2 = hashes2new.stream().map(h -> new Pair<>(GID.EMPTY, byHash2.get(h))).collect(Collectors.toList());
-            samePairs = hashesSame.stream().map(h -> {
-                GID s1 = byHash1.get(h);
-                GID s2 = byHash2.get(h);
-                return new Pair<>(s1, s2);
-            }).collect(Collectors.toList());
+            deletedPairs = hashesLeftUnique.stream().map(h -> new Pair<>(byLeftHash.get(h), GID.EMPTY)).collect(Collectors.toList());
+            addedPairs = hashesRightUnique.stream().map(h -> new Pair<>(GID.EMPTY, byRightHash.get(h))).collect(Collectors.toList());
+            samePairs = hashesSame.stream().map(h -> new Pair<>(byLeftHash.get(h), byRightHash.get(h))).collect(Collectors.toList());
 
-            sortButtonClick(null);
+            filterResult();
+
             waitLabel.setVisible(false);
-            hBox.setVisible(true);
-            compareTable.refresh();
+            controlsHBox.setVisible(true);
         });
-        thread.setDaemon(true);
-        thread.start();
     }
 
-    public void sortButtonClick(ActionEvent actionEvent) {
+    public void sortButtonClick() {
+        filterResult();
+    }
+
+    private void filterResult() {
+
+        boolean omitHeaders = headlessRadioButton.isSelected();
 
         LOGGER.info("Filtering...");
-        pairs1= filter(pairs1);
-        pairs2= filter(pairs2);
-        samePairs= filter(samePairs);
-
-
-        List<Pair<GID, GID>> pairs = new ArrayList<>();
-        pairs.addAll(pairs1);
-        pairs.addAll(pairs2);
-        pairs.addAll(samePairs);
+        List<Pair<GID, GID>> pairs = filterPairs();
 
         LOGGER.info("Sorting...");
-        boolean woHeaders = woHeader.isSelected();
-
-        pairs = pairs.stream().sorted((p1, p2) -> {
-            GID c1 = p1.getKey().getTitle().isEmpty() ? p1.getValue() : p1.getKey();
-            GID c2 = p2.getKey().getTitle().isEmpty() ? p2.getValue() : p2.getKey();
-            if (woHeaders) {
-                String s1 = bytesToHex(c1.getSha1wh());
-                String s2 = bytesToHex(c2.getSha1wh());
-                return s1.compareTo(s2);
-            } else {
-                String s1 = bytesToHex(c1.getSha1());
-                String s2 = bytesToHex(c2.getSha1());
-                return s1.compareTo(s2);
-            }
-        }).collect(Collectors.toList());
+        pairs = sortByHash(pairs, omitHeaders);
 
         LOGGER.info("Merging result...");
-        List<Pair<GID, GID>> mergedPairs = new ArrayList<>();
+        pairs = mergePairs(pairs, omitHeaders);
 
-        int i = 0;
-        do {
-            Pair<GID, GID> pair1 = pairs.get(i);
-            Pair<GID, GID> pair2 = pairs.get(i + 1);
-            if (woHeaders) {
-                if (pair1.getKey().getSha1wh() != null && Arrays.equals(pair1.getKey().getSha1wh(), pair2.getValue().getSha1wh())) {
-                    mergedPairs.add(new Pair<>(pair1.getKey(), pair2.getValue()));
-                    i++;
-                } else if (pair1.getValue().getSha1wh() != null && Arrays.equals(pair1.getValue().getSha1wh(), pair2.getKey().getSha1wh())) {
-                    mergedPairs.add(new Pair<>(pair1.getValue(), pair2.getKey()));
-                    i++;
-                } else {
-                    mergedPairs.add(pair1);
-                }
-            } else {
-                if (pair1.getKey().getSha1() != null && Arrays.equals(pair1.getKey().getSha1(), pair2.getValue().getSha1())) {
-                    mergedPairs.add(new Pair<>(pair1.getKey(), pair2.getValue()));
-                    i++;
-                } else if (pair1.getValue().getSha1() != null && Arrays.equals(pair1.getValue().getSha1(), pair2.getKey().getSha1())) {
-                    mergedPairs.add(new Pair<>(pair1.getValue(), pair2.getKey()));
-                    i++;
-                } else {
-                    mergedPairs.add(pair1);
-                }
-            }
-            i++;
-        } while (i < pairs.size() - 1);
-        if (mergedPairs.get(mergedPairs.size() - 1).equals(pairs.get(pairs.size() - 2))) {
-            mergedPairs.add(pairs.get(pairs.size() - 1));
-        }
-
-        mergedPairs = mergedPairs.stream().sorted((p1, p2) -> {
-            GID c1 = p1.getKey().getTitle().isEmpty() ? p1.getValue() : p1.getKey();
-            GID c2 = p2.getKey().getTitle().isEmpty() ? p2.getValue() : p2.getKey();
-            return c1.getTitle().compareToIgnoreCase(c2.getTitle());
-        }).collect(Collectors.toList());
-
-        compareTable.setItems(FXCollections.observableArrayList(mergedPairs));
+        tableView.setItems(FXCollections.observableArrayList(pairs));
     }
 
-    //TODO can use filtered from compareTable.getItems()
+    private List<Pair<GID, GID>> filterPairs() {
+        List<Pair<GID, GID>> filteredDeletedPairs = filter(deletedPairs);
+        List<Pair<GID, GID>> filteredAddedPairs = filter(addedPairs);
+        List<Pair<GID, GID>> filteredSamePairs= filter(samePairs);
+
+        List<Pair<GID, GID>> pairs = new ArrayList<>();
+        pairs.addAll(filteredDeletedPairs);
+        pairs.addAll(filteredAddedPairs);
+        pairs.addAll(filteredSamePairs);
+        return pairs;
+    }
+
+    //TODO can use filtered from tableView.getItems()
     private List<Pair<GID, GID>> filter(List<Pair<GID, GID>> pairs) {
+
         return pairs.stream().filter(pair -> {
             boolean p = pair.getKey().getTitle().contains("(PD)")  || pair.getValue().getTitle().contains("(PD)");
             boolean h = pair.getKey().getTitle().contains("(Hack)")  || pair.getValue().getTitle().contains("(Hack)")
@@ -253,25 +226,88 @@ public class CompareController {
                     ||pair.getKey().getTitle().contains(" Hack)") || pair.getValue().getTitle().contains(" Hack)");
             boolean g = !(p || h);
 
-            return (p && pd.isSelected()) || (h && hack.isSelected()) || (g && good.isSelected());
+            return (p && pdCheckBox.isSelected()) || (h && hackCheckBox.isSelected()) || (g && allGoodCheckBox.isSelected());
         }).collect(Collectors.toList());
     }
 
-    static class PairKeyFactory implements Callback<TableColumn.CellDataFeatures<Pair<GID, GID>, Pair<GID, GID>>, ObservableValue<Pair<GID, GID>>> {
+    private List<Pair<GID, GID>> sortByHash(List<Pair<GID, GID>> pairs, boolean omitHeaders) {
+
+        return pairs.stream().sorted((p1, p2) -> {
+            GID c1 = p1.getKey().getTitle().isEmpty() ? p1.getValue() : p1.getKey();
+            GID c2 = p2.getKey().getTitle().isEmpty() ? p2.getValue() : p2.getKey();
+            if (omitHeaders) {
+                return bytesToHex(c1.getSha1wh()).compareTo(bytesToHex(c2.getSha1wh()));
+            } else {
+                return bytesToHex(c1.getSha1()).compareTo(bytesToHex(c2.getSha1()));
+            }
+        }).collect(Collectors.toList());
+    }
+
+    private List<Pair<GID, GID>> mergePairs(List<Pair<GID, GID>> pairs, boolean omitHeaders) {
+
+        List<Pair<GID, GID>> mergedPairs = new ArrayList<>();
+
+        if (!pairs.isEmpty()) {
+            int i = 0;
+            do {
+                Pair<GID, GID> pair1 = pairs.get(i);
+                Pair<GID, GID> pair2 = pairs.get(i + 1);
+
+                if (omitHeaders) {
+                    if (pair1.getKey().getSha1wh() != null && Arrays.equals(pair1.getKey().getSha1wh(), pair2.getValue().getSha1wh())) {
+                        mergedPairs.add(new Pair<>(pair1.getKey(), pair2.getValue()));
+                        i++;
+                    } else if (pair1.getValue().getSha1wh() != null && Arrays.equals(pair1.getValue().getSha1wh(), pair2.getKey().getSha1wh())) {
+                        mergedPairs.add(new Pair<>(pair1.getValue(), pair2.getKey()));
+                        i++;
+                    } else {
+                        mergedPairs.add(pair1);
+                    }
+                } else {
+                    if (pair1.getKey().getSha1() != null && Arrays.equals(pair1.getKey().getSha1(), pair2.getValue().getSha1())) {
+                        mergedPairs.add(new Pair<>(pair1.getKey(), pair2.getValue()));
+                        i++;
+                    } else if (pair1.getValue().getSha1() != null && Arrays.equals(pair1.getValue().getSha1(), pair2.getKey().getSha1())) {
+                        mergedPairs.add(new Pair<>(pair1.getValue(), pair2.getKey()));
+                        i++;
+                    } else {
+                        mergedPairs.add(pair1);
+                    }
+                }
+                i++;
+            } while (i < pairs.size() - 1);
+
+            if (mergedPairs.get(mergedPairs.size() - 1).equals(pairs.get(pairs.size() - 2))) {
+                mergedPairs.add(pairs.get(pairs.size() - 1));
+            }
+        }
+        return sortByTitle(mergedPairs);
+    }
+
+    private List<Pair<GID, GID>> sortByTitle(List<Pair<GID, GID>> pairs) {
+
+        return pairs.stream().sorted((p1, p2) -> {
+            GID c1 = p1.getKey().getTitle().isEmpty() ? p1.getValue() : p1.getKey();
+            GID c2 = p2.getKey().getTitle().isEmpty() ? p2.getValue() : p2.getKey();
+            return c1.getTitle().compareToIgnoreCase(c2.getTitle());
+        }).collect(Collectors.toList());
+    }
+
+    static class PairNameFactory implements Callback<TableColumn.CellDataFeatures<Pair<GID, GID>, Pair<GID, GID>>, ObservableValue<Pair<GID, GID>>> {
         @Override
         public ObservableValue<Pair<GID, GID>> call(TableColumn.CellDataFeatures<Pair<GID, GID>, Pair<GID, GID>> data) {
             return new ReadOnlyObjectWrapper<>(data.getValue());
         }
     }
 
-    static class PairKeyFactory2 implements Callback<TableColumn.CellDataFeatures<Pair<GID, GID>, String>, ObservableValue<String>> {
+    static class PairLeftHashFactory implements Callback<TableColumn.CellDataFeatures<Pair<GID, GID>, String>, ObservableValue<String>> {
         @Override
         public ObservableValue<String> call(TableColumn.CellDataFeatures<Pair<GID, GID>, String> data) {
             return new ReadOnlyObjectWrapper<>(data.getValue().getKey().getSha1() == null ? "" : bytesToHex(data.getValue().getKey().getSha1()));
         }
     }
 
-    static class PairValueFactory2 implements Callback<TableColumn.CellDataFeatures<Pair<GID, GID>, String>, ObservableValue<String>> {
+    static class PairRightHashFactory implements Callback<TableColumn.CellDataFeatures<Pair<GID, GID>, String>, ObservableValue<String>> {
         @Override
         public ObservableValue<String> call(TableColumn.CellDataFeatures<Pair<GID, GID>, String> data) {
             return new ReadOnlyObjectWrapper<>(data.getValue().getValue().getSha1() == null ? "" : bytesToHex(data.getValue().getValue().getSha1()));

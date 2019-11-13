@@ -1,7 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
 <BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="633.0" prefWidth="892.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="md.leonis.shingler.gui.controller.DashboardController">
     <top>
         <MenuBar BorderPane.alignment="CENTER">
@@ -31,39 +42,28 @@
                             <Button fx:id="openProjectButton" mnemonicParsing="false" onAction="#openProjectButtonClick" text="Open project" />
                             <Button fx:id="gamesToFamilyButton" mnemonicParsing="false" onAction="#gamesToFamilyButtonClick" text="Games to Family" />
                             <Button fx:id="goodMergedToFamilyButton" mnemonicParsing="false" onAction="#goodMergedToFamilyButtonClick" text="GoodMerged to Family" />
-
-                            <Button fx:id="openCollectionButton" mnemonicParsing="false" onAction="#openCollectionClick" text="Open Collection" />
                         </VBox>
                         <ListView fx:id="collectionsView" prefHeight="200.0" prefWidth="200.0" />
-                        <TextArea fx:id="textArea" prefHeight="200.0" prefWidth="200.0" />
+                        <TextArea fx:id="textArea" prefHeight="270.0" prefWidth="265.0" />
                         <VBox spacing="10.0">
-                            <Button fx:id="newCollectionButton" mnemonicParsing="false" onAction="#newCollectionClick"
-                                    text="New Collection"/>
-                            <Button fx:id="deleteCollectionButton" mnemonicParsing="false"
-                                    onAction="#deleteCollectionButtonClick" text="Delete"/>
+                            <Button fx:id="newCollectionButton" mnemonicParsing="false" onAction="#newCollectionClick" text="New Collection" />
+                            <Button fx:id="deleteCollectionButton" mnemonicParsing="false" onAction="#deleteCollectionButtonClick" text="Delete" />
                             <HBox spacing="5.0">
-                                <Button fx:id="renameCollectionButton" mnemonicParsing="false"
-                                        onAction="#renameCollectionButtonClick" text="Rename"/>
-                                <Button fx:id="typeButton" mnemonicParsing="false" onAction="#typeButtonClick"
-                                        text="PLAIN"/>
+                                <Button fx:id="renameCollectionButton" mnemonicParsing="false" onAction="#renameCollectionButtonClick" text="Rename" />
+                                <Button fx:id="typeButton" mnemonicParsing="false" onAction="#typeButtonClick" text="PLAIN" />
                             </HBox>
-                            <Button fx:id="selectCollectionFilesButton" mnemonicParsing="false"
-                                    onAction="#selectCollectionFilesButtonClick" text="Select roms path"/>
+                            <Button fx:id="selectCollectionFilesButton" mnemonicParsing="false" onAction="#selectCollectionFilesButtonClick" text="Select roms path" />
                             <HBox spacing="5.0">
                                 <!--<Button fx:id="selectCollectionFiles" mnemonicParsing="false" onAction="#selectCollectionFilesButtonClick" text="Select GoodMerged" />-->
-                                <Button fx:id="scanCollectionFilesButton" mnemonicParsing="false"
-                                        onAction="#scanCollectionFilesButtonClick" text="Scan files"/>
+                                <Button fx:id="scanCollectionFilesButton" mnemonicParsing="false" onAction="#scanCollectionFilesButtonClick" text="Scan files" />
                             </HBox>
                             <HBox spacing="5.0">
-                                <Button fx:id="scanCollectionHashesButton" mnemonicParsing="false"
-                                        onAction="#scanCollectionHashesButtonClick" text="Scan hashes"/>
+                                <Button fx:id="scanCollectionHashesButton" mnemonicParsing="false" onAction="#scanCollectionHashesButtonClick" text="Scan hashes" />
                             </HBox>
-                            <Button fx:id="generateShinglesButton" mnemonicParsing="false"
-                                    onAction="#generateShinglesButtonClick" text="Generate shingles"/>
+                            <Button fx:id="generateShinglesButton" mnemonicParsing="false" onAction="#generateShinglesButtonClick" text="Generate shingles" />
                             <!--<Button fx:id="selectCollectionFiles" mnemonicParsing="false" onAction="#selectCollectionFilesClick" text="Generate Families" />-->
                             <!--<Button fx:id="selectCollectionFiles" mnemonicParsing="false" onAction="#selectCollectionFilesClick" text="Verify Families" />-->
-                            <Button fx:id="compareCollectionsButton" mnemonicParsing="false"
-                                    onAction="#compareCollectionsButtonClick" text="Compare collections"/>
+                            <Button fx:id="compareCollectionsButton" mnemonicParsing="false" onAction="#compareCollectionsButtonClick" text="Compare collections" />
                         </VBox>
                     </HBox>
                 </VBox>

@@ -70,7 +70,7 @@ public class Main1024a {
     }
 
     public static void createSampleDirs(Path path) {
-        SAMPLES.stream().map(s -> path.resolve("sample" + s)).forEach(IOUtils::createDirectory);
+        SAMPLES.stream().map(s -> path.resolve("sample" + s)).forEach(IOUtils::createDirectories);
     }
 
     @SuppressWarnings("all")

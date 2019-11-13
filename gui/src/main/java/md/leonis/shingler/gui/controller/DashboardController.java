@@ -3,6 +3,7 @@ package md.leonis.shingler.gui.controller;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
@@ -19,17 +20,15 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static md.leonis.shingler.gui.config.ConfigHolder.*;
+import static md.leonis.shingler.gui.view.StageManager.runInBackground;
 
 @Controller
 public class DashboardController {
@@ -39,19 +38,18 @@ public class DashboardController {
     public Button openProjectButton;
     public Button gamesToFamilyButton;
     public Button goodMergedToFamilyButton;
-    
+
     public Label workDirLabel;
     public Button changeWorkDirButton;
-    
+
     public ListView<String> collectionsView;
     public TextArea textArea;
-    
+
     public Button newCollectionButton;
-    public Button openCollectionButton; //TODO
     public Button deleteCollectionButton;
     public Button renameCollectionButton;
     public Button typeButton;
-    
+
     public Button selectCollectionFilesButton;
     public Button scanCollectionFilesButton;
     public Button scanCollectionHashesButton;
@@ -64,119 +62,118 @@ public class DashboardController {
     private final StageManager stageManager;
     private final ConfigHolder configHolder;
 
+    private boolean showPlatforms = true;
+    private RomsCollection romsCollection;
+
     @Lazy
     public DashboardController(StageManager stageManager, ConfigHolder configHolder) {
         this.stageManager = stageManager;
         this.configHolder = configHolder;
     }
 
-    private LinkedHashMap<String, String> platforms;
-
-    private int level = 0;
-    private RomsCollection romsCollection;
-
     @FXML
     private void initialize() {
-        LogController logController = new LogController(stageManager);
-        anchorPane.getChildren().add(logController);
+
+        anchorPane.getChildren().add(new LogController(stageManager));
         //templateController.getSelectAllButton().setOnAction(event -> selectAllClick());
         //logController.getSelectedLevelsListenerHandles().registerListener(event -> refreshWebView());
-        
-        //TODO config
-        userHome = Paths.get(System.getProperty("user.home"));
-        rootWorkDir = userHome.resolve("shingler");
-        shinglesDir = rootWorkDir.resolve("shingles");
-        collectionsDir = rootWorkDir.resolve("collections");
-        
+
         workDirLabel.setText(rootWorkDir.toString());
 
-        //TODO read from disk
-        platforms = new LinkedHashMap<>();
-        platforms.put("NES", "nes");
-        platforms.put("TEST", "test");
-
-        IOUtils.createDirectory(collectionsDir);
-        platforms.values().forEach(p -> IOUtils.createDirectory(collectionsDir.resolve(p)));
+        collectionsView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        collectionsView.setOnMouseClicked(this::handleCollectionsViewMouseClicked);
 
         showPlatforms();
-
-        collectionsView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        collectionsView.setOnMouseClicked(click -> {
-
-            int selectedCount = collectionsView.getSelectionModel().getSelectedItems().size();
-
-            if (selectedCount > 1) {
-                textArea.setText(selectedCount + " collections are selected");
-                return;
-            }
-
-            boolean dblClick = click.getClickCount() == 2;
-            String selectedItem = collectionsView.getSelectionModel().getSelectedItem();
-
-            if (selectedItem.equals("..")) {
-                if (dblClick) {
-                    showPlatforms();
-                } else {
-                    textArea.setText("");
-                }
-            } else {
-                if (level == 0) {
-                    if (dblClick) {
-                        showCollections(platforms.get(selectedItem));
-                    } else {
-                        showPlatform(platforms.get(selectedItem));
-                    }
-                } else {
-                    loadCollection(selectedItem);
-                }
-            }
-        });
     }
-    
+
+    private void handleCollectionsViewMouseClicked(MouseEvent click) {
+
+        int selectedCount = collectionsView.getSelectionModel().getSelectedItems().size();
+
+        if (selectedCount > 1) {
+            textArea.setText(selectedCount + " items are selected");
+            return;
+        }
+
+        boolean dblClick = (click.getClickCount() == 2);
+        String selectedItem = collectionsView.getSelectionModel().getSelectedItem();
+
+        if (selectedItem.equals("..")) {
+            handleLevelUpClick(dblClick);
+        } else {
+            handleItemClick(dblClick, selectedItem);
+        }
+    }
+
+    private void handleLevelUpClick(boolean dblClick) {
+
+        if (dblClick) {
+            showPlatforms();
+        } else {
+            textArea.setText("");
+        }
+    }
+
+    private void handleItemClick(boolean dblClick, String selectedItem) {
+
+        if (showPlatforms) {
+            if (dblClick) {
+                showPlatformCollections(platforms.get(selectedItem));
+            } else {
+                showPlatformStatus(platforms.get(selectedItem));
+            }
+        } else {
+            selectCollection(selectedItem);
+        }
+    }
+
     private void showPlatforms() {
-        level = 0;
+
+        showPlatforms = true;
         platform = null;
         collectionsView.setItems(FXCollections.observableArrayList(platforms.keySet()));
 
         if (!platforms.isEmpty()) {
             collectionsView.getSelectionModel().selectFirst();
-            showPlatform(platforms.keySet().iterator().next());
+            showPlatformStatus(platforms.keySet().iterator().next());
         }
     }
 
-    private void showPlatform(String selectedItem) {
+    private void showPlatformStatus(String selectedItem) {
+
         platform = selectedItem;
-        List<Path> collections = IOUtils.listFiles(collectionsDir.resolve(platform));
+        List<Path> collections = IOUtils.listFiles(workCollectionsDir());
         textArea.setText("Collections: " + collections.size());
     }
 
-    private void showCollections(String selectedItem) {
-        level = 1;
+    private void showPlatformCollections(String selectedItem) {
+
+        showPlatforms = false;
         platform = selectedItem;
         collectionsView.setItems(FXCollections.observableArrayList(".."));
 
-        Path workCollectionsDir = collectionsDir.resolve(platform);
-        List<Path> collections = IOUtils.listFiles(workCollectionsDir);
+        List<Path> collections = IOUtils.listFiles(workCollectionsDir());
         collectionsView.getItems().addAll(FXCollections.observableArrayList(collections.stream().map(c -> c.getFileName().toString()).collect(Collectors.toList())));
-        collectionsView.getSelectionModel().selectFirst();
+        //collectionsView.getSelectionModel().selectFirst();
         textArea.setText("");
     }
 
-    private void loadCollection(String selectedItem) {
+    private void selectCollection(String selectedItem) {
+
         collection = selectedItem;
-
-        Path workCollectionsDir = collectionsDir.resolve(platform);
-        romsCollection = IOUtils.loadCollection(workCollectionsDir.resolve(collection).toFile());
-
+        loadCollection();
         showCollection();
     }
 
     private void showCollection() {
+
         textArea.setText(collection);
         textArea.appendText("\nType: " + romsCollection.getType());
         textArea.appendText("\nRoms path: " + (null == romsCollection.getRomsPath() ? "---" : romsCollection.getRomsPath()));
         boolean isEmpty = romsCollection.getGids().isEmpty();
         textArea.appendText("\nRoms count: " + (isEmpty ? "---" : romsCollection.getGids().size()));
+
+        typeButton.setText(romsCollection.getType().toString());
 
         boolean hasShaHash = !isEmpty && !(null == romsCollection.getGids().values().iterator().next().getSha1());
         boolean hasCrcHash = !isEmpty && !(null == romsCollection.getGids().values().iterator().next().getCrc32());
@@ -203,7 +200,7 @@ public class DashboardController {
     //TODO delete if not need
     public void gamesToFamilyButtonClick() {
     }
-    
+
     public void goodMergedToFamilyButtonClick() {
 
     }
@@ -212,19 +209,18 @@ public class DashboardController {
     }
 
     public void newCollectionClick() {
-        RomsCollection collection = new RomsCollection();
-        collection.setTitle("untitled");
-        collection.setPlatform(platform);
-        IOUtils.serialize(collectionsDir.resolve(platform).resolve(collection.getTitle()).toFile(), collection);
 
-        showCollections(platform);
-    }
+        collection = "untitled";
+        romsCollection = new RomsCollection();
+        romsCollection.setTitle(collection);
+        romsCollection.setPlatform(platform);
+        saveCollection();
 
-    //TODO delete???
-    public void openCollectionClick() {
+        showPlatformCollections(platform);
     }
 
     public void deleteCollectionButtonClick() {
+
         String currentCollection = collectionsView.getSelectionModel().getSelectedItem();
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Confirmation Dialog");
@@ -233,24 +229,17 @@ public class DashboardController {
 
         alert.showAndWait().map(result -> {
             if (result == ButtonType.OK) {
-                Path workCollectionsDir = collectionsDir.resolve(platform);
-
-                try {
-                    Files.delete(workCollectionsDir.resolve(currentCollection));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-                showCollections(platform);
                 collection = null;
-                collectionsView.getSelectionModel().select(0);
-                textArea.setText("");
+                deleteCollection(currentCollection);
+                showPlatformCollections(platform);
             }
             return null;
         });
     }
 
+    //TODO rename, delete, type implement in separate management window
     public void renameCollectionButtonClick() {
+
         String currentCollection = collectionsView.getSelectionModel().getSelectedItem();
         TextInputDialog dialog = new TextInputDialog(currentCollection);
         dialog.setTitle("Text Input Dialog");
@@ -262,22 +251,29 @@ public class DashboardController {
             collection = result.get();
             romsCollection.setTitle(collection);
 
-            Path workCollectionsDir = collectionsDir.resolve(platform);
-            IOUtils.serialize(workCollectionsDir.resolve(collection).toFile(), romsCollection);
+            saveCollection();
+            deleteCollection(currentCollection);
 
-            try {
-                Files.delete(workCollectionsDir.resolve(currentCollection));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            showCollections(platform);
+            showPlatformCollections(platform);
             collectionsView.getSelectionModel().select(collection);
             showCollection();
         }
     }
 
+    private void loadCollection() {
+        romsCollection = IOUtils.loadCollection(workCollectionsDir().resolve(collection).toFile());
+    }
+
+    private void saveCollection() {
+        IOUtils.serialize(workCollectionsDir().resolve(collection).toFile(), romsCollection);
+    }
+
+    private void deleteCollection(String currentCollection) {
+        IOUtils.deleteFile(workCollectionsDir().resolve(currentCollection));
+    }
+
     public void typeButtonClick() {
+
         CollectionType type = CollectionType.valueOf(typeButton.getText());
         int id = type.ordinal();
         id = (id == CollectionType.values().length - 1) ? 0 : id + 1;
@@ -285,25 +281,26 @@ public class DashboardController {
         typeButton.setText(type.name());
         romsCollection.setType(type);
 
-        Path workCollectionsDir = collectionsDir.resolve(platform);
-        IOUtils.serialize(workCollectionsDir.resolve(collection).toFile(), romsCollection);
+        saveCollection();
         showCollection();
     }
 
     public void selectCollectionFilesButtonClick() {
+
         Stage stage = (Stage) gamesToFamilyButton.getScene().getWindow();
         DirectoryChooser directoryChooser = configHolder.getDirectoryChooser("Select directory with unpacked games");
         File dir = directoryChooser.showDialog(stage);
+        configHolder.saveInitialDir(directoryChooser, dir);
+
         if (dir != null) {
             romsCollection.setRomsPath(dir.getAbsolutePath());
-
             scanCollectionFilesButtonClick();
         }
     }
 
     public void scanCollectionFilesButtonClick() {
 
-        Thread thread = new Thread(() -> {
+        runInBackground(() -> {
             switch (romsCollection.getType()) {
                 case PLAIN:
                     List<Path> romsPaths = IOUtils.listFiles(Paths.get(romsCollection.getRomsPath()));
@@ -317,24 +314,22 @@ public class DashboardController {
                     break;
             }
 
-            Path workCollectionsDir = collectionsDir.resolve(platform);
-            IOUtils.serialize(workCollectionsDir.resolve(collection).toFile(), romsCollection);
-
+            saveCollection();
             showCollection();
         });
-        thread.setDaemon(true);
-        thread.start();
     }
 
     public void scanCollectionHashesButtonClick() {
 
-        Thread thread = new Thread(() -> {
+        runInBackground(() -> {
             try {
                 switch (romsCollection.getType()) {
                     case PLAIN:
+                        //TODO may be use saved GIDs
                         List<Path> romsPaths = IOUtils.listFiles(Paths.get(romsCollection.getRomsPath()));
                         Map<String, GID> gids = Main1024a.calculateHashes(romsPaths);
                         romsCollection.setGids(gids);
+                        break;
                     case MERGED:
                         List<Path> familiesPaths = IOUtils.listFiles(Paths.get(romsCollection.getRomsPath()));
                         Map<String, GID> mergedGids = Main1024a.calculateMergedHashes(familiesPaths.stream().filter(f -> f.getFileName().toString().endsWith(".7z")).collect(Collectors.toList()));
@@ -342,38 +337,34 @@ public class DashboardController {
                         break;
                 }
 
-                Path workCollectionsDir = collectionsDir.resolve(platform);
-                IOUtils.serialize(workCollectionsDir.resolve(collection).toFile(), romsCollection);
-
+                saveCollection();
                 showCollection();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         });
-        thread.setDaemon(true);
-        thread.start();
     }
 
     public void generateShinglesButtonClick() {
+
         Path workShinglesDir = shinglesDir.resolve(platform);
         Main1024a.createSampleDirs(workShinglesDir);
 
         Path romsFolder = Paths.get(romsCollection.getRomsPath());
 
-        Thread thread = new Thread(() -> {
+        runInBackground(() -> {
             try {
                 Main1024a.generateShinglesNio(romsCollection, romsFolder, workShinglesDir);
-
                 showCollection();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         });
-        thread.setDaemon(true);
-        thread.start();
+        //TODO show something?
     }
 
     public void compareCollectionsButtonClick() {
+        //TODO initialize COMPARE controller directly
         selectedCollections = collectionsView.getSelectionModel().getSelectedItems();
         stageManager.showNewWindow(FxmlView.COMPARE);
     }

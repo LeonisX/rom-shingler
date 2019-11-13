@@ -3,21 +3,38 @@ package md.leonis.shingler.gui.controller;
 import javafx.animation.PauseTransition;
 import javafx.fxml.FXML;
 import javafx.util.Duration;
+import md.leonis.shingler.gui.config.ConfigHolder;
 import md.leonis.shingler.gui.view.FxmlView;
 import md.leonis.shingler.gui.view.StageManager;
-import org.springframework.beans.factory.annotation.Autowired;
+import md.leonis.shingler.utils.IOUtils;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
+
+import static md.leonis.shingler.gui.config.ConfigHolder.collectionsDir;
+import static md.leonis.shingler.gui.config.ConfigHolder.platforms;
 
 @Controller
 public class SplashController {
 
+    private final ConfigHolder configHolder;
+    private final StageManager stageManager;
+
     @Lazy
-    @Autowired
-    private StageManager stageManager;
+    public SplashController(StageManager stageManager, ConfigHolder configHolder) {
+        this.stageManager = stageManager;
+        this.configHolder = configHolder;
+    }
 
     @FXML
     private void initialize() {
+
+        //TODO service, read from disk
+        platforms.put("NES", "nes");
+        platforms.put("TEST", "test");
+
+        IOUtils.createDirectories(collectionsDir);
+        platforms.values().forEach(p -> IOUtils.createDirectories(collectionsDir.resolve(p)));
+
         //TODO switch on
         //PauseTransition delay = new PauseTransition(Duration.seconds(1));
         PauseTransition delay = new PauseTransition(Duration.millis(1));
