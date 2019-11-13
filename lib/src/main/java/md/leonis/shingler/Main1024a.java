@@ -29,7 +29,6 @@ public class Main1024a {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Main1024a.class);
 
-
     private static String GAMES_DIR = "D:\\Downloads\\games\\";
     private static String WORK_DIR = "D:\\Downloads\\games\\";
 
@@ -46,7 +45,7 @@ public class Main1024a {
     private static final Map<Integer, Map<String, long[]>> SHINGLE_MAP =
             SAMPLES.stream().collect(Collectors.toMap(Function.identity(), HashMap::new));
 
-    static final Cache<File, long[]> cache = new Cache<>(0, 0, 1600);
+    static final Cache<String, long[]> cache = new Cache<>(0, 0, 2400);
 
     @SuppressWarnings("all")
     public static void main(String[] args) throws IOException {
@@ -177,48 +176,44 @@ public class Main1024a {
 
         SHINGLE_MAP.forEach((key, value) -> {
             int index = key;
-            if (index > 1) {
+            if (index > SHINGLE_MAP_THRESHOLD) {
 
                 File shinglesMapFile = new File("shinglesMap" + index);
-
                 Map<String, long[]> shinglesMap = new HashMap<>();
 
-                if (index > SHINGLE_MAP_THRESHOLD) {
+                if (shinglesMapFile.exists()) {
+                    System.out.println(String.format("Getting sample%s from disk...", index));
+                    shinglesMap = ShingleUtils.loadMap(shinglesMapFile);
+                } else {
+                    System.out.println(String.format("Generating sample%s...", index));
+                    for (int i = 0; i < files.size(); i++) {
+                        File file = files.get(i);
 
-                    if (shinglesMapFile.exists()) {
-                        System.out.println(String.format("Getting sample%s from disk...", index));
-                        shinglesMap = ShingleUtils.loadMap(shinglesMapFile);
-                    } else {
-                        System.out.println(String.format("Generating sample%s...", index));
-                        for (int i = 0; i < files.size(); i++) {
-                            File file = files.get(i);
+                        File sampleFile = new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + file.getName() + ".shg");
 
-                            File sampleFile = new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + file.getName() + ".shg");
+                        if (!sampleFile.exists()) {
+
+                            System.out.println(String.format(Locale.US, "%s: %2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
+
+                            File srcSampleFolder = SAMPLE_DIRS_MAP.get(index);
+
+                            long[] shingles = ShingleUtils.loadFromCache(cache, new File(srcSampleFolder.getAbsolutePath() + File.separator + file.getName() + ".shg"));
+                            long[] filteredShingles = filterArrays(shingles, index);
+
+                            shinglesMap.put(file.getName(), filteredShingles);
 
                             if (!sampleFile.exists()) {
-
-                                System.out.println(String.format(Locale.US, "%s: %2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
-
-                                File srcSampleFolder = SAMPLE_DIRS_MAP.get(index);
-
-                                long[] shingles = ShingleUtils.loadFromCache(cache, new File(srcSampleFolder.getAbsolutePath() + File.separator + file.getName() + ".shg"));
-                                long[] filteredShingles = filterArrays(shingles, index);
-
-                                shinglesMap.put(file.getName(), filteredShingles);
-
-                                if (!sampleFile.exists()) {
-                                    ShingleUtils.save(filteredShingles, sampleFile);
-                                }
-                            } else {
-                                System.out.println(String.format(Locale.US, "Reading: %s: %2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
-                                long[] filteredShingles = ShingleUtils.loadFromCache(cache, sampleFile);
-                                shinglesMap.put(file.getName(), filteredShingles);
+                                ShingleUtils.save(filteredShingles, sampleFile);
                             }
+                        } else {
+                            System.out.println(String.format(Locale.US, "Reading: %s: %2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
+                            long[] filteredShingles = ShingleUtils.loadFromCache(cache, sampleFile);
+                            shinglesMap.put(file.getName(), filteredShingles);
                         }
-                        serialize(shinglesMapFile, shinglesMap);
                     }
-                    SHINGLE_MAP.replace(index, shinglesMap);
+                    serialize(shinglesMapFile, shinglesMap);
                 }
+                SHINGLE_MAP.replace(index, shinglesMap);
             }
         });
     }
@@ -261,6 +256,75 @@ public class Main1024a {
         families = mergeFamilies(families, 30, 64);
 
         //TODO проходиться сиротами и смотреть куда пристроить.
+    }
+
+    static void calculateRelations(Map<String, Family> families, int index, File familyFile) {
+
+        int[] k = {0};
+        int[] save = {0};
+
+        families.values().forEach(family -> {
+            int relationsCount = family.getMembers().size() * (family.getMembers().size() - 1) / 2;
+            if (family.getRelations().size() == relationsCount) { // x * (x - 1) / 2
+                System.out.println(String.format("%nSkipping: %s... [%s] %2.3f%%", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size()));
+                k[0]++;
+            } else {
+
+                System.out.println(String.format("%nComparing: %s... [%s] %2.3f%%", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size()));
+
+                //family.getRelations().clear();
+
+                for (int i = 0; i < family.size() - 1; i++) {
+
+                    if (save[0] > 100000 * index) {
+                        System.out.println("Saving family...");
+                        IOUtils.serialize(familyFile, families);
+                        save[0] = 0;
+                    }
+
+                    Name name1 = family.get(i);
+
+                    if (family.hasAllRelations(name1, i)) {
+                        System.out.println(String.format("Skipping all relations %s: %s", i, name1.getName()));
+                        continue;
+                    }
+
+                    long[] s1Set = ShingleUtils.loadFromCache(cache, new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name1.getName() + ".shg"));
+
+                    for (int j = i + 1; j < family.size(); j++) {
+
+                        Name name2 = family.get(j);
+
+                        if (family.containsRelation(name1, name2)) {
+                            System.out.println(String.format("Skipping relation %s -> %s: %s -> %s", i, j, name1.getName(), name2.getName()));
+                            continue;
+                        }
+
+                        if (name2.isDone()) {
+                            continue;
+                        }
+
+                        long[] s2Set = ShingleUtils.loadFromCache(cache, new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name2.getName() + ".shg"));
+
+                        long[] s1intersect = intersectArrays(s1Set, s2Set);
+                        long[] s1union = unionArrays(s1Set, s2Set);
+                        double jakkard = s1intersect.length * 100.0 / s1union.length;
+
+                        name1.addJakkardStatus(jakkard);
+                        name2.addJakkardStatus(jakkard);
+
+                        Result result = new Result(name1, name2, jakkard);
+                        System.out.println(i + "->" + j + ": " + result);
+
+                        family.addRelation(result);
+                        save[0]++;
+                    }
+                    name1.setDone(true);
+                }
+                family.setMother(family.getMembers().stream().max(Comparator.comparing(Name::getJakkardStatus)).orElse(null));
+                k[0]++;
+            }
+        });
     }
 
     private static Map<String, Family> mergeFamilies(Map<String, Family> families, double jakkardIndex, int index) {
@@ -307,10 +371,9 @@ public class Main1024a {
 
                 long[] s1intersect = intersectArrays(s1Set, s2Set);
                 long[] s1union = unionArrays(s1Set, s2Set);
-                double relative = s1intersect.length * 100.0 / s1Set.length;
                 double jakkard = s1intersect.length * 100.0 / s1union.length;
 
-                Result result = new Result(name1, name2, relative, jakkard);
+                Result result = new Result(name1, name2, jakkard);
                 //System.out.println(result);
 
                 if (jakkard >= jakkardIndex) {
@@ -334,91 +397,6 @@ public class Main1024a {
         families2.values().forEach(Main1024a::recalculateJakkard);
 
         return families2;
-    }
-
-    static void calculateRelations(Map<String, Family> families, int index, File familyFile) {
-
-        int[] k = {0};
-
-        int[] save = {0};
-
-        families.values().forEach(family -> {
-            int relationsCount = family.getMembers().size() * (family.getMembers().size() - 1) / 2;
-            if (family.getRelations().size() == relationsCount) { // x * (x - 1) / 2
-                System.out.println(String.format("%nSkipping: %s... [%s] %2.3f%%", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size()));
-                k[0]++;
-            } else {
-
-                System.out.println(String.format("%nComparing: %s... [%s] %2.3f%%", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size()));
-
-                //family.getRelations().clear();
-
-                for (int i = 0; i < family.size() - 1; i++) {
-
-                    if (save[0] > 100000 * index) {
-                        System.out.println("Saving family...");
-                        IOUtils.serialize(familyFile, families);
-                        save[0] = 0;
-                    }
-
-                    Name name1 = family.get(i);
-
-                    if (family.hasAllRelations(name1, i)) {
-                        System.out.println(String.format("Skipping all relations %s: %s", i, name1.getName()));
-                        continue;
-                    }
-
-                    long[] s1Set;
-                    // TODO use one cache, not two
-                    if (index > SHINGLE_MAP_THRESHOLD) {
-                        s1Set = SHINGLE_MAP.get(index).get(name1.getName());
-                    } else {
-                        s1Set = ShingleUtils.loadFromCache(cache, new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name1.getName() + ".shg"));
-                    }
-
-                    for (int j = i + 1; j < family.size(); j++) {
-
-                        Name name2 = family.get(j);
-
-                        if (family.containsRelation(name1, name2)) {
-                            System.out.println(String.format("Skipping relation %s -> %s: %s -> %s", i, j, name1.getName(), name2.getName()));
-                            continue;
-                        }
-
-                        if (name2.isDone()) {
-                            continue;
-                        }
-
-                        long[] s2Set;
-                        if (index > SHINGLE_MAP_THRESHOLD) {
-                            s2Set = SHINGLE_MAP.get(index).get(name2.getName());
-                        } else {
-                            s2Set = ShingleUtils.loadFromCache(cache, new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name2.getName() + ".shg"));
-                        }
-
-                        long[] s1intersect = intersectArrays(s1Set, s2Set);
-                        long[] s1union = unionArrays(s1Set, s2Set);
-                        double relative = s1intersect.length * 100.0 / s1Set.length;
-                        double jakkard = s1intersect.length * 100.0 / s1union.length;
-
-                        name1.addRelativeStatus(relative);
-                        name2.addRelativeStatus(relative);
-
-                        name1.addJakkardStatus(jakkard);
-                        name2.addJakkardStatus(jakkard);
-
-                        Result result = new Result(name1, name2, relative, jakkard);
-                        System.out.println(i + "->" + j + ": " + result);
-
-                        family.addRelation(result);
-                        save[0]++;
-                    }
-                    name1.setDone(true);
-                }
-                family.setMother(family.getMembers().stream().max(Comparator.comparing(Name::getJakkardStatus)).orElse(null));
-                k[0]++;
-            }
-        });
     }
 
     private static List<Name> deleteNonSiblings(Family fam, double jakkardIndex) {
@@ -497,12 +475,10 @@ public class Main1024a {
         return deleted;
     }
 
-
     @Measured
     private static void recalculateJakkard(Family family) {
         family.getMembers().forEach(m -> {
             List<Result> results = family.getRelations().stream().filter(r -> r.getName1().equals(m) || r.getName2().equals(m)).collect(Collectors.toList());
-            m.setRelativeStatus(results.stream().mapToDouble(Result::getRelative).sum());
             m.setJakkardStatus(results.stream().mapToDouble(Result::getJakkard).sum());
         });
     }
@@ -629,7 +605,6 @@ public class Main1024a {
             throw new RuntimeException(e);
         }
     }
-
 
     public static Map<String, GID> calculateHashes(List<Path> files) {
 

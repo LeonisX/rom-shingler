@@ -1,6 +1,7 @@
 package md.leonis.shingler.gui.controller;
 
 import javafx.collections.FXCollections;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
@@ -55,6 +56,7 @@ public class DashboardController {
     public Button scanCollectionHashesButton;
     public Button generateShinglesButton;
     public Button compareCollectionsButton;
+    public Button manageFamiliesButton;
 
     @FXML
     private AnchorPane anchorPane;
@@ -367,5 +369,9 @@ public class DashboardController {
         //TODO initialize COMPARE controller directly
         selectedCollections = collectionsView.getSelectionModel().getSelectedItems();
         stageManager.showNewWindow(FxmlView.COMPARE);
+    }
+
+    public void manageFamiliesButtonClick(ActionEvent actionEvent) {
+        stageManager.showNewWindow(FxmlView.FAMILY);
     }
 }

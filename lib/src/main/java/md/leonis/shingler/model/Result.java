@@ -8,13 +8,11 @@ public class Result implements Serializable {
 
     private Name name1;
     private Name name2;
-    private double relative;
     private double jakkard;
 
-    public Result(Name name1, Name name2, double relative, double jakkard) {
+    public Result(Name name1, Name name2, double jakkard) {
         this.name1 = name1;
         this.name2 = name2;
-        this.relative = relative;
         this.jakkard = jakkard;
     }
 
@@ -26,16 +24,12 @@ public class Result implements Serializable {
         return name2;
     }
 
-    public double getRelative() {
-        return relative;
-    }
-
     public double getJakkard() {
         return jakkard;
     }
 
     @Override
     public String toString() {
-        return "\"" + name1.getName() + "\",\"" + name2.getName() + "\",\"" + relative + "\",\"" + jakkard + "\"";
+        return "\"" + name1.getName() + "\",\"" + name2.getName() + "\",\"" + jakkard + "\"";
     }
 }

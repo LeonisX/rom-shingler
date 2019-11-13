@@ -83,8 +83,9 @@ public class ShingleUtils {
     }
 
     @Measured
-    public static long[] loadFromCache(Cache<File, long[]> cache, File file) {
-        long[] cachedValue = cache.get(file);
+    public static long[] loadFromCache(Cache<String, long[]> cache, File file) {
+        String key = file.getAbsolutePath();
+        long[] cachedValue = cache.get(key);
         if (cachedValue != null) {
             return cachedValue;
         }
@@ -97,7 +98,28 @@ public class ShingleUtils {
             System.gc();
             System.out.println(String.format("Now we have %s Mb of RAM", getFreeMemory()));
         }
-        cache.put(file, result);
+        cache.put(key, result);
+
+        return result;
+    }
+
+    @Measured
+    public static long[] loadFromCache(Cache<String, long[]> cache, Path file) {
+        String key = file.toAbsolutePath().toString();
+        long[] cachedValue = cache.get(key);
+        if (cachedValue != null) {
+            return cachedValue;
+        }
+
+        long[] result = ShingleUtils.load(file);
+        if (getFreeMemory() < 250) {
+            System.out.println(String.format("We have only %s Mb of RAM", getFreeMemory()));
+            System.out.println("Cleaning Cache...");
+            cache.cleanup();
+            System.gc();
+            System.out.println(String.format("Now we have %s Mb of RAM", getFreeMemory()));
+        }
+        cache.put(key, result);
 
         return result;
     }

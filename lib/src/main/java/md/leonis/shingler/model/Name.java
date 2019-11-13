@@ -12,7 +12,6 @@ public class Name implements Serializable {
     private int index = 100;
 
     private double jakkardStatus = 0;
-    private double relativeStatus = 0;
 
     public Name(File file, boolean done) {
         this.file = file;
@@ -123,18 +122,6 @@ public class Name implements Serializable {
 
     public void setJakkardStatus(double jakkardStatus) {
         this.jakkardStatus = jakkardStatus;
-    }
-
-    public double getRelativeStatus() {
-        return relativeStatus;
-    }
-
-    public void setRelativeStatus(double relativeStatus) {
-        this.relativeStatus = relativeStatus;
-    }
-
-    public void addRelativeStatus(double status) {
-        relativeStatus += status;
     }
 
     public void addJakkardStatus(double status) {

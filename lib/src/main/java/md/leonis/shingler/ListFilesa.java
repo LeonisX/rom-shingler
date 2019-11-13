@@ -1,16 +1,20 @@
 package md.leonis.shingler;
 
-import md.leonis.shingler.model.Family;
-import md.leonis.shingler.model.GID;
-import md.leonis.shingler.model.Name;
+import md.leonis.shingler.model.*;
 import md.leonis.shingler.utils.IOUtils;
 import md.leonis.shingler.utils.MeasureMethodTest;
+import md.leonis.shingler.utils.Measured;
+import md.leonis.shingler.utils.ShingleUtils;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Function;
@@ -21,31 +25,266 @@ import static md.leonis.shingler.utils.BinaryUtils.*;
 
 public class ListFilesa {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ListFilesa.class);
+
+    private static final Cache<String, long[]> cache = new Cache<>(0, 0, 2400);
+
+    private static Path userHome = Paths.get(System.getProperty("user.home"));
+    private static Path rootWorkDir = userHome.resolve("shingler");
+    private static Path shinglesDir = rootWorkDir.resolve("shingles");
+    private static Path collectionsDir = rootWorkDir.resolve("collections");
+    private static Path familiesDir = rootWorkDir.resolve("families");
+
+    private static String collection = "GoodNES 3.14";
+    private static String platform = "nes";
+    private static RomsCollection romsCollection;
+    private static Map<String, GID> byHash;
+    private static Map<String, GID> byTitle;
+
+    private static Path romsDir = Paths.get("D:\\Downloads\\games314");
+
     public static void main(String[] args) throws IOException {
 
         MeasureMethodTest.premain();
+        generateFamilies();
+    }
 
-        System.out.println("Reading list of games...");
-        List<File> files = Arrays.asList(Objects.requireNonNull(new File("D:\\Downloads\\Nintendo Famicom - GoodNES ROMS v3.23b Merged").listFiles()));
+    // Need shingles
+    private static void generateFamilies() {
 
-        System.out.println("Get file names from archives...");
-        Map<File, List<String>> map = files.stream().collect(Collectors.toMap(Function.identity(), ListFilesa::listFiles));
+        LOGGER.info("Reading list of games...");
+        List<File> archives = IOUtils.listFiles(romsDir.toFile()).stream().filter(f -> f.getName().endsWith(".7z")).collect(Collectors.toList());
 
-        System.out.println("Preparing cache...");
-        Main1024a.loadSamplesInCache(map.values().stream().flatMap(v -> v.stream().map(File::new)).collect(Collectors.toList()));
+        LOGGER.info("Reading list of games...");
+        romsCollection = IOUtils.loadCollection(workCollectionsDir().resolve(collection).toFile());
+        byHash = romsCollection.getGids().values().stream().collect(Collectors.toMap(h -> bytesToHex(h.getSha1()), Function.identity()));
+        byTitle = romsCollection.getGids().values().stream().collect(Collectors.toMap(GID::getTitle, Function.identity()));
 
-        System.out.println("Creating list of unique games...");
-        Map<File, List<String>> filtereMap = new HashMap<>();
+        LOGGER.info("Get file names from archives...");
+        Map<File, List<String>> map = archives.stream().collect(Collectors.toMap(Function.identity(), ListFilesa::listFiles));
+
+        //TODO not need :(
+        //LOGGER.info("Preparing cache...");
+        //Main1024a.loadSamplesInCache(map.values().stream().flatMap(v -> v.stream().map(File::new)).collect(Collectors.toList()));
+
+        //TODO this code is needed when generate families from scratch
+        /*LOGGER.info("Creating list of unique games...");
+        Map<File, List<String>> filteredMap = new HashMap<>();
 
         // really unique
         map.forEach((key, value) -> {
-            List<String> names = value.stream().filter(ListFilesa::nonHack).map(s -> s.substring(0, s.lastIndexOf('.'))).map(ListFilesa::normalize).distinct().filter(v -> !v.equals(normalize(key.getName().replace(".7z", "")))).collect(Collectors.toList());
-            filtereMap.put(key, names);
-        });
+            List<String> names = value.stream().filter(ListFilesa::nonHack)
+                    .map(s -> s.substring(0, s.lastIndexOf('.')))
+                    .map(ListFilesa::normalize)
+                    .distinct()
+                    .filter(v -> !v.equals(normalize(key.getName().replace(".7z", ""))))
+                    .collect(Collectors.toList());
+            filteredMap.put(key, names);
+        });*/
 
+        //saveUniqueListToFile(filteredMap);
+
+        LOGGER.info("Generating families...");
+        generateFamilies(map, 8, 30);
+
+        //otherStatistics(map);
+    }
+
+    private static void generateFamilies(Map<File, List<String>> map, int index, int jakkardIndex) {
+
+        Main1024a.cache.fullCleanup();
+
+        IOUtils.createDirectories(familiesDir.resolve(platform));
+        File familyFile = familiesDir.resolve(platform).resolve(collection + index).toFile();
+
+        Map<String, Family> families;
+        if (familyFile.exists()) {
+            System.out.println(String.format("%nReading families from file %s...", familyFile));
+            families = IOUtils.loadFamilies(familyFile);
+        } else {
+            System.out.println("\nGenerating families...");
+            Map<String, List<Name>> namesList = new HashMap<>();
+            map.forEach((key, value) -> namesList.put(key.getName(), value.stream().map(v -> new Name(new File(v), false)).collect(Collectors.toList())));
+
+            families = namesList.entrySet().stream()/*.filter(e -> e.getValue().size() != 1)*/
+                    .collect(Collectors.toMap(Map.Entry::getKey, e -> new Family(e.getKey(), e.getValue())));
+        }
+
+        calculateRelations(families, index, familyFile);
+
+        System.out.println("Saving family...");
+        IOUtils.serialize(familyFile, families);
+
+        int total = (int) map.values().stream().mapToLong(Collection::size).sum();
+        int inFamily = families.values().stream().map(Family::size).mapToInt(Integer::intValue).sum();
+
+        System.out.println("Total: " + total);
+        System.out.println("In family: " + inFamily);
+        System.out.println("Not in family: " + (total - inFamily));
+
+        //Main1024a.saveDropCsv(families, index, 50);
+
+        //TODO jakkardIndex
+        /*Main1024a.drop(families, 50);
+        inFamily = families.values().stream().map(Main1024a.Family::size).mapToInt(Integer::intValue).sum();
+
+        System.out.println("Total: " + total);
+        System.out.println("In family: " + inFamily);
+        System.out.println("Not in family: " + (total - inFamily));*/
+
+        System.out.println("==");
+        //TODO merge jakkardIndex 20
+        //TODO index 1 or 16. Better 1
+        //families = mergeFamilies(families, 30, 64);
+
+        //TODO проходиться сиротами и смотреть куда пристроить.
+    }
+
+    static void calculateRelations(Map<String, Family> families, int index, File familyFile) {
+
+        Path sampleDir = shinglesDir.resolve(platform).resolve("sample" + index);
+
+        int[] k = {0};
+        int[] save = {0};
+
+        families.values().forEach(family -> {
+
+            if (save[0] > 100000 * index) {
+                System.out.println("Saving family...");
+                IOUtils.serialize(familyFile, families);
+                save[0] = 0;
+            }
+
+            int relationsCount = family.getMembers().size() * (family.getMembers().size() - 1) / 2;
+            if (family.getRelations().size() == relationsCount) { // x * (x - 1) / 2
+                System.out.println(String.format("%nSkipping: %s... [%s] %2.3f%%", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size()));
+                k[0]++;
+            } else {
+
+                System.out.println(String.format("%nComparing: %s... [%s] %2.3f%%", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size()));
+                family.getRelations().clear();
+
+                for (int i = 0; i < family.size() - 1; i++) {
+
+                    Name name1 = family.get(i);
+
+                    long[] s1Set = ShingleUtils.loadFromCache(cache, sampleDir.resolve(bytesToHex(byTitle.get(name1.getName()).getSha1()) + ".shg"));
+
+                    for (int j = i + 1; j < family.size(); j++) {
+
+                        Name name2 = family.get(j);
+
+                        long[] s2Set = ShingleUtils.loadFromCache(cache, sampleDir.resolve(bytesToHex(byTitle.get(name2.getName()).getSha1()) + ".shg"));
+
+                        long[] s1intersect = intersectArrays(s1Set, s2Set);
+                        long[] s1union = unionArrays(s1Set, s2Set);
+                        double jakkard = s1intersect.length * 100.0 / s1union.length;
+
+                        name1.addJakkardStatus(jakkard);
+                        name2.addJakkardStatus(jakkard);
+
+                        Result result = new Result(name1, name2, jakkard);
+                        System.out.println(i + "->" + j + ": " + result);
+
+                        family.addRelation(result);
+                        save[0]++;
+                    }
+                    name1.setDone(true);
+                }
+                family.setMother(family.getMembers().stream().max(Comparator.comparing(Name::getJakkardStatus)).orElse(null));
+                k[0]++;
+            }
+        });
+    }
+
+    static void drop(Map<String, Family> families, double jakkardIndex) {
+
+        families.values().forEach(family -> {
+            List<Name> toDelete = deleteNonSiblings(family, jakkardIndex);
+
+            toDelete.forEach(td -> System.out.println(String.format("Dropping: %s (%2.4f%%)", td.getName(), td.getJakkardStatus() / family.size())));
+
+            family.setRelations(family.getRelations().stream().filter(r -> toDelete.contains(r.getName1()) || toDelete.contains(r.getName2())).collect(Collectors.toList()));
+            family.getRelationsCount().forEach((key, value) ->
+                    family.getRelationsCount().replace(key, (int) family.getRelations().stream().filter(r -> r.getName1().getName().equals(key)).count())
+            );
+            family.setIndividualRelations(family.getIndividualRelations().stream().filter(r -> toDelete.stream().anyMatch(d -> r.startsWith(d.getName()))).collect(Collectors.toSet()));
+
+            family.getMembers().removeAll(toDelete);
+
+            recalculateJakkard(family);
+        });
+    }
+
+    private static List<Name> deleteNonSiblings(Family fam, double jakkardIndex) {
+        Family family = new Family(fam);
+
+        List<Name> deleted = new ArrayList<>();
+
+        //TODO revert
+        if (family.getName().equals("Public Domain.7z") || family.getName().equals("Multicarts Collection.7z")
+                || family.getName().equals("Wxn Collection.7z") || family.getName().equals("VT03 Collection.7z")) {
+            return deleted;
+        }
+
+        double status = family.getJakkardStatus(0);
+        double k = 100 / status;
+
+        for (int i = 1; i < family.size(); i++) {
+            if (family.getJakkardStatus(i) * k < jakkardIndex) {
+                deleted.add(family.get(i));
+            }
+        }
+
+        return deleted;
+    }
+
+    static void saveDropCsv(Map<String, Family> families, int index, double jakkardIndex) {
+
+        List<String> toDelete = families.values().stream().flatMap(family -> getNonSiblings(family, jakkardIndex).stream()
+                .sorted(Comparator.comparing(Name::getJakkardStatus))
+                .map(n -> String.format("\"%s\";\"%s\";\"%2.4f\"", family.getName().replace(".7z", ""), n.getName(), n.getJakkardStatus() / family.size()))).collect(Collectors.toList());
+
+        try {
+            Files.write(Paths.get("low-jakkard" + index + ".csv"), toDelete, Charset.defaultCharset());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static List<Name> getNonSiblings(Family family, double jakkardIndex) {
+
+        List<Name> deleted = new ArrayList<>();
+
+        if (family.getName().equals("Public Domain.7z") || family.getName().equals("Multicarts Collection.7z")
+                || family.getName().equals("Wxn Collection.7z") || family.getName().equals("VT03 Collection.7z")) {
+            return deleted;
+        }
+
+        double status = family.getJakkardStatus(0);
+        double k = 100 / status;
+
+        for (int i = 1; i < family.size(); i++) {
+            if (family.getJakkardStatus(i) * k < jakkardIndex) {
+                deleted.add(family.get(i));
+            }
+        }
+
+        return deleted;
+    }
+
+    @Measured
+    private static void recalculateJakkard(Family family) {
+        family.getMembers().forEach(m -> {
+            List<Result> results = family.getRelations().stream().filter(r -> r.getName1().equals(m) || r.getName2().equals(m)).collect(Collectors.toList());
+            m.setJakkardStatus(results.stream().mapToDouble(Result::getJakkard).sum());
+        });
+    }
+
+    private static void saveUniqueListToFile(Map<File, List<String>> filteredMap) throws IOException {
         List<String> lines = new ArrayList<>();
 
-        filtereMap.entrySet().stream().sorted(Comparator.comparing(e -> e.getKey().getName())).forEach(e -> {
+        filteredMap.entrySet().stream().sorted(Comparator.comparing(e -> e.getKey().getName())).forEach(e -> {
             lines.add(e.getKey().getName().replace(".7z", ""));
             if (e.getValue().size() >= 1) {
                 e.getValue().forEach(v -> lines.add("    " + v));
@@ -54,9 +293,9 @@ public class ListFilesa {
         });
 
         Files.write(Paths.get("unique.txt"), lines);
+    }
 
-        //generateFamilies(map, 1, 30);
-
+    private static void otherStatistics(Map<File, List<String>> map) {
         System.out.println("Generating families...");
         Main1024a.SAMPLES.forEach(index -> {
             if (!new File("low-jakkard" + index + ".csv").exists())
@@ -109,55 +348,6 @@ public class ListFilesa {
     // a < b = ((b-a)/a) * 100
     static double deviation(double d1, double d2) {
         return Math.abs(d2 - d1) / d1 * 100;
-    }
-
-    private static void generateFamilies(Map<File, List<String>> map, int index, int jakkardIndex) {
-
-        Main1024a.cache.fullCleanup();
-
-        File familyFile = new File("list-family" + index);
-
-        Map<String, Family> families;
-        if (familyFile.exists()) {
-            System.out.println(String.format("%nReading families from file %s...", familyFile));
-            families = IOUtils.loadFamilies(familyFile);
-        } else {
-            System.out.println("\nGenerating families...");
-            Map<String, List<Name>> namesList = new HashMap<>();
-            map.forEach((key, value) -> namesList.put(key.getName(), value.stream().map(v -> new Name(new File(v), false)).collect(Collectors.toList())));
-
-            families = namesList.entrySet().stream()/*.filter(e -> e.getValue().size() != 1)*/
-                    .collect(Collectors.toMap(Map.Entry::getKey, e -> new Family(e.getKey(), e.getValue())));
-        }
-
-        Main1024a.calculateRelations(families, index, familyFile);
-
-        System.out.println("Saving family...");
-        IOUtils.serialize(familyFile, families);
-
-        int total = (int) map.values().stream().mapToLong(Collection::size).sum();
-        int inFamily = families.values().stream().map(Family::size).mapToInt(Integer::intValue).sum();
-
-        System.out.println("Total: " + total);
-        System.out.println("In family: " + inFamily);
-        System.out.println("Not in family: " + (total - inFamily));
-
-        Main1024a.saveDropCsv(families, index, 50);
-
-        //TODO jakkardIndex
-        /*Main1024a.drop(families, 50);
-        inFamily = families.values().stream().map(Main1024a.Family::size).mapToInt(Integer::intValue).sum();
-
-        System.out.println("Total: " + total);
-        System.out.println("In family: " + inFamily);
-        System.out.println("Not in family: " + (total - inFamily));*/
-
-        System.out.println("==");
-        //TODO merge jakkardIndex 20
-        //TODO index 1 or 16. Better 1
-        //families = mergeFamilies(families, 30, 64);
-
-        //TODO проходиться сиротами и смотреть куда пристроить.
     }
 
     private static boolean nonHack(String s) {
@@ -289,25 +479,11 @@ public class ListFilesa {
         try (SevenZFile archiveFile = new SevenZFile(file)) {
             return StreamSupport.stream(archiveFile.getEntries().spliterator(), false).map(SevenZArchiveEntry::getName).collect(Collectors.toList());
         } catch (IOException e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
     }
 
-    public static Map<String, GID> listFiles2(File file) {
-        Map<String, GID> result = new LinkedHashMap<>();
-
-        try (SevenZFile sevenZFile = new SevenZFile(file)) {
-            SevenZArchiveEntry entry = sevenZFile.getNextEntry();
-            while (entry != null) {
-                byte[] content = new byte[(int) entry.getSize()];
-                byte[] contentwh = Arrays.copyOfRange(content,16, content.length);
-                sevenZFile.read(content, 0, content.length);
-                result.put(entry.getName(), new GID(entry.getName(), entry.getSize(), entry.getCrcValue(), md5(content), sha1(content), crc32(contentwh), md5(contentwh), sha1(contentwh), null));
-                entry = sevenZFile.getNextEntry();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return result;
+    public static Path workCollectionsDir() {
+        return collectionsDir.resolve(platform);
     }
 }

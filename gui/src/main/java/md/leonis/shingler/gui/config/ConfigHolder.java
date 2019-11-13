@@ -18,7 +18,7 @@ import java.util.Map;
 public class ConfigHolder {
 
     //TODO config
-    public static Path userHome = Paths.get(System.getProperty("user.home"));;
+    public static Path userHome = Paths.get(System.getProperty("user.home"));
     public static Path rootWorkDir = userHome.resolve("shingler");
     public static Path shinglesDir = rootWorkDir.resolve("shingles");
     public static Path collectionsDir = rootWorkDir.resolve("collections");

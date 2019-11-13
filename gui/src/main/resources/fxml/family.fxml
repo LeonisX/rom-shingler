@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TreeView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="879.0" prefWidth="1220.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="md.leonis.shingler.gui.controller.FamilyController">
+    <top>
+        <HBox alignment="CENTER" prefHeight="46.0" prefWidth="1220.0" spacing="5.0" BorderPane.alignment="CENTER">
+            <Label fx:id="waitLabel" text="Please wait" />
+            <HBox fx:id="controlsHBox" alignment="CENTER" prefHeight="46.0" prefWidth="393.0" spacing="5.0">
+            <Button fx:id="auditFamiliesButton" mnemonicParsing="false" onAction="#auditFamiliesButtonClick" text="Audit families" />
+                <Button fx:id="generateFamiliesButton" mnemonicParsing="false" onAction="#generateFamiliesButtonClick" text="Generate families" />
+            <Button fx:id="verifyFamiliesButton" mnemonicParsing="false" onAction="#verifyFamiliesButtonClick" text="Verify families" />
+            </HBox>
+        </HBox>
+    </top>
+    <bottom>
+        <VBox fx:id="vBox" />
+    </bottom>
+   <center>
+      <TreeView fx:id="treeView" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
+   </center>
+</BorderPane>
