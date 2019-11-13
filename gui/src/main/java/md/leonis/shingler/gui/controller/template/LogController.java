@@ -20,7 +20,7 @@ public class LogController extends VBox {
     @FXML
     private HBox controls;
     @FXML
-    private ChoiceBox filterLevel;
+    private ChoiceBox<Level> filterLevel;
     @FXML
     private ToggleButton showTimestamp;
     @FXML
@@ -43,8 +43,7 @@ public class LogController extends VBox {
     @Lazy
     public LogController(StageManager stageManager) {
 
-        stageManager.loadTemplate("log", this, () ->
-                System.out.println("======="));
+        stageManager.loadTemplate("log", this, () -> {});
 
         LogView logView = new LogView();
 

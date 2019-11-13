@@ -33,7 +33,10 @@ import static md.leonis.shingler.utils.BinaryUtils.bytesToHex;
 public class CompareController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CompareController.class);
-    @FXML
+
+
+    private static final Color BLUE_GRAY = Color.color(0.4019608f, 0.4019608f, 0.6f);
+
     public VBox vBox;
 
     public TableView<Pair<GID, GID>> tableView;
@@ -54,7 +57,6 @@ public class CompareController {
     public CheckBox hackCheckBox;
     
     public Label waitLabel;
-    
 
     private final StageManager stageManager;
     private final ConfigHolder configHolder;
@@ -62,8 +64,6 @@ public class CompareController {
     private List<Pair<GID, GID>> deletedPairs;
     private List<Pair<GID, GID>> addedPairs;
     private List<Pair<GID, GID>> samePairs;
-
-    private static final Color BLUE_GRAY = Color.color(0.4019608f, 0.4019608f, 0.6f);
 
     @Lazy
     public CompareController(StageManager stageManager, ConfigHolder configHolder) {
