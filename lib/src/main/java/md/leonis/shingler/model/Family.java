@@ -70,7 +70,7 @@ public class Family implements Serializable, Cloneable {
         return members;
     }
 
-    void setMembers(List<Name> members) {
+    public void setMembers(List<Name> members) {
         this.members = members;
     }
 
@@ -80,6 +80,14 @@ public class Family implements Serializable, Cloneable {
 
     public void setMother(Name mother) {
         this.mother = mother;
+    }
+
+    public void selectMother() {
+        if (getMembers().size() == 1) {
+            setMother(getMembers().get(0));
+        } else {
+            setMother(getMembers().stream().max(Comparator.comparing(Name::getJakkardStatus)).orElse(null));
+        }
     }
 
     public List<Result> getRelations() {
@@ -117,13 +125,13 @@ public class Family implements Serializable, Cloneable {
     @Measured
     public void addRelation(Result result) {
         relations.add(result);
-        Integer count = relationsCount.get(result.getName1().getName());
+        /*Integer count = relationsCount.get(result.getName1().getName());
         if (count == null) {
             relationsCount.put(result.getName1().getName(), 0);
         } else {
             relationsCount.replace(result.getName1().getName(), ++count);
         }
-        individualRelations.add(join(result.getName1(), result.getName2()));
+        individualRelations.add(join(result.getName1(), result.getName2()));*/
     }
 
     private String join(Name name1, Name name2) {
@@ -132,15 +140,17 @@ public class Family implements Serializable, Cloneable {
 
     @Measured
     public boolean containsRelation(Name name1, Name name2) {
-        return individualRelations.contains(join(name1, name2));
+        throw new RuntimeException("");
+        /*return individualRelations.contains(join(name1, name2));*/
         //return relations.stream().filter(r -> r.getName1().getName().equals(name1.getName())).anyMatch(r -> r.getName2().getName().equals(name2.getName()));
     }
 
     @Measured
     public boolean hasAllRelations(Name name, int index) {
-        int expectedRelations = members.size() - index - 1;
+        throw new RuntimeException("");
+        /*int expectedRelations = members.size() - index - 1;
         Integer count = relationsCount.get(name.getName());
-        return count != null && count == expectedRelations;
+        return count != null && count == expectedRelations;*/
     }
 
     @Measured

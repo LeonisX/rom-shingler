@@ -60,11 +60,11 @@
                             <HBox spacing="5.0">
                                 <Button fx:id="scanCollectionHashesButton" mnemonicParsing="false" onAction="#scanCollectionHashesButtonClick" text="Scan hashes" />
                             </HBox>
-                     <Button fx:id="manageFamiliesButton" mnemonicParsing="false" onAction="#manageFamiliesButtonClick" text="Manage families" />
                             <Button fx:id="generateShinglesButton" mnemonicParsing="false" onAction="#generateShinglesButtonClick" text="Generate shingles" />
                             <!--<Button fx:id="selectCollectionFiles" mnemonicParsing="false" onAction="#selectCollectionFilesClick" text="Generate Families" />-->
                             <!--<Button fx:id="selectCollectionFiles" mnemonicParsing="false" onAction="#selectCollectionFilesClick" text="Verify Families" />-->
                             <Button fx:id="compareCollectionsButton" mnemonicParsing="false" onAction="#compareCollectionsButtonClick" text="Compare collections" />
+                     <Button fx:id="manageFamiliesButton" mnemonicParsing="false" onAction="#manageFamiliesButtonClick" text="Manage families" />
                         </VBox>
                     </HBox>
                 </VBox>

@@ -1,8 +1,11 @@
 package md.leonis.shingler.model;
 
+import lombok.AllArgsConstructor;
+
 import java.io.File;
 import java.io.Serializable;
 
+@AllArgsConstructor
 public class Name implements Serializable {
 
     private static final long serialVersionUID = 292207904602980582L;
@@ -12,6 +15,11 @@ public class Name implements Serializable {
     private int index = 100;
 
     private double jakkardStatus = 0;
+
+    public Name(File file, boolean done, double jakkardStatus) {
+        this(file, done);
+        this.jakkardStatus = jakkardStatus;
+    }
 
     public Name(File file, boolean done) {
         this.file = file;
@@ -79,15 +87,15 @@ public class Name implements Serializable {
         return index;
     }
 
-    void setIndex(int index) {
+    public void setIndex(int index) {
         this.index = index;
     }
 
-    File getFile() {
+    public File getFile() {
         return file;
     }
 
-    void setFile(File file) {
+    public void setFile(File file) {
         this.file = file;
     }
 

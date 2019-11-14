@@ -37,10 +37,10 @@ public class Main1024a {
     static final List<Integer> SAMPLES = Arrays.asList(1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024);
 
     private static final Map<Integer, File> SAMPLE_DIRS_MAP =
-            SAMPLES.stream().collect(Collectors.toMap(Function.identity(), s -> new File(GAMES_DIR + "sample" + s)));
+            SAMPLES.stream().collect(Collectors.toMap(Function.identity(), s -> new File(GAMES_DIR + "sample-" + s)));
 
     private static final Map<Integer, Path> SAMPLE_DIRS_MAP2 =
-            SAMPLES.stream().collect(Collectors.toMap(Function.identity(), s -> Paths.get(GAMES_DIR).resolve("sample" + s)));
+            SAMPLES.stream().collect(Collectors.toMap(Function.identity(), s -> Paths.get(GAMES_DIR).resolve("sample-" + s)));
 
     private static final Map<Integer, Map<String, long[]>> SHINGLE_MAP =
             SAMPLES.stream().collect(Collectors.toMap(Function.identity(), HashMap::new));
@@ -182,10 +182,10 @@ public class Main1024a {
                 Map<String, long[]> shinglesMap = new HashMap<>();
 
                 if (shinglesMapFile.exists()) {
-                    System.out.println(String.format("Getting sample%s from disk...", index));
+                    LOGGER.info(String.format("Getting sample%s from disk...", index));
                     shinglesMap = ShingleUtils.loadMap(shinglesMapFile);
                 } else {
-                    System.out.println(String.format("Generating sample%s...", index));
+                    LOGGER.info(String.format("Generating sample%s...", index));
                     for (int i = 0; i < files.size(); i++) {
                         File file = files.get(i);
 
@@ -193,7 +193,7 @@ public class Main1024a {
 
                         if (!sampleFile.exists()) {
 
-                            System.out.println(String.format(Locale.US, "%s: %2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
+                            LOGGER.info(String.format(Locale.US, "%s: %2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
 
                             File srcSampleFolder = SAMPLE_DIRS_MAP.get(index);
 
@@ -206,7 +206,7 @@ public class Main1024a {
                                 ShingleUtils.save(filteredShingles, sampleFile);
                             }
                         } else {
-                            System.out.println(String.format(Locale.US, "Reading: %s: %2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
+                            LOGGER.info(String.format(Locale.US, "Reading: %s: %2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
                             long[] filteredShingles = ShingleUtils.loadFromCache(cache, sampleFile);
                             shinglesMap.put(file.getName(), filteredShingles);
                         }
@@ -226,10 +226,10 @@ public class Main1024a {
 
         Map<String, Family> families;
         if (familyFile.exists()) {
-            System.out.println("\nReading families from file...");
+            LOGGER.info("\nReading families from file...");
             families = IOUtils.loadFamilies(familyFile);
         } else {
-            System.out.println("\nGenerating families...");
+            LOGGER.info("\nGenerating families...");
             Map<String, List<Name>> namesList = names.stream().collect(Collectors.groupingBy(Name::getCleanName));
 
             families = namesList.entrySet().stream().filter(e -> e.getValue().size() != 1)
@@ -242,14 +242,14 @@ public class Main1024a {
 
         int inFamily = families.values().stream().map(Family::size).mapToInt(Integer::intValue).sum();
 
-        System.out.println("In family: " + inFamily);
-        System.out.println("Not in family: " + (names.size() - inFamily));
+        LOGGER.info("In family: " + inFamily);
+        LOGGER.info("Not in family: " + (names.size() - inFamily));
 
         //TODO jakkardIndex
         drop(families, 30);
 
-        System.out.println("In family: " + inFamily);
-        System.out.println("Not in family: " + (names.size() - inFamily));
+        LOGGER.info("In family: " + inFamily);
+        LOGGER.info("Not in family: " + (names.size() - inFamily));
 
         //TODO merge jakkardIndex 20
         //TODO index 1 or 16. Better 1
@@ -266,18 +266,18 @@ public class Main1024a {
         families.values().forEach(family -> {
             int relationsCount = family.getMembers().size() * (family.getMembers().size() - 1) / 2;
             if (family.getRelations().size() == relationsCount) { // x * (x - 1) / 2
-                System.out.println(String.format("%nSkipping: %s... [%s] %2.3f%%", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size()));
+                LOGGER.debug(String.format("%nSkipping: %s... [%s] %2.3f%%", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size()));
                 k[0]++;
             } else {
 
-                System.out.println(String.format("%nComparing: %s... [%s] %2.3f%%", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size()));
+                LOGGER.info(String.format("%nComparing: %s... [%s] %2.3f%%", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size()));
 
                 //family.getRelations().clear();
 
                 for (int i = 0; i < family.size() - 1; i++) {
 
                     if (save[0] > 100000 * index) {
-                        System.out.println("Saving family...");
+                        LOGGER.info("Saving family...");
                         IOUtils.serialize(familyFile, families);
                         save[0] = 0;
                     }
@@ -285,7 +285,7 @@ public class Main1024a {
                     Name name1 = family.get(i);
 
                     if (family.hasAllRelations(name1, i)) {
-                        System.out.println(String.format("Skipping all relations %s: %s", i, name1.getName()));
+                        LOGGER.debug(String.format("Skipping all relations %s: %s", i, name1.getName()));
                         continue;
                     }
 
@@ -296,7 +296,7 @@ public class Main1024a {
                         Name name2 = family.get(j);
 
                         if (family.containsRelation(name1, name2)) {
-                            System.out.println(String.format("Skipping relation %s -> %s: %s -> %s", i, j, name1.getName(), name2.getName()));
+                            LOGGER.debug(String.format("Skipping relation %s -> %s: %s -> %s", i, j, name1.getName(), name2.getName()));
                             continue;
                         }
 
@@ -314,16 +314,16 @@ public class Main1024a {
                         name2.addJakkardStatus(jakkard);
 
                         Result result = new Result(name1, name2, jakkard);
-                        System.out.println(i + "->" + j + ": " + result);
+                        LOGGER.info(i + "->" + j + ": " + result);
 
                         family.addRelation(result);
                         save[0]++;
                     }
                     name1.setDone(true);
                 }
-                family.setMother(family.getMembers().stream().max(Comparator.comparing(Name::getJakkardStatus)).orElse(null));
                 k[0]++;
             }
+            family.selectMother();
         });
     }
 
@@ -338,11 +338,11 @@ public class Main1024a {
             Family family = familyList.get(i);
 
             if (family.isSkip()) {
-                System.out.println(String.format("Skipping: %s... %2.2f%%", family.getName(), k[0] * 100.0 / families.size()));
+                LOGGER.debug(String.format("Skipping: %s... %2.2f%%", family.getName(), k[0] * 100.0 / families.size()));
                 continue;
             }
 
-            System.out.println(String.format("Comparing: %s... %2.2f%%", family.getName(), k[0] * 100.0 / families.size()));
+            LOGGER.info(String.format("Comparing: %s... %2.2f%%", family.getName(), k[0] * 100.0 / families.size()));
 
             Name name1 = family.get(0);
 
@@ -374,7 +374,7 @@ public class Main1024a {
                 double jakkard = s1intersect.length * 100.0 / s1union.length;
 
                 Result result = new Result(name1, name2, jakkard);
-                //System.out.println(result);
+                //LOGGER.info(result);
 
                 if (jakkard >= jakkardIndex) {
                     mapping.put(family2, family);
@@ -383,7 +383,7 @@ public class Main1024a {
             k[0]++;
         }
 
-        System.out.println(mapping);
+        LOGGER.info(mapping.toString());
 
         mapping.forEach((key, value) -> {
             value.getMembers().addAll(key.getMembers());
@@ -399,35 +399,12 @@ public class Main1024a {
         return families2;
     }
 
-    private static List<Name> deleteNonSiblings(Family fam, double jakkardIndex) {
-        Family family = new Family(fam);
-
-        List<Name> deleted = new ArrayList<>();
-
-        //TODO revert
-        if (family.getName().equals("Public Domain.7z") || family.getName().equals("Multicarts Collection.7z")
-                || family.getName().equals("Wxn Collection.7z") || family.getName().equals("VT03 Collection.7z")) {
-            return deleted;
-        }
-
-        double status = family.getJakkardStatus(0);
-        double k = 100 / status;
-
-        for (int i = 1; i < family.size(); i++) {
-            if (family.getJakkardStatus(i) * k < jakkardIndex) {
-                deleted.add(family.get(i));
-            }
-        }
-
-        return deleted;
-    }
-
     static void drop(Map<String, Family> families, double jakkardIndex) {
 
         families.values().forEach(family -> {
-            List<Name> toDelete = deleteNonSiblings(family, jakkardIndex);
+            List<Name> toDelete = getNonSiblings(family, jakkardIndex);
 
-            toDelete.forEach(td -> System.out.println(String.format("Dropping: %s (%2.4f%%)", td.getName(), td.getJakkardStatus() / family.size())));
+            toDelete.forEach(td -> LOGGER.info(String.format("Dropping: %s (%2.4f%%)", td.getName(), td.getJakkardStatus() / family.size())));
 
             family.setRelations(family.getRelations().stream().filter(r -> toDelete.contains(r.getName1()) || toDelete.contains(r.getName2())).collect(Collectors.toList()));
             family.getRelationsCount().forEach((key, value) ->
@@ -458,12 +435,13 @@ public class Main1024a {
 
         List<Name> deleted = new ArrayList<>();
 
+        //TODO remove this
         if (family.getName().equals("Public Domain.7z") || family.getName().equals("Multicarts Collection.7z")
                 || family.getName().equals("Wxn Collection.7z") || family.getName().equals("VT03 Collection.7z")) {
             return deleted;
         }
 
-        double status = family.getJakkardStatus(0);
+        double status = family.getMother().getJakkardStatus();
         double k = 100 / status;
 
         for (int i = 1; i < family.size(); i++) {
@@ -485,7 +463,7 @@ public class Main1024a {
 
     /*private static void compareAndCopy(List<Name> names, int index, int jakkardIndex) throws IOException {
 
-        System.out.println("\nComparing...");
+        LOGGER.info("\nComparing...");
         PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("result.csv", true)));
 
         names.forEach(name1 -> {
@@ -534,7 +512,7 @@ public class Main1024a {
 
                             if (jakkard > jakkardIndex) { // 35
                                 name2.setDone(true);
-                                System.out.println(result);
+                                LOGGER.info(result);
                                 toCopy.add(name2);
                             }
 
@@ -562,7 +540,7 @@ public class Main1024a {
                     throw new RuntimeException(e);
                 }
             } else {
-                System.out.println("Skipping: " + name1.getName());
+                LOGGER.debug("Skipping: " + name1.getName());
             }
         });
 

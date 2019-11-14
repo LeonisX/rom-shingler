@@ -5,11 +5,15 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.slf4j.Logger;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import static org.slf4j.LoggerFactory.getLogger;
@@ -149,5 +153,21 @@ public class StageManager {
         Thread thread = new Thread(runnable);
         thread.setDaemon(true);
         thread.start();
+    }
+
+
+    private final Map<String, File> initialDirs = new HashMap<>();
+    private final DirectoryChooser directoryChooser = new DirectoryChooser();
+
+    public DirectoryChooser getDirectoryChooser(String title) {
+        directoryChooser.setTitle(title);
+        directoryChooser.setInitialDirectory(initialDirs.get(title));
+        return directoryChooser;
+    }
+
+    public void saveInitialDir(DirectoryChooser directoryChooser, File file) {
+        if (null != file) {
+            initialDirs.put(directoryChooser.getTitle(), file);
+        }
     }
 }

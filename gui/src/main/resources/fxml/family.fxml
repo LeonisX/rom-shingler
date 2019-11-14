@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.control.TreeView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
@@ -11,17 +17,74 @@
     <top>
         <HBox alignment="CENTER" prefHeight="46.0" prefWidth="1220.0" spacing="5.0" BorderPane.alignment="CENTER">
             <Label fx:id="waitLabel" text="Please wait" />
-            <HBox fx:id="controlsHBox" alignment="CENTER" prefHeight="46.0" prefWidth="393.0" spacing="5.0">
-            <Button fx:id="auditFamiliesButton" mnemonicParsing="false" onAction="#auditFamiliesButtonClick" text="Audit families" />
-                <Button fx:id="generateFamiliesButton" mnemonicParsing="false" onAction="#generateFamiliesButtonClick" text="Generate families" />
-            <Button fx:id="verifyFamiliesButton" mnemonicParsing="false" onAction="#verifyFamiliesButtonClick" text="Verify families" />
-            </HBox>
+            <VBox prefHeight="47.0" prefWidth="1054.0">
+                <HBox prefHeight="47.0" prefWidth="1022.0">
+                    <VBox prefHeight="47.0" prefWidth="811.0">
+                        <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="5.0">
+                            <Label text="Total families:" />
+                            <Label fx:id="totalFamiliesLabel" />
+                            <Label text="Total games:" />
+                            <Label fx:id="totalGamesLabel" />
+                            <Label text="Grouped games:" />
+                            <Label fx:id="groupedGamesLabel" />
+                            <Label text="Orphaned games:" />
+                            <Label fx:id="orphanedGamesLabel" />
+                        </HBox>
+                        <HBox fx:id="controlsHBox" alignment="CENTER" prefHeight="46.0" prefWidth="732.0" spacing="5.0">
+                            <Label text="Precision:" />
+                            <ComboBox fx:id="precisionCheckBox" onAction="#precisionCheckBoxAction" prefHeight="25.0" prefWidth="74.0" />
+                            <Button fx:id="generateFamiliesButton" mnemonicParsing="false" onAction="#generateFamiliesButtonClick" text="Generate families" />
+                     <Button fx:id="calculateRelationsButton" mnemonicParsing="false" onAction="#calculateRelationsButtonClick" text="Calculate relations" />
+                            <Button fx:id="auditFamiliesButton" mnemonicParsing="false" onAction="#auditFamiliesButtonClick" text="Audit families" />
+                            <Button fx:id="verifyFamiliesButton" mnemonicParsing="false" onAction="#verifyFamiliesButtonClick" text="Verify families" />
+                            <Button fx:id="mergeFamiliesButton" mnemonicParsing="false" onAction="#mergeFamiliesButtonClick" text="Merge families" />
+                        </HBox>
+                    </VBox>
+                    <VBox alignment="CENTER" prefHeight="47.0" prefWidth="530.0" spacing="5.0">
+                        <HBox alignment="CENTER" spacing="5.0">
+                            <ToggleButton mnemonicParsing="false" text="Family" />
+                            <ToggleButton mnemonicParsing="false" text="ToggleButton" />
+                            <ToggleButton mnemonicParsing="false" text="ToggleButton" />
+                            <ToggleButton mnemonicParsing="false" text="ToggleButton" />
+                        </HBox>
+                        <HBox alignment="CENTER" spacing="5.0">
+                            <CheckBox fx:id="allGoodCheckBox" mnemonicParsing="false" selected="true" text="Good" />
+                            <CheckBox fx:id="pdCheckBox" mnemonicParsing="false" selected="true" text="PD" />
+                            <CheckBox fx:id="hackCheckBox" mnemonicParsing="false" selected="true" text="Hack" />
+                        </HBox>
+                    </VBox>
+                </HBox>
+            </VBox>
         </HBox>
     </top>
     <bottom>
         <VBox fx:id="vBox" />
     </bottom>
-   <center>
-      <TreeView fx:id="treeView" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
-   </center>
+    <center>
+        <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
+            <Tab text="Family">
+                <BorderPane prefHeight="200.0" prefWidth="200.0">
+                    <top>
+                        <HBox alignment="CENTER_LEFT" prefHeight="40.0" prefWidth="1220.0" spacing="5.0" BorderPane.alignment="CENTER">
+                            <Button fx:id="expandAllButton" mnemonicParsing="false" onAction="#expandAllButtonClick" text="Expand all" />
+                            <Button fx:id="collapseAllButton" mnemonicParsing="false" onAction="#collapseAllButtonClick" text="Collapse all" />
+                            <Label text="Jakkard:" />
+                            <TextField fx:id="jakkardTextField" onKeyReleased="#jakkardTextFieldKeyReleased" prefHeight="25.0" prefWidth="64.0" />
+                     <Button fx:id="selectButton" mnemonicParsing="false" onAction="#selectButtonClick" text="Select" />
+                     <Button fx:id="newGroupButton" mnemonicParsing="false" onAction="#newGroupButtonClick" text="New group" />
+                     <Button fx:id="addToGroupButton" mnemonicParsing="false" onAction="#addToGroupButtonClick" text="Add to group" />
+                     <Button fx:id="kickAwayButton" mnemonicParsing="false" onAction="#kickAwayButtonClick" text="Kick away" />
+                        </HBox>
+                    </top>
+                    <center>
+                        <TreeView fx:id="familyTreeView" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
+                    </center>
+                    <right>
+                        <HBox prefHeight="100.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
+                    </right>
+                </BorderPane>
+            </Tab>
+            <Tab text="TODO" />
+        </TabPane>
+    </center>
 </BorderPane>

@@ -4,6 +4,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -20,8 +22,12 @@ public class RomsCollection implements Serializable {
     private String title;
     private String platform;
     private CollectionType type = CollectionType.PLAIN;
-    private String romsPath;
+    private String romsPathString;
     private List<GID> gids = new ArrayList<>();
+
+    public Path getRomsPath() {
+        return Paths.get(romsPathString);
+    }
 
     public void setGids(Map<String, GID> gids) {
         this.gids = new ArrayList<>(gids.values());

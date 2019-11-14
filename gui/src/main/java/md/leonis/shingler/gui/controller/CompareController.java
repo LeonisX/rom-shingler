@@ -10,7 +10,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.util.Callback;
 import javafx.util.Pair;
-import md.leonis.shingler.gui.config.ConfigHolder;
+import md.leonis.shingler.model.ConfigHolder;
 import md.leonis.shingler.gui.view.StageManager;
 import md.leonis.shingler.model.GID;
 import md.leonis.shingler.model.RomsCollection;
@@ -24,8 +24,8 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static md.leonis.shingler.gui.config.ConfigHolder.selectedCollections;
-import static md.leonis.shingler.gui.config.ConfigHolder.workCollectionsDir;
+import static md.leonis.shingler.model.ConfigHolder.selectedCollections;
+import static md.leonis.shingler.model.ConfigHolder.workCollectionsPath;
 import static md.leonis.shingler.gui.view.StageManager.runInBackground;
 import static md.leonis.shingler.utils.BinaryUtils.bytesToHex;
 
@@ -153,8 +153,8 @@ public class CompareController {
             String collection2 = selectedCollections.get(1);
 
             LOGGER.info("Reading from disk...");
-            RomsCollection romsCollection1 = IOUtils.loadCollection(workCollectionsDir().resolve(collection1).toFile());
-            RomsCollection romsCollection2 = IOUtils.loadCollection(workCollectionsDir().resolve(collection2).toFile());
+            RomsCollection romsCollection1 = IOUtils.loadCollection(workCollectionsPath().resolve(collection1).toFile());
+            RomsCollection romsCollection2 = IOUtils.loadCollection(workCollectionsPath().resolve(collection2).toFile());
 
             LOGGER.info("Prepare hashes...");
             Set<String> hashesLeft = romsCollection1.getGids().values().stream().map(h -> bytesToHex(h.getSha1())).collect(Collectors.toSet());

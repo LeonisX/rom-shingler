@@ -6,69 +6,71 @@ import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.util.Callback;
 import javafx.util.Pair;
-import md.leonis.shingler.gui.config.ConfigHolder;
+import md.leonis.shingler.ListFilesa;
+import md.leonis.shingler.gui.domain.NameView;
 import md.leonis.shingler.gui.view.StageManager;
-import md.leonis.shingler.model.GID;
-import md.leonis.shingler.model.RomsCollection;
+import md.leonis.shingler.model.*;
 import md.leonis.shingler.utils.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
 
+import java.io.File;
 import java.util.*;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static md.leonis.shingler.gui.config.ConfigHolder.selectedCollections;
-import static md.leonis.shingler.gui.config.ConfigHolder.workCollectionsDir;
-import static md.leonis.shingler.gui.view.StageManager.runInBackground;
+import static md.leonis.shingler.model.ConfigHolder.*;
 import static md.leonis.shingler.utils.BinaryUtils.bytesToHex;
 
+//TODO calculate relations button
 @Controller
 public class FamilyController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FamilyController.class);
 
-
-    private static final Color BLUE_GRAY = Color.color(0.4019608f, 0.4019608f, 0.6f);
+    private final StageManager stageManager;
+    private final ConfigHolder configHolder;
 
     public VBox vBox;
 
-    public TableView<Pair<GID, GID>> tableView;
-    public TableColumn<Pair<GID, GID>, Pair<GID, GID>> leftColumn;
-    public TableColumn<Pair<GID, GID>, Pair<GID, GID>> rightColumn;
-    public TableColumn<Pair<GID, GID>, String> leftHashColumn;
-    public TableColumn<Pair<GID, GID>, String> rightHashColumn;
-
     public HBox controlsHBox;
-    public Button sortButton;
+    public Label waitLabel;
 
-    public ToggleGroup toggleGroup;
-    public RadioButton fullHashRadioButton;
-    public RadioButton headlessRadioButton;
+    public Button auditFamiliesButton;
+    public Button generateFamiliesButton;
+    public Button verifyFamiliesButton;
+    public Button mergeFamiliesButton;
+
+    public Label totalFamiliesLabel;
+    public Label totalGamesLabel;
+    public Label groupedGamesLabel;
+    public Label orphanedGamesLabel;
 
     public CheckBox allGoodCheckBox;
     public CheckBox pdCheckBox;
     public CheckBox hackCheckBox;
+    public Button calculateRelationsButton;
+    public Button selectButton;
+    public Button kickAwayButton;
+    public Button newGroupButton;
+    public Button addToGroupButton;
 
-    public Label waitLabel;
+    private TreeItem<NameView> rootItem = new TreeItem<>(NameView.EMPTY);
 
-    private final StageManager stageManager;
-    private final ConfigHolder configHolder;
-    public Button auditFamiliesButton;
-    public Button generateFamiliesButton;
-    public Button verifyFamiliesButton;
-    public TreeView treeView;
-
-    private List<Pair<GID, GID>> deletedPairs;
-    private List<Pair<GID, GID>> addedPairs;
-    private List<Pair<GID, GID>> samePairs;
+    public TreeView<NameView> familyTreeView;
+    public ComboBox<Integer> precisionCheckBox;
+    public TextField jakkardTextField;
+    public Button expandAllButton;
+    public Button collapseAllButton;
 
     @Lazy
     public FamilyController(StageManager stageManager, ConfigHolder configHolder) {
@@ -79,232 +81,299 @@ public class FamilyController {
     @FXML
     private void initialize() {
 
+        jakkardTextField.setText("" + jakkard);
+        //TODO up
+        Pattern pattern = Pattern.compile("\\d*|\\d+\\.\\d*");
+        TextFormatter formatter = new TextFormatter((UnaryOperator<TextFormatter.Change>) change -> pattern.matcher(change.getControlNewText()).matches() ? change : null);
+        jakkardTextField.setTextFormatter(formatter);
+
+        precisionCheckBox.setItems(FXCollections.observableArrayList(DENOMINATORS));
+        precisionCheckBox.setCellFactory(precisionCheckBoxCellFactory);
+        precisionCheckBox.getSelectionModel().select(getDenominatorId());
+
         controlsHBox.managedProperty().bind(controlsHBox.visibleProperty());
         waitLabel.managedProperty().bind(waitLabel.visibleProperty());
 
         //TODO for future - try to use rowFactory again
-        leftColumn.setCellFactory(leftColumnCellFactory());
+        /*leftColumn.setCellFactory(leftColumnCellFactory());
         rightColumn.setCellFactory(rightColumnCellFactory());
 
         leftColumn.setCellValueFactory(new PairNameFactory());
         rightColumn.setCellValueFactory(new PairNameFactory());
         leftHashColumn.setCellValueFactory(new PairLeftHashFactory());
-        rightHashColumn.setCellValueFactory(new PairRightHashFactory());
+        rightHashColumn.setCellValueFactory(new PairRightHashFactory());*/
 
-        preloadCollections();
+        loadFamilies();
     }
 
-    private Callback<TableColumn<Pair<GID, GID>, Pair<GID, GID>>, TableCell<Pair<GID, GID>, Pair<GID, GID>>> rightColumnCellFactory() {
+    private Callback<ListView<Integer>, ListCell<Integer>> precisionCheckBoxCellFactory = new Callback<ListView<Integer>, ListCell<Integer>>() {
 
-        return new Callback<TableColumn<Pair<GID, GID>, Pair<GID, GID>>, TableCell<Pair<GID, GID>, Pair<GID, GID>>>() {
-            @Override
-            public TableCell<Pair<GID, GID>, Pair<GID, GID>> call(TableColumn<Pair<GID, GID>, Pair<GID, GID>> param) {
-                return new TableCell<Pair<GID, GID>, Pair<GID, GID>>() {
+        @Override
+        public ListCell<Integer> call(ListView<Integer> l) {
+            return new ListCell<Integer>() {
 
-                    @Override
-                    public void updateItem(Pair<GID, GID> item, boolean empty) {
-                        super.updateItem(item, empty);
-                        if (!isEmpty() && !(null == item)) {
-                            Color color = Color.GRAY;
-                            if (item.getKey().getTitle().isEmpty() && !item.getValue().getTitle().isEmpty()) { // new
-                                color = Color.GREEN;
-                            } else if (!item.getKey().getTitle().equals(item.getValue().getTitle())) { // renamed
-                                color = Color.BLUE;
-                            } else if (!Arrays.equals(item.getKey().getSha1(), item.getValue().getSha1())) {
-                                color = BLUE_GRAY;
-                            }
-                            setText(item.getValue().getTitle());
-                            setTextFill(color);
+                @Override
+                protected void updateItem(Integer item, boolean empty) {
+                    super.updateItem(item, empty);
+                    Color color = Color.DARKGREEN;
+                    if (item == null || empty) {
+                        setGraphic(null);
+                    } else {
+                        setText("1/" + item);
+                        if (item > 8 && item < 128) {
+                            color = Color.BLACK;
+                        } else if (item >= 128) {
+                            color = Color.DARKRED;
                         }
                     }
-                };
-            }
-        };
+                    setTextFill(color);
+                }
+            };
+        }
+    };
+
+    private void loadFamilies() {
+        File familyFile = fullFamiliesPath().toFile();
+
+        if (familyFile.exists()) {
+            System.out.println(String.format("%nReading families from file %s...", familyFile));
+            families = IOUtils.loadFamilies(familyFile);
+        } else {
+            families = new HashMap<>();
+        }
+
+        showFamilies();
     }
 
-    private Callback<TableColumn<Pair<GID, GID>, Pair<GID, GID>>, TableCell<Pair<GID, GID>, Pair<GID, GID>>> leftColumnCellFactory() {
+    // TODO expand all expanded after operations (group, kick)
+    private void showFamilies() {
+        int total = romsCollection.getGids().size();
+        int inFamily = families.values().stream().map(Family::size).mapToInt(Integer::intValue).sum();
 
-        return new Callback<TableColumn<Pair<GID, GID>, Pair<GID, GID>>, TableCell<Pair<GID, GID>, Pair<GID, GID>>>() {
-            @Override
-            public TableCell<Pair<GID, GID>, Pair<GID, GID>> call(TableColumn<Pair<GID, GID>, Pair<GID, GID>> param) {
-                return new TableCell<Pair<GID, GID>, Pair<GID, GID>>() {
+        totalFamiliesLabel.setText("" + families.size());
+        totalGamesLabel.setText("" + romsCollection.getGids().size());
+        groupedGamesLabel.setText("" + inFamily);
+        orphanedGamesLabel.setText("" + (total - inFamily));
 
-                    @Override
-                    public void updateItem(Pair<GID, GID> item, boolean empty) {
-                        super.updateItem(item, empty);
-                        if (!isEmpty() && !(null == item)) {
-                            Color color = Color.GRAY;
-                            if (!item.getKey().getTitle().isEmpty() && item.getValue().getTitle().isEmpty()) { // deleted
-                                color = Color.RED;
-                            } else if (!item.getKey().getTitle().equals(item.getValue().getTitle())) { // renamed
-                                color = Color.BLUE;
-                            } else if (!Arrays.equals(item.getKey().getSha1(), item.getValue().getSha1())) {
-                                color = BLUE_GRAY;
-                            }
-                            setText(item.getKey().getTitle());
-                            setTextFill(color);
-                        }
+        Map<NameView, List<NameView>> familiesView = new LinkedHashMap<>();
+
+        families.entrySet().stream().sorted(Map.Entry.comparingByKey(Comparator.comparing(String::toString)))
+                .forEach(e -> {
+                    List<NameView> views = new ArrayList<>();
+                    for (int i = 0; i < e.getValue().getMembers().size(); i++) {
+                        Name name = e.getValue().getMembers().get(i);
+                        views.add(new NameView(name, e.getKey(), e.getValue().getJakkardStatus(i)));
                     }
-                };
-            }
-        };
-    }
 
-    private void preloadCollections() {
+                    views = views.stream().sorted(Comparator.comparing(NameView::getJakkardStatus).reversed()).collect(Collectors.toList());
 
-        runInBackground(() -> {
-            LOGGER.info("Preloading collections...");
-            String collection1 = selectedCollections.get(0);
-            String collection2 = selectedCollections.get(1);
+                    NameView root = new NameView(e, views);
+                    familiesView.put(root, views);
+                });
 
-            LOGGER.info("Reading from disk...");
-            RomsCollection romsCollection1 = IOUtils.loadCollection(workCollectionsDir().resolve(collection1).toFile());
-            RomsCollection romsCollection2 = IOUtils.loadCollection(workCollectionsDir().resolve(collection2).toFile());
+        Set<String> familyNames = families.values().stream().flatMap(f -> f.getMembers().stream().map(Name::getName)).collect(Collectors.toSet());
+        Set<String> orphanedNames = romsCollection.getGids().values().stream().map(GID::getTitle).collect(Collectors.toSet());
+        orphanedNames.removeAll(familyNames);
 
-            LOGGER.info("Prepare hashes...");
-            Set<String> hashesLeft = romsCollection1.getGids().values().stream().map(h -> bytesToHex(h.getSha1())).collect(Collectors.toSet());
-            Set<String> hashesRight = romsCollection2.getGids().values().stream().map(h -> bytesToHex(h.getSha1())).collect(Collectors.toSet());
+        orphanedNames.stream().sorted().forEach(name -> familiesView.put(new NameView(name), new ArrayList<>()));
 
-            LOGGER.info("Processing hashes...");
-            Set<String> hashesLeftUnique = new HashSet<>(hashesLeft);
-            hashesLeftUnique.removeAll(hashesRight);
-            Set<String> hashesRightUnique = new HashSet<>(hashesRight);
-            hashesRightUnique.removeAll(hashesLeft);
-            Set<String> hashesSame = new HashSet<>(hashesLeft);
-            hashesSame.retainAll(hashesRight);
+        rootItem.getChildren().clear();
+        familyTreeView.setRoot(rootItem);
+        familyTreeView.setShowRoot(false);
+        familyTreeView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        familyTreeView.setCellFactory(treeViewCellFactory());
 
-            Map<String, GID> byLeftHash = romsCollection1.getGids().values().stream().collect(Collectors.toMap(h -> bytesToHex(h.getSha1()), Function.identity()));
-            Map<String, GID> byRightHash = romsCollection2.getGids().values().stream().collect(Collectors.toMap(h -> bytesToHex(h.getSha1()), Function.identity()));
-
-            LOGGER.info("Preparing added/deleted/modified collections...");
-
-            deletedPairs = hashesLeftUnique.stream().map(h -> new Pair<>(byLeftHash.get(h), GID.EMPTY)).collect(Collectors.toList());
-            addedPairs = hashesRightUnique.stream().map(h -> new Pair<>(GID.EMPTY, byRightHash.get(h))).collect(Collectors.toList());
-            samePairs = hashesSame.stream().map(h -> new Pair<>(byLeftHash.get(h), byRightHash.get(h))).collect(Collectors.toList());
-
-            filterResult();
-
-            waitLabel.setVisible(false);
-            controlsHBox.setVisible(true);
+        familiesView.forEach((key, value) -> {
+            TreeItem<NameView> node = new TreeItem<>(key);
+            value.forEach(c -> node.getChildren().add(new TreeItem<>(c)));
+            rootItem.getChildren().add(node);
         });
     }
 
-    public void sortButtonClick() {
-        filterResult();
+    public void mergeFamiliesButtonClick(ActionEvent actionEvent) {
     }
 
-    private void filterResult() {
-
-        boolean omitHeaders = headlessRadioButton.isSelected();
-
-        LOGGER.info("Filtering...");
-        List<Pair<GID, GID>> pairs = filterPairs();
-
-        LOGGER.info("Sorting...");
-        pairs = sortByHash(pairs, omitHeaders);
-
-        LOGGER.info("Merging result...");
-        pairs = mergePairs(pairs, omitHeaders);
-
-        tableView.setItems(FXCollections.observableArrayList(pairs));
-    }
-
-    private List<Pair<GID, GID>> filterPairs() {
-        List<Pair<GID, GID>> filteredDeletedPairs = filter(deletedPairs);
-        List<Pair<GID, GID>> filteredAddedPairs = filter(addedPairs);
-        List<Pair<GID, GID>> filteredSamePairs= filter(samePairs);
-
-        List<Pair<GID, GID>> pairs = new ArrayList<>();
-        pairs.addAll(filteredDeletedPairs);
-        pairs.addAll(filteredAddedPairs);
-        pairs.addAll(filteredSamePairs);
-        return pairs;
-    }
-
-    //TODO can use filtered from tableView.getItems()
-    private List<Pair<GID, GID>> filter(List<Pair<GID, GID>> pairs) {
-
-        return pairs.stream().filter(pair -> {
-            boolean p = pair.getKey().getTitle().contains("(PD)")  || pair.getValue().getTitle().contains("(PD)");
-            boolean h = pair.getKey().getTitle().contains("(Hack)")  || pair.getValue().getTitle().contains("(Hack)")
-                    || pair.getKey().getTitle().contains("(Hack ") || pair.getValue().getTitle().contains("(Hack ")
-                    ||pair.getKey().getTitle().contains(" Hack)") || pair.getValue().getTitle().contains(" Hack)");
-            boolean g = !(p || h);
-
-            return (p && pdCheckBox.isSelected()) || (h && hackCheckBox.isSelected()) || (g && allGoodCheckBox.isSelected());
-        }).collect(Collectors.toList());
-    }
-
-    private List<Pair<GID, GID>> sortByHash(List<Pair<GID, GID>> pairs, boolean omitHeaders) {
-
-        return pairs.stream().sorted((p1, p2) -> {
-            GID c1 = p1.getKey().getTitle().isEmpty() ? p1.getValue() : p1.getKey();
-            GID c2 = p2.getKey().getTitle().isEmpty() ? p2.getValue() : p2.getKey();
-            if (omitHeaders) {
-                return bytesToHex(c1.getSha1wh()).compareTo(bytesToHex(c2.getSha1wh()));
-            } else {
-                return bytesToHex(c1.getSha1()).compareTo(bytesToHex(c2.getSha1()));
-            }
-        }).collect(Collectors.toList());
-    }
-
-    private List<Pair<GID, GID>> mergePairs(List<Pair<GID, GID>> pairs, boolean omitHeaders) {
-
-        List<Pair<GID, GID>> mergedPairs = new ArrayList<>();
-
-        if (!pairs.isEmpty()) {
-            int i = 0;
-            do {
-                Pair<GID, GID> pair1 = pairs.get(i);
-                Pair<GID, GID> pair2 = pairs.get(i + 1);
-
-                if (omitHeaders) {
-                    if (pair1.getKey().getSha1wh() != null && Arrays.equals(pair1.getKey().getSha1wh(), pair2.getValue().getSha1wh())) {
-                        mergedPairs.add(new Pair<>(pair1.getKey(), pair2.getValue()));
-                        i++;
-                    } else if (pair1.getValue().getSha1wh() != null && Arrays.equals(pair1.getValue().getSha1wh(), pair2.getKey().getSha1wh())) {
-                        mergedPairs.add(new Pair<>(pair1.getValue(), pair2.getKey()));
-                        i++;
-                    } else {
-                        mergedPairs.add(pair1);
-                    }
-                } else {
-                    if (pair1.getKey().getSha1() != null && Arrays.equals(pair1.getKey().getSha1(), pair2.getValue().getSha1())) {
-                        mergedPairs.add(new Pair<>(pair1.getKey(), pair2.getValue()));
-                        i++;
-                    } else if (pair1.getValue().getSha1() != null && Arrays.equals(pair1.getValue().getSha1(), pair2.getKey().getSha1())) {
-                        mergedPairs.add(new Pair<>(pair1.getValue(), pair2.getKey()));
-                        i++;
-                    } else {
-                        mergedPairs.add(pair1);
-                    }
-                }
-                i++;
-            } while (i < pairs.size() - 1);
-
-            if (mergedPairs.get(mergedPairs.size() - 1).equals(pairs.get(pairs.size() - 2))) {
-                mergedPairs.add(pairs.get(pairs.size() - 1));
-            }
+    public void jakkardTextFieldKeyReleased(KeyEvent keyEvent) {
+        try {
+            jakkard = Double.parseDouble(jakkardTextField.getText());
+            System.out.println(jakkard);
+            familyTreeView.refresh();
+        } catch (NumberFormatException ignore) {
+            jakkard = 0;
         }
-        return sortByTitle(mergedPairs);
     }
 
-    private List<Pair<GID, GID>> sortByTitle(List<Pair<GID, GID>> pairs) {
+    public void expandAllButtonClick(ActionEvent actionEvent) {
+        rootItem.getChildren().forEach(item -> {
+            if (item != null && !item.isLeaf()) {
+                item.setExpanded(true);
+            }
+        });
+    }
 
-        return pairs.stream().sorted((p1, p2) -> {
-            GID c1 = p1.getKey().getTitle().isEmpty() ? p1.getValue() : p1.getKey();
-            GID c2 = p2.getKey().getTitle().isEmpty() ? p2.getValue() : p2.getKey();
-            return c1.getTitle().compareToIgnoreCase(c2.getTitle());
-        }).collect(Collectors.toList());
+    public void collapseAllButtonClick(ActionEvent actionEvent) {
+        rootItem.getChildren().forEach(item -> {
+            if (item != null && !item.isLeaf()) {
+                item.setExpanded(false);
+            }
+        });
+    }
+
+    public void precisionCheckBoxAction(ActionEvent actionEvent) {
+        setDenominatorId(precisionCheckBox.getSelectionModel().getSelectedItem());
+        loadFamilies();
+    }
+
+    private Callback<TreeView<NameView>, TreeCell<NameView>> treeViewCellFactory() {
+
+        return new Callback<TreeView<NameView>, TreeCell<NameView>>() {
+            @Override
+            public TreeCell<NameView> call(TreeView<NameView> param) {
+                return new TreeCell<NameView>() {
+
+                    @Override
+                    public void updateItem(NameView item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (!isEmpty() && !(null == item)) {
+                            Color color = Color.BLACK;
+
+                            double minIndex = item.getJakkardStatus();
+
+                            if (item.isFamily()) {
+                                if (item.getItems().size() >= 2) {
+                                    minIndex = item.getItems().stream().min(Comparator.comparing(NameView::getJakkardStatus)).map(NameView::getJakkardStatus).orElse(0.0);
+                                } else {
+                                    minIndex = 100;
+                                }
+                            }
+
+                            if (minIndex < jakkard) {
+                                color = Color.RED;
+                            }
+                            setText(item.toString());
+                            setTextFill(color);
+                            familyTreeView.refresh();
+                        } else {
+                            setText(null);
+                        }
+                    }
+                };
+            }
+        };
+    }
+
+    public void generateFamiliesButtonClick(ActionEvent actionEvent) {
+        if (romsCollection.getType() == CollectionType.PLAIN) {
+            ListFilesa.generateFamilies();
+        } else {
+            ListFilesa.archiveToFamilies();
+        }
+        showFamilies();
+    }
+
+    public void calculateRelationsButtonClick(ActionEvent actionEvent) {
+        ListFilesa.calculateRelations();
+        showFamilies();
     }
 
     public void auditFamiliesButtonClick(ActionEvent actionEvent) {
     }
 
-    public void generateFamiliesButtonClick(ActionEvent actionEvent) {
+    public void verifyFamiliesButtonClick(ActionEvent actionEvent) {
     }
 
-    public void verifyFamiliesButtonClick(ActionEvent actionEvent) {
+    public void selectButtonClick(ActionEvent actionEvent) {
+        TextInputDialog dialog = new TextInputDialog("");
+        dialog.setTitle("Text Input Dialog");
+        dialog.setHeaderText("Look, a Text Input Dialog");
+        dialog.setContentText("Enter search phrase:");
+
+        Optional<String> result = dialog.showAndWait();
+        if (result.isPresent()) {
+            String phrase = result.get().toLowerCase();
+            rootItem.getChildren().forEach(c -> {
+                if (!c.getValue().isFamily() && c.getValue().getName().toLowerCase().contains(phrase)) {
+                    familyTreeView.getSelectionModel().select(c);
+                }
+            });
+        }
+    }
+
+    //TODO in future allow to merge families too
+    public void addToGroupButtonClick(ActionEvent actionEvent) {
+
+        List<Name> selectedNames = familyTreeView.getSelectionModel().getSelectedItems().stream()
+                .filter(t -> !t.getValue().isFamily())
+                .filter(t -> t.getParent().equals(rootItem))
+                .map(t -> t.getValue().toName())
+                .collect(Collectors.toList());
+
+        List<String> choices = families.keySet().stream().sorted().collect(Collectors.toList());
+
+        ChoiceDialog<String> dialog = new ChoiceDialog<>(choices.get(0), choices);
+        dialog.setTitle("Choice Dialog");
+        dialog.setHeaderText("Look, a Choice Dialog");
+        dialog.setContentText("Select group:");
+
+        Optional<String> result = dialog.showAndWait();
+        if (result.isPresent()){
+            Family family = families.get(result.get());
+            family.getMembers().addAll(selectedNames);
+            ListFilesa.calculateRelations(family);
+
+            showFamilies();
+        }
+    }
+
+    //TODO in future allow to merge families too
+    public void newGroupButtonClick(ActionEvent actionEvent) {
+
+        List<Name> selectedNames = familyTreeView.getSelectionModel().getSelectedItems().stream()
+                .filter(t -> !t.getValue().isFamily())
+                .filter(t -> t.getParent().equals(rootItem))
+                .map(t -> t.getValue().toName())
+                .collect(Collectors.toList());
+
+        TextInputDialog dialog = new TextInputDialog(selectedNames.get(0).getCleanName());
+        dialog.setTitle("Text Input Dialog");
+        dialog.setHeaderText("Look, a Text Input Dialog");
+        dialog.setContentText("Please enter new group name:");
+
+        Optional<String> result = dialog.showAndWait();
+        if (result.isPresent()){
+            String familyName = result.get();
+            Family family = new Family(familyName, selectedNames);
+            families.put(familyName, family);
+            ListFilesa.calculateRelations(family);
+
+            showFamilies();
+        }
+    }
+
+    //TODO in future allow to delete families too
+    public void kickAwayButtonClick(ActionEvent actionEvent) {
+
+        Set<Family> modifiedFamilies = new HashSet<>();
+
+        familyTreeView.getSelectionModel().getSelectedItems().stream()
+                .filter(t -> !t.getValue().isFamily())
+                .filter(t -> !t.getParent().equals(rootItem))
+                .forEach(t -> {
+                    String name = t.getValue().getName();
+                    String familyName = t.getValue().getFamilyName();
+                    Family family = families.get(familyName);
+                    List<Name> filteredMembers = family.getMembers().stream().filter(n -> !n.getName().equals(name)).collect(Collectors.toList());
+                    family.setMembers(filteredMembers);
+                    modifiedFamilies.add(family);
+                });
+
+        modifiedFamilies.forEach(ListFilesa::calculateRelations);
+
+        families = families.entrySet().stream()
+                .filter(f -> !f.getValue().getMembers().isEmpty())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        showFamilies();
     }
 
     static class PairNameFactory implements Callback<TableColumn.CellDataFeatures<Pair<GID, GID>, Pair<GID, GID>>, ObservableValue<Pair<GID, GID>>> {

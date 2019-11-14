@@ -3,15 +3,15 @@ package md.leonis.shingler.gui.controller;
 import javafx.animation.PauseTransition;
 import javafx.fxml.FXML;
 import javafx.util.Duration;
-import md.leonis.shingler.gui.config.ConfigHolder;
+import md.leonis.shingler.model.ConfigHolder;
 import md.leonis.shingler.gui.view.FxmlView;
 import md.leonis.shingler.gui.view.StageManager;
 import md.leonis.shingler.utils.IOUtils;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
 
-import static md.leonis.shingler.gui.config.ConfigHolder.collectionsDir;
-import static md.leonis.shingler.gui.config.ConfigHolder.platforms;
+import static md.leonis.shingler.model.ConfigHolder.collectionsDir;
+import static md.leonis.shingler.model.ConfigHolder.platforms;
 
 @Controller
 public class SplashController {
@@ -30,7 +30,6 @@ public class SplashController {
 
         //TODO service, read from disk
         platforms.put("NES", "nes");
-        platforms.put("TEST", "test");
 
         IOUtils.createDirectories(collectionsDir);
         platforms.values().forEach(p -> IOUtils.createDirectories(collectionsDir.resolve(p)));

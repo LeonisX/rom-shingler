@@ -9,7 +9,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import md.leonis.shingler.Main1024a;
-import md.leonis.shingler.gui.config.ConfigHolder;
+import md.leonis.shingler.model.ConfigHolder;
 import md.leonis.shingler.gui.controller.template.LogController;
 import md.leonis.shingler.gui.view.FxmlView;
 import md.leonis.shingler.gui.view.StageManager;
@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static md.leonis.shingler.gui.config.ConfigHolder.*;
+import static md.leonis.shingler.model.ConfigHolder.*;
 import static md.leonis.shingler.gui.view.StageManager.runInBackground;
 
 @Controller
@@ -65,7 +65,6 @@ public class DashboardController {
     private final ConfigHolder configHolder;
 
     private boolean showPlatforms = true;
-    private RomsCollection romsCollection;
 
     @Lazy
     public DashboardController(StageManager stageManager, ConfigHolder configHolder) {
@@ -144,7 +143,7 @@ public class DashboardController {
     private void showPlatformStatus(String selectedItem) {
 
         platform = selectedItem;
-        List<Path> collections = IOUtils.listFiles(workCollectionsDir());
+        List<Path> collections = IOUtils.listFiles(workCollectionsPath());
         textArea.setText("Collections: " + collections.size());
     }
 
@@ -154,7 +153,7 @@ public class DashboardController {
         platform = selectedItem;
         collectionsView.setItems(FXCollections.observableArrayList(".."));
 
-        List<Path> collections = IOUtils.listFiles(workCollectionsDir());
+        List<Path> collections = IOUtils.listFiles(workCollectionsPath());
         collectionsView.getItems().addAll(FXCollections.observableArrayList(collections.stream().map(c -> c.getFileName().toString()).collect(Collectors.toList())));
         //collectionsView.getSelectionModel().selectFirst();
         textArea.setText("");
@@ -171,7 +170,7 @@ public class DashboardController {
 
         textArea.setText(collection);
         textArea.appendText("\nType: " + romsCollection.getType());
-        textArea.appendText("\nRoms path: " + (null == romsCollection.getRomsPath() ? "---" : romsCollection.getRomsPath()));
+        textArea.appendText("\nRoms path: " + (null == romsCollection.getRomsPathString() ? "---" : romsCollection.getRomsPathString()));
         boolean isEmpty = romsCollection.getGids().isEmpty();
         textArea.appendText("\nRoms count: " + (isEmpty ? "---" : romsCollection.getGids().size()));
 
@@ -263,15 +262,15 @@ public class DashboardController {
     }
 
     private void loadCollection() {
-        romsCollection = IOUtils.loadCollection(workCollectionsDir().resolve(collection).toFile());
+        romsCollection = IOUtils.loadCollection(fullCollectionsPath().toFile());
     }
 
     private void saveCollection() {
-        IOUtils.serialize(workCollectionsDir().resolve(collection).toFile(), romsCollection);
+        IOUtils.serialize(fullCollectionsPath().toFile(), romsCollection);
     }
 
     private void deleteCollection(String currentCollection) {
-        IOUtils.deleteFile(workCollectionsDir().resolve(currentCollection));
+        IOUtils.deleteFile(workCollectionsPath().resolve(currentCollection));
     }
 
     public void typeButtonClick() {
@@ -290,12 +289,12 @@ public class DashboardController {
     public void selectCollectionFilesButtonClick() {
 
         Stage stage = (Stage) gamesToFamilyButton.getScene().getWindow();
-        DirectoryChooser directoryChooser = configHolder.getDirectoryChooser("Select directory with unpacked games");
+        DirectoryChooser directoryChooser = stageManager.getDirectoryChooser("Select directory with unpacked games");
         File dir = directoryChooser.showDialog(stage);
-        configHolder.saveInitialDir(directoryChooser, dir);
+        stageManager.saveInitialDir(directoryChooser, dir);
 
         if (dir != null) {
-            romsCollection.setRomsPath(dir.getAbsolutePath());
+            romsCollection.setRomsPathString(dir.getAbsolutePath());
             scanCollectionFilesButtonClick();
         }
     }
@@ -305,12 +304,12 @@ public class DashboardController {
         runInBackground(() -> {
             switch (romsCollection.getType()) {
                 case PLAIN:
-                    List<Path> romsPaths = IOUtils.listFiles(Paths.get(romsCollection.getRomsPath()));
+                    List<Path> romsPaths = IOUtils.listFiles(Paths.get(romsCollection.getRomsPathString()));
                     Map<String, GID> gids = Main1024a.GIDsFromFiles(romsPaths);
                     romsCollection.setGids(gids);
                     break;
                 case MERGED:
-                    List<Path> familiesPaths = IOUtils.listFiles(Paths.get(romsCollection.getRomsPath()));
+                    List<Path> familiesPaths = IOUtils.listFiles(Paths.get(romsCollection.getRomsPathString()));
                     Map<String, GID> mergedGids = Main1024a.GIDsFromMergedFile(familiesPaths.stream().filter(f -> f.getFileName().toString().endsWith(".7z")).collect(Collectors.toList()));
                     romsCollection.setGids(mergedGids);
                     break;
@@ -328,12 +327,12 @@ public class DashboardController {
                 switch (romsCollection.getType()) {
                     case PLAIN:
                         //TODO may be use saved GIDs
-                        List<Path> romsPaths = IOUtils.listFiles(Paths.get(romsCollection.getRomsPath()));
+                        List<Path> romsPaths = IOUtils.listFiles(Paths.get(romsCollection.getRomsPathString()));
                         Map<String, GID> gids = Main1024a.calculateHashes(romsPaths);
                         romsCollection.setGids(gids);
                         break;
                     case MERGED:
-                        List<Path> familiesPaths = IOUtils.listFiles(Paths.get(romsCollection.getRomsPath()));
+                        List<Path> familiesPaths = IOUtils.listFiles(Paths.get(romsCollection.getRomsPathString()));
                         Map<String, GID> mergedGids = Main1024a.calculateMergedHashes(familiesPaths.stream().filter(f -> f.getFileName().toString().endsWith(".7z")).collect(Collectors.toList()));
                         romsCollection.setGids(mergedGids);
                         break;
@@ -349,14 +348,13 @@ public class DashboardController {
 
     public void generateShinglesButtonClick() {
 
-        Path workShinglesDir = shinglesDir.resolve(platform);
-        Main1024a.createSampleDirs(workShinglesDir);
+        Main1024a.createSampleDirs(workShinglesPath());
 
-        Path romsFolder = Paths.get(romsCollection.getRomsPath());
+        Path romsFolder = Paths.get(romsCollection.getRomsPathString());
 
         runInBackground(() -> {
             try {
-                Main1024a.generateShinglesNio(romsCollection, romsFolder, workShinglesDir);
+                Main1024a.generateShinglesNio(romsCollection, romsFolder, workShinglesPath());
                 showCollection();
             } catch (Exception e) {
                 throw new RuntimeException(e);

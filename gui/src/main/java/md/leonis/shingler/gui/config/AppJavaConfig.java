@@ -3,6 +3,7 @@ package md.leonis.shingler.gui.config;
 import javafx.stage.Stage;
 import md.leonis.shingler.gui.view.SpringFXMLLoader;
 import md.leonis.shingler.gui.view.StageManager;
+import md.leonis.shingler.model.ConfigHolder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
