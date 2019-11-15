@@ -5,6 +5,9 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
@@ -24,7 +27,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
 
+import java.awt.*;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.List;
 import java.util.*;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
@@ -65,6 +72,8 @@ public class FamilyController {
     public Button kickAwayButton;
     public Button newGroupButton;
     public Button addToGroupButton;
+    public Button openDirButton;
+    public Button runButton;
 
     private TreeItem<NameView> rootItem = new TreeItem<>(NameView.EMPTY);
 
@@ -311,7 +320,7 @@ public class FamilyController {
         SmartChoiceDialog<String> dialog = stageManager.getChoiceDialog("Choice Dialog", "Look, a Choice Dialog", "Select group:", choices.get(0), choices);
 
         Optional<String> result = dialog.showAndWait();
-        if (result.isPresent()){
+        if (result.isPresent()) {
             Family family = families.get(result.get());
             family.getMembers().addAll(selectedNames);
             ListFilesa.calculateRelations(family);
@@ -337,7 +346,7 @@ public class FamilyController {
         TextInputDialog dialog = stageManager.getTextInputDialog("Text Input Dialog", "Look, a Text Input Dialog", "Please enter new group name:", selectedNames.get(0).getCleanName());
 
         Optional<String> result = dialog.showAndWait();
-        if (result.isPresent()){
+        if (result.isPresent()) {
             String familyName = result.get();
             Family family = new Family(familyName, selectedNames);
             families.put(familyName, family);
@@ -371,6 +380,30 @@ public class FamilyController {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         showFamilies();
+    }
+
+    public void openDirButtonClick(ActionEvent actionEvent) {
+
+        try {
+            Desktop.getDesktop().open(romsCollection.getRomsPath().toFile());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void runButtonClick(ActionEvent actionEvent) {
+
+        try {
+            NameView nameView = familyTreeView.getSelectionModel().getSelectedItem().getValue();
+            if (romsCollection.getType() == CollectionType.PLAIN) {
+                Desktop.getDesktop().open(romsCollection.getRomsPath().resolve(nameView.getName()).toFile());
+            } else {
+                Path path = IOUtils.extractFromArchive(romsCollection.getRomsPath().resolve(nameView.getFamilyName()), nameView.getName());
+                Desktop.getDesktop().open(path.toFile());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     static class PairNameFactory implements Callback<TableColumn.CellDataFeatures<Pair<GID, GID>, Pair<GID, GID>>, ObservableValue<Pair<GID, GID>>> {

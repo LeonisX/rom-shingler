@@ -112,6 +112,17 @@ public class IOUtils {
     }
 
     @Measured
+    public static Path extractFromArchive(Path file, String fileName) {
+        try {
+            Path tempFile = Files.createTempFile("shingler", fileName);
+            Files.write(tempFile, loadBytesFromArchive(file, fileName));
+            return tempFile;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Measured
     public static byte[] loadBytesFromArchive(Path file, String fileName) {
 
         try (SevenZFile sevenZFile = new SevenZFile(file.toFile())) {

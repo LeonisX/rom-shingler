@@ -74,6 +74,8 @@
                      <Button fx:id="newGroupButton" mnemonicParsing="false" onAction="#newGroupButtonClick" text="New group" />
                      <Button fx:id="addToGroupButton" mnemonicParsing="false" onAction="#addToGroupButtonClick" text="Add to group" />
                      <Button fx:id="kickAwayButton" mnemonicParsing="false" onAction="#kickAwayButtonClick" text="Kick away" />
+                     <Button fx:id="openDirButton" mnemonicParsing="false" onAction="#openDirButtonClick" text="Open dir" />
+                     <Button fx:id="runButton" mnemonicParsing="false" onAction="#runButtonClick" text="Run " />
                         </HBox>
                     </top>
                     <center>

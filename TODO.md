@@ -1,8 +1,5 @@
 # TODO list
 
-* Open game dir
-* Open emulator
-
 * Orphaned - find nearest families, allow to add.
 View:
 orphan

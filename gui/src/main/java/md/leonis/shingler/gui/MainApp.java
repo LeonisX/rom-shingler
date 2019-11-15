@@ -3,13 +3,13 @@ package md.leonis.shingler.gui;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import md.leonis.shingler.utils.MeasureMethodTest;
 import md.leonis.shingler.gui.view.FxmlView;
 import md.leonis.shingler.gui.view.StageManager;
+import md.leonis.shingler.utils.MeasureMethodTest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 
 @SpringBootApplication
@@ -35,7 +35,10 @@ public class MainApp extends Application {
     public void init() {
         String[] args = this.getParameters().getRaw().toArray(new String[0]);
         // We run Spring context initialization at the time of JavaFX initialization:
-        springContext = SpringApplication.run(MainApp.class, args);
+        SpringApplicationBuilder builder = new SpringApplicationBuilder(MainApp.class);
+        builder.headless(false);
+        springContext = builder.run(args);
+        //springContext = SpringApplication.run(MainApp.class, args);
     }
 
     @Override
