@@ -164,7 +164,6 @@ public class ListFilesa {
 
         File familyFile = fullFamiliesPath().toFile();
 
-        byHash = romsCollection.getGids().values().stream().collect(Collectors.toMap(h -> bytesToHex(h.getSha1()), Function.identity())); //TODO not need
         byTitle = romsCollection.getGids().values().stream().collect(Collectors.toMap(GID::getTitle, Function.identity()));
 
         int[] k = {0};
@@ -196,7 +195,6 @@ public class ListFilesa {
 
         Main1024a.cache.fullCleanup();
 
-        byHash = romsCollection.getGids().values().stream().collect(Collectors.toMap(h -> bytesToHex(h.getSha1()), Function.identity())); //TODO not need
         byTitle = romsCollection.getGids().values().stream().collect(Collectors.toMap(GID::getTitle, Function.identity()));
 
         LOGGER.info(String.format("%nComparing: %s... [%s]", family.getName(), family.size()));
@@ -224,9 +222,7 @@ public class ListFilesa {
 
                 long[] s2Set = ShingleUtils.loadFromCache(cache, fullShinglesPath().resolve(bytesToHex(byTitle.get(name2.getName()).getSha1()) + ".shg"));
 
-                long[] s1intersect = intersectArrays(s1Set, s2Set);
-                long[] s1union = unionArrays(s1Set, s2Set);
-                double jakkard = s1intersect.length * 100.0 / s1union.length;
+                double jakkard = doCalculateJakkard(s1Set, s2Set);
 
                 name1.addJakkardStatus(jakkard);
                 name2.addJakkardStatus(jakkard);
@@ -239,6 +235,31 @@ public class ListFilesa {
             }
             name1.setDone(true);
         }
+    }
+
+    private static double doCalculateJakkard(long[] s1Set, long[] s2Set) {
+        long[] s1intersect = intersectArrays(s1Set, s2Set);
+        long[] s1union = unionArrays(s1Set, s2Set);
+        return s1intersect.length * 100.0 / s1union.length;
+    }
+
+    public static Map<Family, Double> calculateRelations(String name) {
+
+        Main1024a.cache.fullCleanup();
+        byTitle = romsCollection.getGids().values().stream().collect(Collectors.toMap(GID::getTitle, Function.identity()));
+
+        int[] k = {0};
+        long[] s1Set = ShingleUtils.loadFromCache(cache, fullShinglesPath().resolve(bytesToHex(byTitle.get(name).getSha1()) + ".shg"));
+
+        return families.values().stream().collect(Collectors.toMap(Function.identity(), family -> {
+            LOGGER.info(String.format("%nComparing: %s with %s %2.3f%%", name, family.getName(), (k[0]++ + 1) * 100.0 / families.size()));
+            long[] s2Set = ShingleUtils.loadFromCache(cache, fullShinglesPath().resolve(bytesToHex(byTitle.get(family.getMother().getName()).getSha1()) + ".shg"));
+
+            return doCalculateJakkard(s1Set, s2Set);
+        })).entrySet().stream()
+                .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
+                .limit(8)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (first, second) -> first, LinkedHashMap::new));
     }
 
     static void drop(Map<String, Family> families, double jakkardIndex) {

@@ -4,6 +4,7 @@
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TextField?>
@@ -68,12 +69,18 @@
                         <HBox alignment="CENTER_LEFT" prefHeight="40.0" prefWidth="1220.0" spacing="5.0" BorderPane.alignment="CENTER">
                             <Button fx:id="expandAllButton" mnemonicParsing="false" onAction="#expandAllButtonClick" text="Expand all" />
                             <Button fx:id="collapseAllButton" mnemonicParsing="false" onAction="#collapseAllButtonClick" text="Collapse all" />
+                     <Separator orientation="VERTICAL" prefHeight="200.0" />
                             <Label text="Jakkard:" />
                             <TextField fx:id="jakkardTextField" onKeyReleased="#jakkardTextFieldKeyReleased" prefHeight="25.0" prefWidth="64.0" />
                      <Button fx:id="selectButton" mnemonicParsing="false" onAction="#selectButtonClick" text="Select" />
+                     <Separator orientation="VERTICAL" prefHeight="200.0" />
                      <Button fx:id="newGroupButton" mnemonicParsing="false" onAction="#newGroupButtonClick" text="New group" />
                      <Button fx:id="addToGroupButton" mnemonicParsing="false" onAction="#addToGroupButtonClick" text="Add to group" />
                      <Button fx:id="kickAwayButton" mnemonicParsing="false" onAction="#kickAwayButtonClick" text="Kick away" />
+                     <Button fx:id="findFamilyButton" mnemonicParsing="false" onAction="#findFamilyButtonClick" text="Find families" />
+                     <Button fx:id="addToFamilyButton" mnemonicParsing="false" onAction="#addToFamilyButtonClick" text="Add to family" />
+                     <Button fx:id="findFamiliesAutoButton" mnemonicParsing="false" onAction="#findFamiliesAutoButtonClick" text="Find families auto" />
+                     <Separator orientation="VERTICAL" prefHeight="200.0" />
                      <Button fx:id="openDirButton" mnemonicParsing="false" onAction="#openDirButtonClick" text="Open dir" />
                      <Button fx:id="runButton" mnemonicParsing="false" onAction="#runButtonClick" text="Run " />
                         </HBox>

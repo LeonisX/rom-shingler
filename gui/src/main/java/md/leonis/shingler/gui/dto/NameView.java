@@ -56,6 +56,16 @@ class NameView {
         this.items = views;
     }
 
+    // Family + Jakkard to NameView
+    public NameView(Family family, Double jakkardStatus) {
+        this.file = null;
+        this.name = family.getName();
+        this.familyName = family.getName();
+        this.jakkardStatus = jakkardStatus;
+        this.status = NodeStatus.FAMILY_LIST;
+        this.items = new ArrayList<>();
+    }
+
     public Name toName() {
         return new Name(file, false, jakkardStatus);
     }
@@ -64,6 +74,8 @@ class NameView {
     public String toString() {
         if (status == NodeStatus.FAMILY) {
             return String.format("%-48s   [%1.0f]", name, jakkardStatus);
+        } if (status == NodeStatus.FAMILY_LIST) {
+            return String.format("%-48s   (%2.3f%%)", name, jakkardStatus);
         } else {
             return String.format("%-48s     (%2.3f%%)", name, jakkardStatus);
         }

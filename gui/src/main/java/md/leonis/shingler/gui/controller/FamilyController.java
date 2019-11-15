@@ -74,6 +74,9 @@ public class FamilyController {
     public Button addToGroupButton;
     public Button openDirButton;
     public Button runButton;
+    public Button findFamilyButton;
+    public Button addToFamilyButton;
+    public Button findFamiliesAutoButton;
 
     private TreeItem<NameView> rootItem = new TreeItem<>(NameView.EMPTY);
 
@@ -403,6 +406,62 @@ public class FamilyController {
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public void findFamilyButtonClick(ActionEvent actionEvent) {
+
+        familyTreeView.getSelectionModel().getSelectedItems().forEach(selectedItem -> {
+            NameView nameView = selectedItem.getValue();
+
+            selectedItem.getChildren().setAll(
+                    ListFilesa.calculateRelations(nameView.getName()).entrySet().stream()
+                            .map(e -> new NameView(e.getKey(), e.getValue()))
+                            .map(TreeItem::new).collect(Collectors.toList())
+            );
+            selectedItem.setExpanded(true);
+        });
+    }
+
+    public void addToFamilyButtonClick(ActionEvent actionEvent) {
+
+        long modified = familyTreeView.getSelectionModel().getSelectedItems().stream().filter(i -> i.getValue().getStatus() == NodeStatus.FAMILY_LIST).peek(selectedItem -> {
+            NameView nameView = selectedItem.getValue();
+
+            if (nameView.getStatus() == NodeStatus.FAMILY_LIST) {
+                Name parent = selectedItem.getParent().getValue().toName();
+                Family family = families.get(nameView.getFamilyName());
+                family.getMembers().add(parent);
+
+                ListFilesa.calculateRelations(family);
+            }
+        }).count();
+
+        if (modified > 0) {
+            showFamilies();
+            IOUtils.serialize(fullFamiliesPath().toFile(), families);
+        }
+    }
+
+    public void findFamiliesAutoButtonClick(ActionEvent actionEvent) {
+
+        long modified = familyTreeView.getSelectionModel().getSelectedItems().stream().map(selectedItem -> {
+            NameView nameView = selectedItem.getValue();
+            Map.Entry<Family, Double> entry = ListFilesa.calculateRelations(nameView.getName()).entrySet().iterator().next();
+
+            if (entry.getValue() >= jakkard) {
+                Family family = ListFilesa.calculateRelations(nameView.getName()).entrySet().iterator().next().getKey();
+                family.getMembers().add(nameView.toName());
+                ListFilesa.calculateRelations(family);
+                return 1;
+            } else {
+                return null;
+            }
+        }).filter(Objects::nonNull).count();
+
+        if (modified > 0) {
+            showFamilies();
+            IOUtils.serialize(fullFamiliesPath().toFile(), families);
         }
     }
 

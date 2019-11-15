@@ -1,15 +1,6 @@
 # TODO list
 
-* Orphaned - find nearest families, allow to add.
-View:
-orphan
-    family1,
-    family2,
-    family3,
-    ...
-    
-* Any other game - same ability
-    
+* Filter by PD, Hack, Good
 
 * Compare families, allow to merge them
 
