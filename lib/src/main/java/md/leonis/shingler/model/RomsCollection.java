@@ -26,7 +26,7 @@ public class RomsCollection implements Serializable {
     private List<GID> gids = new ArrayList<>();
 
     public Path getRomsPath() {
-        return Paths.get(romsPathString);
+        return romsPathString == null ? null : Paths.get(romsPathString);
     }
 
     public void setGids(Map<String, GID> gids) {

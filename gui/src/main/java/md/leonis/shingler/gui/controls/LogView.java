@@ -1,4 +1,4 @@
-package md.leonis.shingler.gui;
+package md.leonis.shingler.gui.controls;
 
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;

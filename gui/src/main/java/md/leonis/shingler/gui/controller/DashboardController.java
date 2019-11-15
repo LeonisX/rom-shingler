@@ -6,14 +6,14 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
-import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import md.leonis.shingler.Main1024a;
-import md.leonis.shingler.model.ConfigHolder;
 import md.leonis.shingler.gui.controller.template.LogController;
+import md.leonis.shingler.gui.controls.SmartDirectoryChooser;
 import md.leonis.shingler.gui.view.FxmlView;
 import md.leonis.shingler.gui.view.StageManager;
 import md.leonis.shingler.model.CollectionType;
+import md.leonis.shingler.model.ConfigHolder;
 import md.leonis.shingler.model.GID;
 import md.leonis.shingler.model.RomsCollection;
 import md.leonis.shingler.utils.IOUtils;
@@ -28,8 +28,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static md.leonis.shingler.model.ConfigHolder.*;
 import static md.leonis.shingler.gui.view.StageManager.runInBackground;
+import static md.leonis.shingler.model.ConfigHolder.*;
 
 @Controller
 public class DashboardController {
@@ -242,10 +242,7 @@ public class DashboardController {
     public void renameCollectionButtonClick() {
 
         String currentCollection = collectionsView.getSelectionModel().getSelectedItem();
-        TextInputDialog dialog = new TextInputDialog(currentCollection);
-        dialog.setTitle("Text Input Dialog");
-        dialog.setHeaderText("Look, a Text Input Dialog");
-        dialog.setContentText("Please enter collection name:");
+        TextInputDialog dialog = stageManager.getTextInputDialog("Text Input Dialog", "Look, a Text Input Dialog", "Please enter collection name:", currentCollection);
 
         Optional<String> result = dialog.showAndWait();
         if (result.isPresent()) {
@@ -289,9 +286,8 @@ public class DashboardController {
     public void selectCollectionFilesButtonClick() {
 
         Stage stage = (Stage) gamesToFamilyButton.getScene().getWindow();
-        DirectoryChooser directoryChooser = stageManager.getDirectoryChooser("Select directory with unpacked games");
+        SmartDirectoryChooser directoryChooser = stageManager.getDirectoryChooser("Select directory with unpacked games", romsCollection.getRomsPath());
         File dir = directoryChooser.showDialog(stage);
-        stageManager.saveInitialDir(directoryChooser, dir);
 
         if (dir != null) {
             romsCollection.setRomsPathString(dir.getAbsolutePath());

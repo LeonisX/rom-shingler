@@ -13,7 +13,8 @@ import javafx.scene.paint.Color;
 import javafx.util.Callback;
 import javafx.util.Pair;
 import md.leonis.shingler.ListFilesa;
-import md.leonis.shingler.gui.domain.NameView;
+import md.leonis.shingler.gui.dto.NameView;
+import md.leonis.shingler.gui.dto.NodeStatus;
 import md.leonis.shingler.gui.view.StageManager;
 import md.leonis.shingler.model.*;
 import md.leonis.shingler.utils.IOUtils;
@@ -239,7 +240,7 @@ public class FamilyController {
 
                             double minIndex = item.getJakkardStatus();
 
-                            if (item.isFamily()) {
+                            if (item.getStatus() == NodeStatus.FAMILY) {
                                 if (item.getItems().size() >= 2) {
                                     minIndex = item.getItems().stream().min(Comparator.comparing(NameView::getJakkardStatus)).map(NameView::getJakkardStatus).orElse(0.0);
                                 } else {
@@ -283,16 +284,13 @@ public class FamilyController {
     }
 
     public void selectButtonClick(ActionEvent actionEvent) {
-        TextInputDialog dialog = new TextInputDialog("");
-        dialog.setTitle("Text Input Dialog");
-        dialog.setHeaderText("Look, a Text Input Dialog");
-        dialog.setContentText("Enter search phrase:");
+        TextInputDialog dialog = stageManager.getTextInputDialog("Text Input Dialog", "Look, a Text Input Dialog", "Enter search phrase:");
 
         Optional<String> result = dialog.showAndWait();
         if (result.isPresent()) {
             String phrase = result.get().toLowerCase();
             rootItem.getChildren().forEach(c -> {
-                if (!c.getValue().isFamily() && c.getValue().getName().toLowerCase().contains(phrase)) {
+                if ((c.getValue().getStatus() != NodeStatus.FAMILY) && c.getValue().getName().toLowerCase().contains(phrase)) {
                     familyTreeView.getSelectionModel().select(c);
                 }
             });
@@ -303,17 +301,13 @@ public class FamilyController {
     public void addToGroupButtonClick(ActionEvent actionEvent) {
 
         List<Name> selectedNames = familyTreeView.getSelectionModel().getSelectedItems().stream()
-                .filter(t -> !t.getValue().isFamily())
+                .filter(t -> t.getValue().getStatus() != NodeStatus.FAMILY)
                 .filter(t -> t.getParent().equals(rootItem))
                 .map(t -> t.getValue().toName())
                 .collect(Collectors.toList());
 
         List<String> choices = families.keySet().stream().sorted().collect(Collectors.toList());
-
-        ChoiceDialog<String> dialog = new ChoiceDialog<>(choices.get(0), choices);
-        dialog.setTitle("Choice Dialog");
-        dialog.setHeaderText("Look, a Choice Dialog");
-        dialog.setContentText("Select group:");
+        ChoiceDialog<String> dialog = stageManager.getChoiceDialog("Choice Dialog", "Look, a Choice Dialog", "Select group:", choices.get(0), choices);
 
         Optional<String> result = dialog.showAndWait();
         if (result.isPresent()){
@@ -329,15 +323,17 @@ public class FamilyController {
     public void newGroupButtonClick(ActionEvent actionEvent) {
 
         List<Name> selectedNames = familyTreeView.getSelectionModel().getSelectedItems().stream()
-                .filter(t -> !t.getValue().isFamily())
+                .filter(t -> t.getValue().getStatus() != NodeStatus.FAMILY)
                 .filter(t -> t.getParent().equals(rootItem))
                 .map(t -> t.getValue().toName())
                 .collect(Collectors.toList());
 
-        TextInputDialog dialog = new TextInputDialog(selectedNames.get(0).getCleanName());
-        dialog.setTitle("Text Input Dialog");
-        dialog.setHeaderText("Look, a Text Input Dialog");
-        dialog.setContentText("Please enter new group name:");
+        if (selectedNames.isEmpty()) {
+            LOGGER.warn("Games are not selected");
+            return;
+        }
+
+        TextInputDialog dialog = stageManager.getTextInputDialog("Text Input Dialog", "Look, a Text Input Dialog", "Please enter new group name:", selectedNames.get(0).getCleanName());
 
         Optional<String> result = dialog.showAndWait();
         if (result.isPresent()){
@@ -356,7 +352,7 @@ public class FamilyController {
         Set<Family> modifiedFamilies = new HashSet<>();
 
         familyTreeView.getSelectionModel().getSelectedItems().stream()
-                .filter(t -> !t.getValue().isFamily())
+                .filter(t -> t.getValue().getStatus() != NodeStatus.FAMILY)
                 .filter(t -> !t.getParent().equals(rootItem))
                 .forEach(t -> {
                     String name = t.getValue().getName();

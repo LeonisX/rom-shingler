@@ -13,6 +13,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import md.leonis.shingler.gui.controls.LogView;
 import md.leonis.shingler.log.InternalLogger;
 import md.leonis.shingler.log.Level;
 import md.leonis.shingler.log.Log;

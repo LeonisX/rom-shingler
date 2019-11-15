@@ -5,14 +5,19 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
-import javafx.stage.DirectoryChooser;
+import javafx.scene.control.ChoiceDialog;
+import javafx.scene.control.TextInputDialog;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import md.leonis.shingler.gui.controls.SmartDirectoryChooser;
+import md.leonis.shingler.gui.dto.DialogTexts;
 import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -157,17 +162,59 @@ public class StageManager {
 
 
     private final Map<String, File> initialDirs = new HashMap<>();
-    private final DirectoryChooser directoryChooser = new DirectoryChooser();
 
-    public DirectoryChooser getDirectoryChooser(String title) {
-        directoryChooser.setTitle(title);
-        directoryChooser.setInitialDirectory(initialDirs.get(title));
+    public SmartDirectoryChooser getDirectoryChooser(String title) {
+        return getDirectoryChooser(title, initialDirs.get(title));
+    }
+
+    public SmartDirectoryChooser getDirectoryChooser(String title, Path romsPath) {
+        return getDirectoryChooser(title, romsPath == null ? null : romsPath.toFile());
+    }
+
+    public SmartDirectoryChooser getDirectoryChooser(String title, File initialDir) {
+        SmartDirectoryChooser directoryChooser = new SmartDirectoryChooser(title, initialDir);
+        directoryChooser.setOnCloseRequest(e ->
+                initialDirs.put(title, ((SmartDirectoryChooser) e.getSource()).getFile())
+        );
         return directoryChooser;
     }
 
-    public void saveInitialDir(DirectoryChooser directoryChooser, File file) {
-        if (null != file) {
-            initialDirs.put(directoryChooser.getTitle(), file);
-        }
+    private final Map<DialogTexts, String> inputDialogTexts = new HashMap<>();
+
+    public TextInputDialog getTextInputDialog(String title, String headerText, String contentText) {
+        return getTextInputDialog(title, headerText, contentText, null);
     }
+
+    public TextInputDialog getTextInputDialog(String title, String headerText, String contentText, String defaultValue) {
+        DialogTexts dialogTexts = new DialogTexts(title, headerText, contentText);
+        String value = (defaultValue == null) ? inputDialogTexts.get(dialogTexts) : defaultValue;
+        TextInputDialog dialog = new TextInputDialog(value);
+        dialog.setTitle(title);
+        dialog.setHeaderText(title);
+        dialog.setContentText(title);
+        dialog.setOnCloseRequest(e ->
+                inputDialogTexts.put(dialogTexts, ((TextInputDialog) e.getSource()).getEditor().getText())
+        );
+        return dialog;
+    }
+
+    private final Map<DialogTexts, String> choiceDialogTexts = new HashMap<>();
+
+    public ChoiceDialog<String> getChoiceDialog(String title, String headerText, String contentText, List<String> choices) {
+        return getChoiceDialog(title, headerText, contentText, null);
+    }
+
+    public ChoiceDialog<String> getChoiceDialog(String title, String headerText, String contentText, String defaultChoice, List<String> choices) {
+        DialogTexts dialogTexts = new DialogTexts(title, headerText, contentText);
+        String choice = (defaultChoice == null) ? choiceDialogTexts.get(dialogTexts) : defaultChoice;
+        ChoiceDialog<String> dialog = new ChoiceDialog<>(choice, choices);
+        dialog.setTitle(title);
+        dialog.setHeaderText(title);
+        dialog.setContentText(title);
+        dialog.setOnCloseRequest(e ->
+                choiceDialogTexts.put(dialogTexts, (String) ((ChoiceDialog) e.getSource()).getSelectedItem())
+        );
+        return dialog;
+    }
+
 }

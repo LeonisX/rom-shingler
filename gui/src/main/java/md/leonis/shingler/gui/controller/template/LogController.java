@@ -9,7 +9,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import md.leonis.shingler.log.Level;
-import md.leonis.shingler.gui.LogView;
+import md.leonis.shingler.gui.controls.LogView;
 import md.leonis.shingler.gui.view.StageManager;
 import org.springframework.context.annotation.Lazy;
 

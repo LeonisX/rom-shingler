@@ -1,4 +1,4 @@
-package md.leonis.shingler.gui.domain;
+package md.leonis.shingler.gui.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,7 +15,7 @@ import java.util.Map;
 public
 class NameView {
 
-    public static NameView EMPTY = new NameView((File) null, "", "", 0.0D, true, new ArrayList<NameView>());
+    public static NameView EMPTY = new NameView(null, "", "", 0.0D, NodeStatus.FAMILY, new ArrayList<>());
 
     //TODO Need???
     private File file;
@@ -23,7 +23,7 @@ class NameView {
     private String familyName;
     private double jakkardStatus;
 
-    private boolean isFamily;
+    private NodeStatus status;
     private List<NameView> items;
 
     // Name to NameView
@@ -32,7 +32,7 @@ class NameView {
         this.name = this.file.getName();
         this.familyName = familyName;
         this.jakkardStatus = jakkardStatus;
-        this.isFamily = false;
+        this.status = NodeStatus.MEMBER;
         this.items = new ArrayList<>();
     }
 
@@ -42,7 +42,7 @@ class NameView {
         this.name = title;
         this.familyName = null;
         this.jakkardStatus = 0;
-        this.isFamily = false;
+        this.status = NodeStatus.ORPHAN;
         this.items = new ArrayList<>();
     }
 
@@ -52,7 +52,7 @@ class NameView {
         this.name = entry.getKey();
         this.familyName = entry.getKey();
         this.jakkardStatus = entry.getValue().getMembers().size();
-        this.isFamily = true;
+        this.status = NodeStatus.FAMILY;
         this.items = views;
     }
 
@@ -62,7 +62,7 @@ class NameView {
 
     @Override
     public String toString() {
-        if (isFamily) {
+        if (status == NodeStatus.FAMILY) {
             return String.format("%-48s   [%1.0f]", name, jakkardStatus);
         } else {
             return String.format("%-48s     (%2.3f%%)", name, jakkardStatus);
