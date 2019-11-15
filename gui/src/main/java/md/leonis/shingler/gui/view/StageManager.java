@@ -9,6 +9,7 @@ import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.TextInputDialog;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import md.leonis.shingler.gui.controls.SmartChoiceDialog;
 import md.leonis.shingler.gui.controls.SmartDirectoryChooser;
 import md.leonis.shingler.gui.dto.DialogTexts;
 import org.slf4j.Logger;
@@ -200,21 +201,20 @@ public class StageManager {
 
     private final Map<DialogTexts, String> choiceDialogTexts = new HashMap<>();
 
-    public ChoiceDialog<String> getChoiceDialog(String title, String headerText, String contentText, List<String> choices) {
+    public SmartChoiceDialog<String> getChoiceDialog(String title, String headerText, String contentText, List<String> choices) {
         return getChoiceDialog(title, headerText, contentText, null);
     }
 
-    public ChoiceDialog<String> getChoiceDialog(String title, String headerText, String contentText, String defaultChoice, List<String> choices) {
+    public SmartChoiceDialog<String> getChoiceDialog(String title, String headerText, String contentText, String defaultChoice, List<String> choices) {
         DialogTexts dialogTexts = new DialogTexts(title, headerText, contentText);
         String choice = (defaultChoice == null) ? choiceDialogTexts.get(dialogTexts) : defaultChoice;
-        ChoiceDialog<String> dialog = new ChoiceDialog<>(choice, choices);
+        SmartChoiceDialog<String> dialog = new SmartChoiceDialog<>(choice, choices);
         dialog.setTitle(title);
         dialog.setHeaderText(title);
         dialog.setContentText(title);
         dialog.setOnCloseRequest(e ->
-                choiceDialogTexts.put(dialogTexts, (String) ((ChoiceDialog) e.getSource()).getSelectedItem())
+                choiceDialogTexts.put(dialogTexts, (String) ((SmartChoiceDialog) e.getSource()).getSelectedItem())
         );
         return dialog;
     }
-
 }

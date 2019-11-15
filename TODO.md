@@ -1,6 +1,5 @@
 # TODO list
 
-* Choice Dialog - use keys to navigate
 * Open game dir
 * Open emulator
 

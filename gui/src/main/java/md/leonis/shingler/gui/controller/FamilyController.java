@@ -13,6 +13,7 @@ import javafx.scene.paint.Color;
 import javafx.util.Callback;
 import javafx.util.Pair;
 import md.leonis.shingler.ListFilesa;
+import md.leonis.shingler.gui.controls.SmartChoiceDialog;
 import md.leonis.shingler.gui.dto.NameView;
 import md.leonis.shingler.gui.dto.NodeStatus;
 import md.leonis.shingler.gui.view.StageManager;
@@ -307,7 +308,7 @@ public class FamilyController {
                 .collect(Collectors.toList());
 
         List<String> choices = families.keySet().stream().sorted().collect(Collectors.toList());
-        ChoiceDialog<String> dialog = stageManager.getChoiceDialog("Choice Dialog", "Look, a Choice Dialog", "Select group:", choices.get(0), choices);
+        SmartChoiceDialog<String> dialog = stageManager.getChoiceDialog("Choice Dialog", "Look, a Choice Dialog", "Select group:", choices.get(0), choices);
 
         Optional<String> result = dialog.showAndWait();
         if (result.isPresent()){
