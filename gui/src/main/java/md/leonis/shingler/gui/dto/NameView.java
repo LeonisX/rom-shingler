@@ -76,6 +76,12 @@ class NameView {
             return String.format("%-48s   [%1.0f]", name, jakkardStatus);
         } if (status == NodeStatus.FAMILY_LIST) {
             return String.format("%-48s   (%2.3f%%)", name, jakkardStatus);
+        } if (status == NodeStatus.ORPHAN) {
+            if (items.size() > 0) {
+                return String.format("%-48s   (%2.3f%%)", name, items.get(0).jakkardStatus);
+            } else {
+                return String.format("%-48s", name);
+            }
         } else {
             return String.format("%-48s     (%2.3f%%)", name, jakkardStatus);
         }

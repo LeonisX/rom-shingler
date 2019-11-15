@@ -49,9 +49,10 @@
                             <ToggleButton mnemonicParsing="false" text="ToggleButton" />
                         </HBox>
                         <HBox alignment="CENTER" spacing="5.0">
-                            <CheckBox fx:id="allGoodCheckBox" mnemonicParsing="false" selected="true" text="Good" />
-                            <CheckBox fx:id="pdCheckBox" mnemonicParsing="false" selected="true" text="PD" />
-                            <CheckBox fx:id="hackCheckBox" mnemonicParsing="false" selected="true" text="Hack" />
+                     <CheckBox fx:id="familiesCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="Families" />
+                            <CheckBox fx:id="allGoodCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="Good" />
+                            <CheckBox fx:id="pdCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="PD" />
+                            <CheckBox fx:id="hackCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="Hack" />
                         </HBox>
                     </VBox>
                 </HBox>

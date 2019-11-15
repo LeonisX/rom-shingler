@@ -77,6 +77,7 @@ public class FamilyController {
     public Button findFamilyButton;
     public Button addToFamilyButton;
     public Button findFamiliesAutoButton;
+    public CheckBox familiesCheckBox;
 
     private TreeItem<NameView> rootItem = new TreeItem<>(NameView.EMPTY);
 
@@ -171,25 +172,27 @@ public class FamilyController {
 
         Map<NameView, List<NameView>> familiesView = new LinkedHashMap<>();
 
-        families.entrySet().stream().sorted(Map.Entry.comparingByKey(Comparator.comparing(String::toString)))
-                .forEach(e -> {
-                    List<NameView> views = new ArrayList<>();
-                    for (int i = 0; i < e.getValue().getMembers().size(); i++) {
-                        Name name = e.getValue().getMembers().get(i);
-                        views.add(new NameView(name, e.getKey(), e.getValue().getJakkardStatus(i)));
-                    }
+        if (familiesCheckBox.isSelected()) {
+            families.entrySet().stream().sorted(Map.Entry.comparingByKey(Comparator.comparing(String::toString)))
+                    .forEach(e -> {
+                        List<NameView> views = new ArrayList<>();
+                        for (int i = 0; i < e.getValue().getMembers().size(); i++) {
+                            Name name = e.getValue().getMembers().get(i);
+                            views.add(new NameView(name, e.getKey(), e.getValue().getJakkardStatus(i)));
+                        }
 
-                    views = views.stream().sorted(Comparator.comparing(NameView::getJakkardStatus).reversed()).collect(Collectors.toList());
+                        views = views.stream().sorted(Comparator.comparing(NameView::getJakkardStatus).reversed()).collect(Collectors.toList());
 
-                    NameView root = new NameView(e, views);
-                    familiesView.put(root, views);
-                });
+                        NameView root = new NameView(e, views);
+                        familiesView.put(root, views);
+                    });
+        }
 
         Set<String> familyNames = families.values().stream().flatMap(f -> f.getMembers().stream().map(Name::getName)).collect(Collectors.toSet());
         Set<String> orphanedNames = romsCollection.getGids().values().stream().map(GID::getTitle).collect(Collectors.toSet());
         orphanedNames.removeAll(familyNames);
 
-        orphanedNames.stream().sorted().forEach(name -> familiesView.put(new NameView(name), new ArrayList<>()));
+        orphanedNames.stream().filter(this::filter).sorted().forEach(name -> familiesView.put(new NameView(name), new ArrayList<>()));
 
         rootItem.getChildren().clear();
         familyTreeView.setRoot(rootItem);
@@ -203,6 +206,17 @@ public class FamilyController {
             rootItem.getChildren().add(node);
         });
     }
+
+    private boolean filter(String name) {
+            boolean p = name.contains("(PD)")  || name.contains("(PD)");
+            boolean h = name.contains("(Hack)")  || name.contains("(Hack)")
+                    || name.contains("(Hack ") || name.contains("(Hack ")
+                    || name.contains(" Hack)") || name.contains(" Hack)");
+            boolean g = !(p || h);
+
+            return (p && pdCheckBox.isSelected()) || (h && hackCheckBox.isSelected()) || (g && allGoodCheckBox.isSelected());
+    }
+
 
     public void mergeFamiliesButtonClick(ActionEvent actionEvent) {
     }
@@ -414,10 +428,13 @@ public class FamilyController {
         familyTreeView.getSelectionModel().getSelectedItems().forEach(selectedItem -> {
             NameView nameView = selectedItem.getValue();
 
+            List<NameView> items = ListFilesa.calculateRelations(nameView.getName()).entrySet().stream()
+                    .map(e -> new NameView(e.getKey(), e.getValue())).collect(Collectors.toList());
+
+            nameView.setItems(items);
+
             selectedItem.getChildren().setAll(
-                    ListFilesa.calculateRelations(nameView.getName()).entrySet().stream()
-                            .map(e -> new NameView(e.getKey(), e.getValue()))
-                            .map(TreeItem::new).collect(Collectors.toList())
+                    items.stream().map(TreeItem::new).collect(Collectors.toList())
             );
             selectedItem.setExpanded(true);
         });
@@ -463,6 +480,10 @@ public class FamilyController {
             showFamilies();
             IOUtils.serialize(fullFamiliesPath().toFile(), families);
         }
+    }
+
+    public void checkBoxAction(ActionEvent actionEvent) {
+        showFamilies();
     }
 
     static class PairNameFactory implements Callback<TableColumn.CellDataFeatures<Pair<GID, GID>, Pair<GID, GID>>, ObservableValue<Pair<GID, GID>>> {
