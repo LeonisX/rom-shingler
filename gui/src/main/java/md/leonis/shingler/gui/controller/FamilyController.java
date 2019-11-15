@@ -78,8 +78,13 @@ public class FamilyController {
     public Button addToFamilyButton;
     public Button findFamiliesAutoButton;
     public CheckBox familiesCheckBox;
+    public TreeView familyRelationsTreeView;
+    public Button expandAllButton2;
+    public Button collapseAllButton2;
+    public TextField jakkardTextField2;
 
     private TreeItem<NameView> rootItem = new TreeItem<>(NameView.EMPTY);
+    private TreeItem<NameView> rootItem2 = new TreeItem<>(NameView.EMPTY);
 
     public TreeView<NameView> familyTreeView;
     public ComboBox<Integer> precisionCheckBox;
@@ -484,6 +489,33 @@ public class FamilyController {
 
     public void checkBoxAction(ActionEvent actionEvent) {
         showFamilies();
+    }
+
+    public void expandAllButtonClick2(ActionEvent actionEvent) {
+        rootItem2.getChildren().forEach(item -> {
+            if (item != null && !item.isLeaf()) {
+                item.setExpanded(true);
+            }
+        });
+    }
+
+    public void collapseAllButtonClick2(ActionEvent actionEvent) {
+        rootItem2.getChildren().forEach(item -> {
+            if (item != null && !item.isLeaf()) {
+                item.setExpanded(false);
+            }
+        });
+    }
+
+    //TODO unify
+    public void jakkardTextFieldKeyReleased2(KeyEvent keyEvent) {
+        try {
+            jakkard = Double.parseDouble(jakkardTextField2.getText());
+            System.out.println(jakkard);
+            familyRelationsTreeView.refresh();
+        } catch (NumberFormatException ignore) {
+            jakkard = 0;
+        }
     }
 
     static class PairNameFactory implements Callback<TableColumn.CellDataFeatures<Pair<GID, GID>, Pair<GID, GID>>, ObservableValue<Pair<GID, GID>>> {
