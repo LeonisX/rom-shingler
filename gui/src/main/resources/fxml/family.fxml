@@ -5,6 +5,7 @@
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TextField?>
@@ -88,12 +89,12 @@
                             <Button fx:id="runListButton" mnemonicParsing="false" onAction="#runListButtonClick" text="Run*" />
                         </HBox>
                     </top>
-                    <center>
-                        <TreeView fx:id="familyTreeView" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
-                    </center>
-                    <right>
-                        <HBox prefHeight="100.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
-                    </right>
+               <center>
+                   <SplitPane dividerPositions="0.5" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+                       <TreeView fx:id="familyTreeView" prefHeight="200.0" prefWidth="200.0"/>
+                       <TreeView fx:id="orphanTreeView" prefHeight="200.0" prefWidth="200.0"/>
+                   </SplitPane>
+               </center>
                 </BorderPane>
             </Tab>
             <Tab text="Families manager">
@@ -126,9 +127,6 @@
                     <center>
                         <TreeView fx:id="familyRelationsTreeView" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
                     </center>
-                    <right>
-                        <HBox prefHeight="100.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
-                    </right>
                 </BorderPane>
             </Tab>
         </TabPane>
