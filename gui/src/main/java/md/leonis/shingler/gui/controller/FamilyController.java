@@ -16,6 +16,7 @@ import javafx.scene.paint.Color;
 import javafx.util.Callback;
 import javafx.util.Pair;
 import md.leonis.shingler.ListFilesa;
+import md.leonis.shingler.gui.controls.ListViewDialog;
 import md.leonis.shingler.gui.controls.SmartChoiceDialog;
 import md.leonis.shingler.gui.dto.NameView;
 import md.leonis.shingler.gui.dto.NodeStatus;
@@ -502,6 +503,71 @@ public class FamilyController {
         }
     }
 
+
+    public void runListButtonClick(ActionEvent actionEvent) {
+
+        try {
+            TreeItem<NameView> item = familyTreeView.getSelectionModel().getSelectedItem();
+            NameView nameView = item.getValue();
+
+            if (nameView.getStatus() == NodeStatus.FAMILY || nameView.getStatus() == NodeStatus.FAMILY_LIST) {
+                Family family = families.get(nameView.getFamilyName());
+                Name bestCandidate = family.getMembers().stream().max(Comparator.comparing(Name::getIndex)).orElse(null);
+
+                ListViewDialog<String> dialog = stageManager.getListViewDialog("Choice Dialog", "Look, a Choice Dialog", "Select group:",
+                        bestCandidate.getName(), family.getMembers().stream().map(Name::getName).collect(Collectors.toList()));
+
+                Optional<String> result = dialog.showAndWait();
+                if (result.isPresent()) {
+                    bestCandidate = family.getMembers().stream().filter(n -> n.getName().equals(result.get())).findFirst().orElse(null);
+                }
+
+                nameView = new NameView(bestCandidate, bestCandidate.getName(), -1);
+            }
+
+            if (romsCollection.getType() == CollectionType.PLAIN) {
+                Desktop.getDesktop().open(romsCollection.getRomsPath().resolve(nameView.getName()).toFile());
+            } else {
+                Path path = IOUtils.extractFromArchive(romsCollection.getRomsPath().resolve(nameView.getFamilyName()), nameView.getName());
+                Desktop.getDesktop().open(path.toFile());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void runListButton2Click(ActionEvent actionEvent) {
+
+        try {
+            TreeItem<NameView> item = familyRelationsTreeView.getSelectionModel().getSelectedItem();
+            NameView nameView = item.getValue();
+
+            if (nameView.getStatus() == NodeStatus.FAMILY || nameView.getStatus() == NodeStatus.FAMILY_LIST) {
+                Family family = families.get(nameView.getFamilyName());
+                Name bestCandidate = family.getMembers().stream().max(Comparator.comparing(Name::getIndex)).orElse(null);
+
+                ListViewDialog<String> dialog = stageManager.getListViewDialog("Choice Dialog", "Look, a Choice Dialog", "Select group:",
+                        bestCandidate.getName(), family.getMembers().stream().map(Name::getName).collect(Collectors.toList()));
+
+                Optional<String> result = dialog.showAndWait();
+                if (result.isPresent()) {
+                    bestCandidate = family.getMembers().stream().filter(n -> n.getName().equals(result.get())).findFirst().orElse(null);
+                }
+
+                nameView = new NameView(bestCandidate, bestCandidate.getName(), -1);
+            }
+
+            if (romsCollection.getType() == CollectionType.PLAIN) {
+                Desktop.getDesktop().open(romsCollection.getRomsPath().resolve(nameView.getName()).toFile());
+            } else {
+                Path path = IOUtils.extractFromArchive(romsCollection.getRomsPath().resolve(nameView.getFamilyName()), nameView.getName());
+                Desktop.getDesktop().open(path.toFile());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void findFamilyButtonClick(ActionEvent actionEvent) {
 
         familyTreeView.getSelectionModel().getSelectedItems().forEach(selectedItem -> {
@@ -658,12 +724,6 @@ public class FamilyController {
 
     public void orderButtonClick(ActionEvent actionEvent) {
         updateTrees();
-    }
-
-    public void runListButtonClick(ActionEvent actionEvent) {
-    }
-
-    public void runListButton2Click(ActionEvent actionEvent) {
     }
 
     static class PairNameFactory implements Callback<TableColumn.CellDataFeatures<Pair<GID, GID>, Pair<GID, GID>>, ObservableValue<Pair<GID, GID>>> {

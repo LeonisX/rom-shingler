@@ -5,10 +5,10 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
-import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.TextInputDialog;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import md.leonis.shingler.gui.controls.ListViewDialog;
 import md.leonis.shingler.gui.controls.SmartChoiceDialog;
 import md.leonis.shingler.gui.controls.SmartDirectoryChooser;
 import md.leonis.shingler.gui.dto.DialogTexts;
@@ -214,6 +214,25 @@ public class StageManager {
         dialog.setContentText(title);
         dialog.setOnCloseRequest(e ->
                 choiceDialogTexts.put(dialogTexts, (String) ((SmartChoiceDialog) e.getSource()).getSelectedItem())
+        );
+        return dialog;
+    }
+
+    private final Map<DialogTexts, String> listViewDialogTexts = new HashMap<>();
+
+    public ListViewDialog<String> getListViewDialog(String title, String headerText, String contentText, List<String> choices) {
+        return getListViewDialog(title, headerText, contentText, null);
+    }
+
+    public ListViewDialog<String> getListViewDialog(String title, String headerText, String contentText, String defaultChoice, List<String> choices) {
+        DialogTexts dialogTexts = new DialogTexts(title, headerText, contentText);
+        String choice = (defaultChoice == null) ? choiceDialogTexts.get(dialogTexts) : defaultChoice;
+        ListViewDialog<String> dialog = new ListViewDialog<>(choice, choices);
+        dialog.setTitle(title);
+        dialog.setHeaderText(title);
+        dialog.setContentText(title);
+        dialog.setOnCloseRequest(e ->
+                listViewDialogTexts.put(dialogTexts, (String) ((ListViewDialog) e.getSource()).getSelectedItem())
         );
         return dialog;
     }

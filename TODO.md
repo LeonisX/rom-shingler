@@ -1,6 +1,9 @@
 # TODO list
 
 * On change tabs - update jakkard, treeview
+ 
+ 
+ * TODO order for family members, families always are sorted by title
   
 * Show orphaned in separate treeview (resized)
  
