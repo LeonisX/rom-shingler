@@ -115,6 +115,7 @@ public class FamilyController {
     private void initialize() {
 
         jakkardTextField.setText("" + jakkard);
+        jakkardTextField2.setText("" + jakkard);
         TextFormatter formatter = new TextFormatter((UnaryOperator<TextFormatter.Change>) change -> PATTERN.matcher(change.getControlNewText()).matches() ? change : null);
         jakkardTextField.setTextFormatter(formatter);
 
@@ -125,7 +126,11 @@ public class FamilyController {
         controlsHBox.managedProperty().bind(controlsHBox.visibleProperty());
         waitLabel.managedProperty().bind(waitLabel.visibleProperty());
 
-        tabPane.getSelectionModel().selectedItemProperty().addListener(        (ov, oldTab, newTab) -> showFamilies()        );
+        tabPane.getSelectionModel().selectedItemProperty().addListener((ov, oldTab, newTab) -> {
+            jakkardTextField.setText("" + jakkard);
+            jakkardTextField2.setText("" + jakkard);
+            showFamilies();
+        });
 
         //TODO load family relations here???
         loadFamilies();
