@@ -244,6 +244,10 @@ public class ListFilesa {
     }
 
     public static Map<Family, Double> calculateRelations(String name) {
+        return calculateRelations(name, "");
+    }
+
+    public static Map<Family, Double> calculateRelations(String name, String ignore) {
 
         Main1024a.cache.fullCleanup();
         byTitle = romsCollection.getGids().values().stream().collect(Collectors.toMap(GID::getTitle, Function.identity()));
@@ -251,7 +255,7 @@ public class ListFilesa {
         int[] k = {0};
         long[] s1Set = ShingleUtils.loadFromCache(cache, fullShinglesPath().resolve(bytesToHex(byTitle.get(name).getSha1()) + ".shg"));
 
-        return families.values().stream().collect(Collectors.toMap(Function.identity(), family -> {
+        return families.values().stream().filter(e -> !e.getName().equals(ignore)).collect(Collectors.toMap(Function.identity(), family -> {
             LOGGER.info(String.format("%nComparing: %s with %s %2.3f%%", name, family.getName(), (k[0]++ + 1) * 100.0 / families.size()));
             long[] s2Set = ShingleUtils.loadFromCache(cache, fullShinglesPath().resolve(bytesToHex(byTitle.get(family.getMother().getName()).getSha1()) + ".shg"));
 

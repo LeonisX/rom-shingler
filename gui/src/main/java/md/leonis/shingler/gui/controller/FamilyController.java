@@ -78,10 +78,13 @@ public class FamilyController {
     public Button addToFamilyButton;
     public Button findFamiliesAutoButton;
     public CheckBox familiesCheckBox;
-    public TreeView familyRelationsTreeView;
+    public TreeView<NameView> familyRelationsTreeView;
     public Button expandAllButton2;
     public Button collapseAllButton2;
     public TextField jakkardTextField2;
+    public Button findRelativesButton;
+    public Button mergeRelativesIntoButton;
+    public TabPane tabPane;
 
     private TreeItem<NameView> rootItem = new TreeItem<>(NameView.EMPTY);
     private TreeItem<NameView> rootItem2 = new TreeItem<>(NameView.EMPTY);
@@ -123,6 +126,10 @@ public class FamilyController {
         leftHashColumn.setCellValueFactory(new PairLeftHashFactory());
         rightHashColumn.setCellValueFactory(new PairRightHashFactory());*/
 
+
+        tabPane.getSelectionModel().selectedItemProperty().addListener(        (ov, oldTab, newTab) -> showFamilies()        );
+
+        //TODO load family relations here???
         loadFamilies();
     }
 
@@ -175,51 +182,75 @@ public class FamilyController {
         groupedGamesLabel.setText("" + inFamily);
         orphanedGamesLabel.setText("" + (total - inFamily));
 
-        Map<NameView, List<NameView>> familiesView = new LinkedHashMap<>();
+        if (tabPane.getSelectionModel().getSelectedIndex() == 0) { // First tab
 
-        if (familiesCheckBox.isSelected()) {
-            families.entrySet().stream().sorted(Map.Entry.comparingByKey(Comparator.comparing(String::toString)))
-                    .forEach(e -> {
-                        List<NameView> views = new ArrayList<>();
-                        for (int i = 0; i < e.getValue().getMembers().size(); i++) {
-                            Name name = e.getValue().getMembers().get(i);
-                            views.add(new NameView(name, e.getKey(), e.getValue().getJakkardStatus(i)));
-                        }
+            Map<NameView, List<NameView>> familiesView = new LinkedHashMap<>();
 
-                        views = views.stream().sorted(Comparator.comparing(NameView::getJakkardStatus).reversed()).collect(Collectors.toList());
+            //TODO delete at all, use separate trees
+            if (familiesCheckBox.isSelected()) {
+                families.entrySet().stream().sorted(Map.Entry.comparingByKey(Comparator.comparing(String::toString)))
+                        .forEach(e -> {
+                            List<NameView> views = new ArrayList<>();
+                            for (int i = 0; i < e.getValue().getMembers().size(); i++) {
+                                Name name = e.getValue().getMembers().get(i);
+                                views.add(new NameView(name, e.getKey(), e.getValue().getJakkardStatus(i)));
+                            }
 
-                        NameView root = new NameView(e, views);
-                        familiesView.put(root, views);
-                    });
+                            views = views.stream().sorted(Comparator.comparing(NameView::getJakkardStatus).reversed()).collect(Collectors.toList());
+
+                            NameView root = new NameView(e, views);
+                            familiesView.put(root, views);
+                        });
+            }
+
+            Set<String> familyNames = families.values().stream().flatMap(f -> f.getMembers().stream().map(Name::getName)).collect(Collectors.toSet());
+            Set<String> orphanedNames = romsCollection.getGids().values().stream().map(GID::getTitle).collect(Collectors.toSet());
+            orphanedNames.removeAll(familyNames);
+
+            orphanedNames.stream().filter(this::filter).sorted().forEach(name -> familiesView.put(new NameView(name), new ArrayList<>()));
+
+            rootItem.getChildren().clear();
+            familyTreeView.setRoot(rootItem);
+            familyTreeView.setShowRoot(false);
+            familyTreeView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+            familyTreeView.setCellFactory(treeViewCellFactory());
+
+            familiesView.forEach((key, value) -> {
+                TreeItem<NameView> node = new TreeItem<>(key);
+                value.forEach(c -> node.getChildren().add(new TreeItem<>(c)));
+                rootItem.getChildren().add(node);
+            });
+        } else { // Family relations tab
+
+            if (familyRelations != null) {
+                Map<NameView, List<NameView>> familyRelationsView = new LinkedHashMap<>();
+
+                familyRelations.forEach((key1, value1) -> familyRelationsView.put(new NameView(key1, (value1.isEmpty() ? 0 : value1.entrySet().iterator().next().getValue())),
+                        value1.entrySet().stream().map(en -> new NameView(en.getKey(), en.getValue())).collect(Collectors.toList())));
+
+                rootItem2.getChildren().clear();
+                familyRelationsTreeView.setRoot(rootItem2);
+                familyRelationsTreeView.setShowRoot(false);
+                familyRelationsTreeView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+                familyRelationsTreeView.setCellFactory(treeViewCellFactory());
+
+                familyRelationsView.forEach((key, value) -> {
+                    TreeItem<NameView> node = new TreeItem<>(key);
+                    value.forEach(c -> node.getChildren().add(new TreeItem<>(c)));
+                    rootItem2.getChildren().add(node);
+                });
+            }
         }
-
-        Set<String> familyNames = families.values().stream().flatMap(f -> f.getMembers().stream().map(Name::getName)).collect(Collectors.toSet());
-        Set<String> orphanedNames = romsCollection.getGids().values().stream().map(GID::getTitle).collect(Collectors.toSet());
-        orphanedNames.removeAll(familyNames);
-
-        orphanedNames.stream().filter(this::filter).sorted().forEach(name -> familiesView.put(new NameView(name), new ArrayList<>()));
-
-        rootItem.getChildren().clear();
-        familyTreeView.setRoot(rootItem);
-        familyTreeView.setShowRoot(false);
-        familyTreeView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        familyTreeView.setCellFactory(treeViewCellFactory());
-
-        familiesView.forEach((key, value) -> {
-            TreeItem<NameView> node = new TreeItem<>(key);
-            value.forEach(c -> node.getChildren().add(new TreeItem<>(c)));
-            rootItem.getChildren().add(node);
-        });
     }
 
     private boolean filter(String name) {
-            boolean p = name.contains("(PD)")  || name.contains("(PD)");
-            boolean h = name.contains("(Hack)")  || name.contains("(Hack)")
-                    || name.contains("(Hack ") || name.contains("(Hack ")
-                    || name.contains(" Hack)") || name.contains(" Hack)");
-            boolean g = !(p || h);
+        boolean p = name.contains("(PD)") || name.contains("(PD)");
+        boolean h = name.contains("(Hack)") || name.contains("(Hack)")
+                || name.contains("(Hack ") || name.contains("(Hack ")
+                || name.contains(" Hack)") || name.contains(" Hack)");
+        boolean g = !(p || h);
 
-            return (p && pdCheckBox.isSelected()) || (h && hackCheckBox.isSelected()) || (g && allGoodCheckBox.isSelected());
+        return (p && pdCheckBox.isSelected()) || (h && hackCheckBox.isSelected()) || (g && allGoodCheckBox.isSelected());
     }
 
 
@@ -515,6 +546,57 @@ public class FamilyController {
             familyRelationsTreeView.refresh();
         } catch (NumberFormatException ignore) {
             jakkard = 0;
+        }
+    }
+
+    public void findRelativesButtonClick(ActionEvent actionEvent) {
+
+        LOGGER.info("Find related families...");
+
+        File familyRelationsFile = fullFamilyRelationsPath().toFile();
+
+        if (familyRelationsFile.exists()) {
+            LOGGER.info(String.format("\nReading family relations from file %s...", familyRelationsFile));
+            familyRelations = IOUtils.loadFamilyRelations(familyRelationsFile);
+        } else {
+            LOGGER.info("\nGenerating family relations from scratch...");
+            familyRelations = families.entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getValue, e -> ListFilesa.calculateRelations(e.getValue().getMother().getName(), e.getKey()), (first, second) -> first, LinkedHashMap::new));
+
+            IOUtils.createDirectories(workFamiliesPath());
+            IOUtils.serialize(familyRelationsFile, familyRelations);
+        }
+        showFamilies();
+    }
+
+    public void mergeRelativesIntoButtonClick(ActionEvent actionEvent) {
+
+        if (familyRelationsTreeView.getSelectionModel().getSelectedItems().size() == 1) {
+
+            TreeItem<NameView> mainFamilyTreeItem = familyRelationsTreeView.getSelectionModel().getSelectedItem();
+            TreeItem<NameView> newFamilyMembersTreeItem = mainFamilyTreeItem.getParent();
+
+            // move all members
+            Family mainFamily = families.get(mainFamilyTreeItem.getValue().getFamilyName());
+            Family newFamilyMembers = families.get(newFamilyMembersTreeItem.getValue().getFamilyName());
+            mainFamily.getMembers().addAll(newFamilyMembers.getMembers());
+
+            // delete empty family
+            families.remove(newFamilyMembersTreeItem.getValue().getFamilyName());
+            familyRelations.remove(newFamilyMembers);
+
+            // calculate relations (main family), select mother
+            ListFilesa.calculateRelations(mainFamily);
+
+            // recalculate relations for main family
+            ListFilesa.calculateRelations(mainFamily.getMother().getName(), mainFamily.getName());
+
+            showFamilies();
+
+            // save, save
+            IOUtils.createDirectories(workFamiliesPath());
+            IOUtils.serialize(fullFamiliesPath().toFile(), families);
+            IOUtils.serialize(fullFamilyRelationsPath().toFile(), familyRelations);
         }
     }
 

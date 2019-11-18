@@ -56,6 +56,9 @@ public class ConfigHolder {
     public static Map<String, GID> byHash;
     public static Map<String, GID> byTitle;
 
+    //TODO save/load
+    public static Map<Family, Map<Family, Double>> familyRelations;
+
     //TODO from config, may be bind to platform or collection
     public static double jakkard = 50;
 
@@ -81,6 +84,10 @@ public class ConfigHolder {
 
     public static Path fullFamiliesPath() {
         return workFamiliesPath().resolve(collection + "-" + denominator);
+    }
+
+    public static Path fullFamilyRelationsPath() {
+        return workFamiliesPath().resolve(collection + "-relations-" + denominator);
     }
 
     //TODO bad solution

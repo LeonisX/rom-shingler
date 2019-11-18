@@ -2,17 +2,16 @@
 
 * Compare families, allow to merge them
 
-Show:
+TODO order: name, jakkard
 
-Family
-    family1     98.12%,
-    family2     14%,
-    ...
-    
+expand all black
+
 * Merge - don't recalculate all relations!
   
 * showFamilies() - show only active tab  
 * On change tabs - update jakkard, treeview
+  
+* Show orphaned in separate treeview (resized)
   
 
 * Somehow don't create families from PD - may be group them at the start

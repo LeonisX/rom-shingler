@@ -82,6 +82,22 @@ public class IOUtils {
 
     @SuppressWarnings("unchecked")
     @Measured
+    public static Map<Family, Map<Family, Double>> loadFamilyRelations(File file) {
+        try {
+            FileInputStream fis = new FileInputStream(file);
+            ObjectInputStream ois = new ObjectInputStream(fis);
+            Map<Family, Map<Family, Double>> result = (Map<Family, Map<Family, Double>>) ois.readObject();
+
+            ois.close();
+            fis.close();
+            return result;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Measured
     static Map<String, GID> loadGIDs(File file) {
         try {
             FileInputStream fis = new FileInputStream(file);

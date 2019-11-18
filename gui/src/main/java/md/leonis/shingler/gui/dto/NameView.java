@@ -57,7 +57,7 @@ class NameView {
     }
 
     // Family + Jakkard to NameView
-    public NameView(Family family, Double jakkardStatus) {
+    public NameView(Family family, double jakkardStatus) {
         this.file = null;
         this.name = family.getName();
         this.familyName = family.getName();
