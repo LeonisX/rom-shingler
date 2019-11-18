@@ -40,11 +40,12 @@ import java.util.stream.Collectors;
 import static md.leonis.shingler.model.ConfigHolder.*;
 import static md.leonis.shingler.utils.BinaryUtils.bytesToHex;
 
-//TODO calculate relations button
 @Controller
 public class FamilyController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FamilyController.class);
+
+    private static final Pattern PATTERN = Pattern.compile("\\d*|\\d+\\.\\d*");
 
     private final StageManager stageManager;
     private final ConfigHolder configHolder;
@@ -54,10 +55,7 @@ public class FamilyController {
     public HBox controlsHBox;
     public Label waitLabel;
 
-    public Button auditFamiliesButton;
     public Button generateFamiliesButton;
-    public Button verifyFamiliesButton;
-    public Button mergeFamiliesButton;
 
     public Label totalFamiliesLabel;
     public Label totalGamesLabel;
@@ -85,6 +83,17 @@ public class FamilyController {
     public Button findRelativesButton;
     public Button mergeRelativesIntoButton;
     public TabPane tabPane;
+    public ToggleButton orderByTitleButton;
+    public ToggleGroup orderTG;
+    public ToggleButton orderByJakkardButton;
+    public ToggleButton orderByTitleButton2;
+    public ToggleGroup orderTG2;
+    public ToggleButton orderByJakkardButton2;
+    public Button findAgainRelativesButton;
+    public Button openDirButton2;
+    public Button runButton2;
+    public Button runListButton2;
+    public Button runListButton;
 
     private TreeItem<NameView> rootItem = new TreeItem<>(NameView.EMPTY);
     private TreeItem<NameView> rootItem2 = new TreeItem<>(NameView.EMPTY);
@@ -105,9 +114,7 @@ public class FamilyController {
     private void initialize() {
 
         jakkardTextField.setText("" + jakkard);
-        //TODO up
-        Pattern pattern = Pattern.compile("\\d*|\\d+\\.\\d*");
-        TextFormatter formatter = new TextFormatter((UnaryOperator<TextFormatter.Change>) change -> pattern.matcher(change.getControlNewText()).matches() ? change : null);
+        TextFormatter formatter = new TextFormatter((UnaryOperator<TextFormatter.Change>) change -> PATTERN.matcher(change.getControlNewText()).matches() ? change : null);
         jakkardTextField.setTextFormatter(formatter);
 
         precisionCheckBox.setItems(FXCollections.observableArrayList(DENOMINATORS));
@@ -116,16 +123,6 @@ public class FamilyController {
 
         controlsHBox.managedProperty().bind(controlsHBox.visibleProperty());
         waitLabel.managedProperty().bind(waitLabel.visibleProperty());
-
-        //TODO for future - try to use rowFactory again
-        /*leftColumn.setCellFactory(leftColumnCellFactory());
-        rightColumn.setCellFactory(rightColumnCellFactory());
-
-        leftColumn.setCellValueFactory(new PairNameFactory());
-        rightColumn.setCellValueFactory(new PairNameFactory());
-        leftHashColumn.setCellValueFactory(new PairLeftHashFactory());
-        rightHashColumn.setCellValueFactory(new PairRightHashFactory());*/
-
 
         tabPane.getSelectionModel().selectedItemProperty().addListener(        (ov, oldTab, newTab) -> showFamilies()        );
 
@@ -172,6 +169,9 @@ public class FamilyController {
         showFamilies();
     }
 
+    private Map<NameView, List<NameView>> familiesView = new LinkedHashMap<>();
+    private Map<NameView, List<NameView>> familyRelationsView = new LinkedHashMap<>();
+
     // TODO expand all expanded after operations (group, kick)
     private void showFamilies() {
         int total = romsCollection.getGids().size();
@@ -184,7 +184,7 @@ public class FamilyController {
 
         if (tabPane.getSelectionModel().getSelectedIndex() == 0) { // First tab
 
-            Map<NameView, List<NameView>> familiesView = new LinkedHashMap<>();
+            familiesView = new LinkedHashMap<>();
 
             //TODO delete at all, use separate trees
             if (familiesCheckBox.isSelected()) {
@@ -207,7 +207,7 @@ public class FamilyController {
             Set<String> orphanedNames = romsCollection.getGids().values().stream().map(GID::getTitle).collect(Collectors.toSet());
             orphanedNames.removeAll(familyNames);
 
-            orphanedNames.stream().filter(this::filter).sorted().forEach(name -> familiesView.put(new NameView(name), new ArrayList<>()));
+            orphanedNames.stream().filter(this::filter)/*.sorted()*/.forEach(name -> familiesView.put(new NameView(name), new ArrayList<>()));
 
             rootItem.getChildren().clear();
             familyTreeView.setRoot(rootItem);
@@ -223,7 +223,7 @@ public class FamilyController {
         } else { // Family relations tab
 
             if (familyRelations != null) {
-                Map<NameView, List<NameView>> familyRelationsView = new LinkedHashMap<>();
+                familyRelationsView = new LinkedHashMap<>();
 
                 familyRelations.forEach((key1, value1) -> familyRelationsView.put(new NameView(key1, (value1.isEmpty() ? 0 : value1.entrySet().iterator().next().getValue())),
                         value1.entrySet().stream().map(en -> new NameView(en.getKey(), en.getValue())).collect(Collectors.toList())));
@@ -241,7 +241,23 @@ public class FamilyController {
                 });
             }
         }
+
+        updateTrees();
     }
+
+    private void updateTrees() {
+
+        if (tabPane.getSelectionModel().getSelectedIndex() == 0) { // First tab
+            rootItem.getChildren().sort(orderByTitleButton.isSelected() ? byTitle : byJakkard);
+        } else { // Family relations tab
+            if (familyRelations != null) {
+                rootItem2.getChildren().sort(orderByTitleButton2.isSelected() ? byTitle : byJakkard);
+            }
+        }
+    }
+
+    private static Comparator<TreeItem<NameView>> byTitle = Comparator.comparing((TreeItem<NameView> n) -> n.getValue().getName());
+    private static Comparator<TreeItem<NameView>> byJakkard = Comparator.comparing((TreeItem<NameView> n) -> n.getValue().getJakkardStatus()).reversed();
 
     private boolean filter(String name) {
         boolean p = name.contains("(PD)") || name.contains("(PD)");
@@ -253,14 +269,9 @@ public class FamilyController {
         return (p && pdCheckBox.isSelected()) || (h && hackCheckBox.isSelected()) || (g && allGoodCheckBox.isSelected());
     }
 
-
-    public void mergeFamiliesButtonClick(ActionEvent actionEvent) {
-    }
-
     public void jakkardTextFieldKeyReleased(KeyEvent keyEvent) {
         try {
             jakkard = Double.parseDouble(jakkardTextField.getText());
-            System.out.println(jakkard);
             familyTreeView.refresh();
         } catch (NumberFormatException ignore) {
             jakkard = 0;
@@ -303,7 +314,7 @@ public class FamilyController {
 
                             double minIndex = item.getJakkardStatus();
 
-                            if (item.getStatus() == NodeStatus.FAMILY) {
+                            if (item.getStatus() == NodeStatus.FAMILY || item.getStatus() == NodeStatus.ORPHAN) {
                                 if (item.getItems().size() >= 2) {
                                     minIndex = item.getItems().stream().min(Comparator.comparing(NameView::getJakkardStatus)).map(NameView::getJakkardStatus).orElse(0.0);
                                 } else {
@@ -340,12 +351,6 @@ public class FamilyController {
         showFamilies();
     }
 
-    public void auditFamiliesButtonClick(ActionEvent actionEvent) {
-    }
-
-    public void verifyFamiliesButtonClick(ActionEvent actionEvent) {
-    }
-
     public void selectButtonClick(ActionEvent actionEvent) {
         TextInputDialog dialog = stageManager.getTextInputDialog("Text Input Dialog", "Look, a Text Input Dialog", "Enter search phrase:");
 
@@ -377,6 +382,8 @@ public class FamilyController {
             Family family = families.get(result.get());
             family.getMembers().addAll(selectedNames);
             ListFilesa.calculateRelations(family);
+            LOGGER.info("Saving family...");
+            IOUtils.serialize(fullFamiliesPath().toFile(), families);
 
             showFamilies();
         }
@@ -404,6 +411,8 @@ public class FamilyController {
             Family family = new Family(familyName, selectedNames);
             families.put(familyName, family);
             ListFilesa.calculateRelations(family);
+            LOGGER.info("Saving family...");
+            IOUtils.serialize(fullFamiliesPath().toFile(), families);
 
             showFamilies();
         }
@@ -427,6 +436,8 @@ public class FamilyController {
                 });
 
         modifiedFamilies.forEach(ListFilesa::calculateRelations);
+        LOGGER.info("Saving family...");
+        IOUtils.serialize(fullFamiliesPath().toFile(), families);
 
         families = families.entrySet().stream()
                 .filter(f -> !f.getValue().getMembers().isEmpty())
@@ -447,7 +458,39 @@ public class FamilyController {
     public void runButtonClick(ActionEvent actionEvent) {
 
         try {
-            NameView nameView = familyTreeView.getSelectionModel().getSelectedItem().getValue();
+            TreeItem<NameView> item = familyTreeView.getSelectionModel().getSelectedItem();
+            NameView nameView = item.getValue();
+
+            if (nameView.getStatus() == NodeStatus.FAMILY || nameView.getStatus() == NodeStatus.FAMILY_LIST) {
+                Family family = families.get(nameView.getFamilyName());
+                Name bestCandidate = family.getMembers().stream().max(Comparator.comparing(Name::getIndex)).orElse(null);
+                nameView = new NameView(bestCandidate, bestCandidate.getName(), -1);
+            }
+
+            if (romsCollection.getType() == CollectionType.PLAIN) {
+                Desktop.getDesktop().open(romsCollection.getRomsPath().resolve(nameView.getName()).toFile());
+            } else {
+                Path path = IOUtils.extractFromArchive(romsCollection.getRomsPath().resolve(nameView.getFamilyName()), nameView.getName());
+                Desktop.getDesktop().open(path.toFile());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    //TODO unify
+    public void runButtonClick2(ActionEvent actionEvent) {
+
+        try {
+            TreeItem<NameView> item = familyRelationsTreeView.getSelectionModel().getSelectedItem();
+            NameView nameView = item.getValue();
+
+            if (nameView.getStatus() == NodeStatus.FAMILY || nameView.getStatus() == NodeStatus.FAMILY_LIST) {
+                Family family = families.get(nameView.getFamilyName());
+                Name bestCandidate = family.getMembers().stream().max(Comparator.comparing(Name::getIndex)).orElse(null);
+                nameView = new NameView(bestCandidate, bestCandidate.getName(), -1);
+            }
+
             if (romsCollection.getType() == CollectionType.PLAIN) {
                 Desktop.getDesktop().open(romsCollection.getRomsPath().resolve(nameView.getName()).toFile());
             } else {
@@ -472,8 +515,10 @@ public class FamilyController {
             selectedItem.getChildren().setAll(
                     items.stream().map(TreeItem::new).collect(Collectors.toList())
             );
-            selectedItem.setExpanded(true);
+            nameView.setJakkardStatus(items.get(0).getJakkardStatus());
+            //selectedItem.setExpanded(true);
         });
+        updateTrees();
     }
 
     public void addToFamilyButtonClick(ActionEvent actionEvent) {
@@ -503,19 +548,19 @@ public class FamilyController {
             Map.Entry<Family, Double> entry = ListFilesa.calculateRelations(nameView.getName()).entrySet().iterator().next();
 
             if (entry.getValue() >= jakkard) {
-                Family family = ListFilesa.calculateRelations(nameView.getName()).entrySet().iterator().next().getKey();
+                Family family = entry.getKey();
                 family.getMembers().add(nameView.toName());
-                ListFilesa.calculateRelations(family);
-                return 1;
+                return family;
             } else {
                 return null;
             }
-        }).filter(Objects::nonNull).count();
+        }).filter(Objects::nonNull).peek(ListFilesa::calculateRelations).count();
 
         if (modified > 0) {
             showFamilies();
             IOUtils.serialize(fullFamiliesPath().toFile(), families);
         }
+        familyTreeView.getSelectionModel().clearSelection();
     }
 
     public void checkBoxAction(ActionEvent actionEvent) {
@@ -542,7 +587,6 @@ public class FamilyController {
     public void jakkardTextFieldKeyReleased2(KeyEvent keyEvent) {
         try {
             jakkard = Double.parseDouble(jakkardTextField2.getText());
-            System.out.println(jakkard);
             familyRelationsTreeView.refresh();
         } catch (NumberFormatException ignore) {
             jakkard = 0;
@@ -558,14 +602,26 @@ public class FamilyController {
         if (familyRelationsFile.exists()) {
             LOGGER.info(String.format("\nReading family relations from file %s...", familyRelationsFile));
             familyRelations = IOUtils.loadFamilyRelations(familyRelationsFile);
+            showFamilies();
         } else {
-            LOGGER.info("\nGenerating family relations from scratch...");
-            familyRelations = families.entrySet().stream()
-                    .collect(Collectors.toMap(Map.Entry::getValue, e -> ListFilesa.calculateRelations(e.getValue().getMother().getName(), e.getKey()), (first, second) -> first, LinkedHashMap::new));
-
-            IOUtils.createDirectories(workFamiliesPath());
-            IOUtils.serialize(familyRelationsFile, familyRelations);
+            findAgainRelativesButtonClick(null);
         }
+
+    }
+
+    public void findAgainRelativesButtonClick(ActionEvent actionEvent) {
+
+        LOGGER.info("Find related families...");
+
+        File familyRelationsFile = fullFamilyRelationsPath().toFile();
+
+        LOGGER.info("\nGenerating family relations from scratch...");
+        familyRelations = families.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getValue, e -> ListFilesa.calculateRelations(e.getValue().getMother().getName(), e.getKey()), (first, second) -> first, LinkedHashMap::new));
+
+        IOUtils.createDirectories(workFamiliesPath());
+        IOUtils.serialize(familyRelationsFile, familyRelations);
+
         showFamilies();
     }
 
@@ -598,6 +654,16 @@ public class FamilyController {
             IOUtils.serialize(fullFamiliesPath().toFile(), families);
             IOUtils.serialize(fullFamilyRelationsPath().toFile(), familyRelations);
         }
+    }
+
+    public void orderButtonClick(ActionEvent actionEvent) {
+        updateTrees();
+    }
+
+    public void runListButtonClick(ActionEvent actionEvent) {
+    }
+
+    public void runListButton2Click(ActionEvent actionEvent) {
     }
 
     static class PairNameFactory implements Callback<TableColumn.CellDataFeatures<Pair<GID, GID>, Pair<GID, GID>>, ObservableValue<Pair<GID, GID>>> {

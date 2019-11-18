@@ -89,7 +89,13 @@ public class ListFilesa {
 
         LOGGER.info("Reading list of games...");
         List<Path> files = IOUtils.listFiles(romsCollection.getRomsPath());
-        List<Name> names = files.stream().map(f -> new Name(f.toFile(), false)).collect(Collectors.toList());
+
+        Set<String> familyNames = families.values().stream().flatMap(f -> f.getMembers().stream().map(Name::getName)).collect(Collectors.toSet());
+        Set<String> orphanedNames = romsCollection.getGids().values().stream().map(GID::getTitle).collect(Collectors.toSet());
+        orphanedNames.removeAll(familyNames);
+
+        //List<Name> names = files.stream().map(f -> new Name(f.toFile(), false)).collect(Collectors.toList());
+        List<Name> names = files.stream().filter(f -> orphanedNames.contains(f.getFileName().toString())).map(f -> new Name(f.toFile(), false)).collect(Collectors.toList());
 
         File familyFile = fullFamiliesPath().toFile();
 
@@ -98,16 +104,21 @@ public class ListFilesa {
             families = IOUtils.loadFamilies(familyFile);
         } else {
             LOGGER.info("\nGenerating families from scratch...");
-            Map<String, List<Name>> namesList = names.stream().filter(n -> nonHack(n.getName())).collect(Collectors.groupingBy(Name::getCleanName));
-
-            families = namesList.entrySet().stream().filter(e -> e.getValue().size() != 1)
-                    .collect(Collectors.toMap(Map.Entry::getKey, e -> new Family(e.getValue())));
-
-            IOUtils.createDirectories(workFamiliesPath());
-            IOUtils.serialize(familyFile, families);
-
-            //saveUniqueListToFile(filteredMap);
         }
+
+        LOGGER.info("\nGenerating families...");
+        Map<String, List<Name>> namesList = names.stream().filter(n -> nonHack(n.getName())).collect(Collectors.groupingBy(Name::getCleanName));
+
+        /*families = namesList.entrySet().stream().filter(e -> e.getValue().size() != 1)
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> new Family(e.getValue())));*/
+
+        namesList.entrySet().stream().filter(e -> e.getValue().size() != 1)
+                .forEach(e -> families.put(e.getKey(), new Family(e.getValue())));
+
+        IOUtils.createDirectories(workFamiliesPath());
+        IOUtils.serialize(familyFile, families);
+
+        //saveUniqueListToFile(filteredMap);
     }
 
     public static void archiveToFamilies() {
@@ -162,8 +173,6 @@ public class ListFilesa {
 
         Main1024a.cache.fullCleanup();
 
-        File familyFile = fullFamiliesPath().toFile();
-
         byTitle = romsCollection.getGids().values().stream().collect(Collectors.toMap(GID::getTitle, Function.identity()));
 
         int[] k = {0};
@@ -173,7 +182,7 @@ public class ListFilesa {
 
             if (save[0] > 100000 * getDenominator()) {
                 LOGGER.info("Saving family...");
-                IOUtils.serialize(familyFile, families);
+                IOUtils.serialize(fullFamiliesPath().toFile(), families);
                 save[0] = 0;
             }
 
@@ -200,9 +209,6 @@ public class ListFilesa {
         LOGGER.info(String.format("%nComparing: %s... [%s]", family.getName(), family.size()));
         doCalculateRelations(family, new int[]{0});
         family.selectMother();
-
-        LOGGER.info("Saving family...");
-        IOUtils.serialize(fullFamiliesPath().toFile(), families);
     }
 
     private static void doCalculateRelations(Family family, int[] save) {
