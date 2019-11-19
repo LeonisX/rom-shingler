@@ -103,6 +103,10 @@ public class FamilyController {
     public MenuItem addToFamilyMenuItem;
     public MenuItem findFamilyMenuItem;
     public MenuItem findFamiliesAutoMenuItem;
+    public ContextMenu familyRelationsContextMenu;
+    public MenuItem mergeRelativesIntoMenuItem;
+    public MenuItem openFamilyRelationsDirItem;
+    public MenuItem runFamilyRelationsItem;
 
 
     private TreeItem<NameView> familyRootItem = new TreeItem<>(NameView.EMPTY);
@@ -803,6 +807,24 @@ public class FamilyController {
         }
     }
 
+    public void familyRelationsContextMenuRequest(ContextMenuEvent event) {
+
+        if (lastNameView != null && findRoot(lastNameView) == familyRelationsRootItem) {
+
+            String hideId = lastNameView.getParent().equals(familyRelationsRootItem) ? "m" : "f";
+
+            familyRelationsContextMenu.getItems().forEach(item -> {
+                if (item.getUserData() != null && item.getUserData().equals(hideId)) {
+                    item.setVisible(false);
+                } else {
+                    item.setVisible(true);
+                }
+            });
+
+            familyRelationsContextMenu.show(familyRelationsTreeView, event.getScreenX(), event.getScreenY());
+        }
+    }
+
     private TreeItem<NameView> findRoot(TreeItem<NameView> item) {
         if (item == null || item.getParent() == null) {
             return item;
@@ -810,4 +832,5 @@ public class FamilyController {
             return findRoot(item.getParent());
         }
     }
+
 }

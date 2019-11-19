@@ -19,35 +19,43 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="879.0" prefWidth="1220.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="md.leonis.shingler.gui.controller.FamilyController">
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="879.0"
+            prefWidth="1220.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="md.leonis.shingler.gui.controller.FamilyController">
     <top>
         <HBox alignment="CENTER" prefHeight="46.0" prefWidth="1220.0" spacing="5.0" BorderPane.alignment="CENTER">
-            <Label fx:id="waitLabel" text="Please wait" />
+            <Label fx:id="waitLabel" text="Please wait"/>
             <VBox prefHeight="47.0" prefWidth="1054.0">
                 <HBox prefHeight="47.0" prefWidth="1022.0">
                     <VBox prefHeight="47.0" prefWidth="811.0">
                         <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="5.0">
-                            <Label text="Total families:" />
-                            <Label fx:id="totalFamiliesLabel" />
-                            <Label text="Total games:" />
-                            <Label fx:id="totalGamesLabel" />
-                            <Label text="Grouped games:" />
-                            <Label fx:id="groupedGamesLabel" />
-                            <Label text="Orphaned games:" />
-                            <Label fx:id="orphanedGamesLabel" />
+                            <Label text="Total families:"/>
+                            <Label fx:id="totalFamiliesLabel"/>
+                            <Label text="Total games:"/>
+                            <Label fx:id="totalGamesLabel"/>
+                            <Label text="Grouped games:"/>
+                            <Label fx:id="groupedGamesLabel"/>
+                            <Label text="Orphaned games:"/>
+                            <Label fx:id="orphanedGamesLabel"/>
                         </HBox>
                         <HBox fx:id="controlsHBox" alignment="CENTER" prefHeight="46.0" prefWidth="732.0" spacing="5.0">
-                            <Label text="Precision:" />
-                            <ComboBox fx:id="precisionCheckBox" onAction="#precisionCheckBoxAction" prefHeight="25.0" prefWidth="74.0" />
-                            <Button fx:id="generateFamiliesButton" mnemonicParsing="false" onAction="#generateFamiliesButtonClick" text="Generate families" />
-                            <Button fx:id="calculateRelationsButton" mnemonicParsing="false" onAction="#calculateRelationsButtonClick" text="Calculate relations" />
+                            <Label text="Precision:"/>
+                            <ComboBox fx:id="precisionCheckBox" onAction="#precisionCheckBoxAction" prefHeight="25.0"
+                                      prefWidth="74.0"/>
+                            <Button fx:id="generateFamiliesButton" mnemonicParsing="false"
+                                    onAction="#generateFamiliesButtonClick" text="Generate families"/>
+                            <Button fx:id="calculateRelationsButton" mnemonicParsing="false"
+                                    onAction="#calculateRelationsButtonClick" text="Calculate relations"/>
                         </HBox>
                     </VBox>
                     <VBox alignment="CENTER" prefHeight="47.0" prefWidth="530.0" spacing="5.0">
                         <HBox alignment="CENTER" spacing="5.0">
-                            <CheckBox fx:id="allGoodCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="Good" />
-                            <CheckBox fx:id="pdCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="PD" />
-                            <CheckBox fx:id="hackCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="Hack" />
+                            <CheckBox fx:id="allGoodCheckBox" mnemonicParsing="false" onAction="#checkBoxAction"
+                                      selected="true" text="Good"/>
+                            <CheckBox fx:id="pdCheckBox" mnemonicParsing="false" onAction="#checkBoxAction"
+                                      selected="true" text="PD"/>
+                            <CheckBox fx:id="hackCheckBox" mnemonicParsing="false" onAction="#checkBoxAction"
+                                      selected="true" text="Hack"/>
                         </HBox>
                     </VBox>
                 </HBox>
@@ -55,63 +63,93 @@
         </HBox>
     </top>
     <bottom>
-        <VBox fx:id="vBox" />
+        <VBox fx:id="vBox"/>
     </bottom>
     <center>
-        <TabPane fx:id="tabPane" prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
+        <TabPane fx:id="tabPane" prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE"
+                 BorderPane.alignment="CENTER">
             <Tab text="Roms manager">
                 <BorderPane prefHeight="200.0" prefWidth="200.0">
                     <top>
-                        <HBox alignment="CENTER_LEFT" prefHeight="40.0" prefWidth="1220.0" spacing="5.0" BorderPane.alignment="CENTER">
-                            <Button fx:id="expandAllButton" mnemonicParsing="false" onAction="#expandAllButtonClick" text="Expand all" />
-                            <Button fx:id="collapseAllButton" mnemonicParsing="false" onAction="#collapseAllButtonClick" text="Collapse all" />
-                            <Separator orientation="VERTICAL" prefHeight="200.0" />
-                            <Label text="Jakkard:" />
-                            <TextField fx:id="jakkardTextField" onKeyReleased="#jakkardTextFieldKeyReleased" prefHeight="25.0" prefWidth="64.0" />
-                            <Separator orientation="VERTICAL" prefHeight="200.0" />
-                            <Label text="Order by:" />
-                            <ToggleButton fx:id="orderByTitleButton" mnemonicParsing="false" onAction="#orderButtonClick" selected="true" text="Title">
+                        <HBox alignment="CENTER_LEFT" prefHeight="40.0" prefWidth="1220.0" spacing="5.0"
+                              BorderPane.alignment="CENTER">
+                            <Button fx:id="expandAllButton" mnemonicParsing="false" onAction="#expandAllButtonClick"
+                                    text="Expand all"/>
+                            <Button fx:id="collapseAllButton" mnemonicParsing="false" onAction="#collapseAllButtonClick"
+                                    text="Collapse all"/>
+                            <Separator orientation="VERTICAL" prefHeight="200.0"/>
+                            <Label text="Jakkard:"/>
+                            <TextField fx:id="jakkardTextField" onKeyReleased="#jakkardTextFieldKeyReleased"
+                                       prefHeight="25.0" prefWidth="64.0"/>
+                            <Separator orientation="VERTICAL" prefHeight="200.0"/>
+                            <Label text="Order by:"/>
+                            <ToggleButton fx:id="orderByTitleButton" mnemonicParsing="false"
+                                          onAction="#orderButtonClick" selected="true" text="Title">
                                 <toggleGroup>
-                                    <ToggleGroup fx:id="orderTG" />
+                                    <ToggleGroup fx:id="orderTG"/>
                                 </toggleGroup>
                             </ToggleButton>
-                            <ToggleButton fx:id="orderByJakkardButton" mnemonicParsing="false" onAction="#orderButtonClick" text="Jakkard" toggleGroup="$orderTG" />
-                            <Separator orientation="VERTICAL" prefHeight="200.0" />
-                            <Button fx:id="selectButton" mnemonicParsing="false" onAction="#selectButtonClick" text="Select" />
-                            <Separator orientation="VERTICAL" prefHeight="200.0" />
-                            <Button fx:id="openDirButton" mnemonicParsing="false" onAction="#openDirButtonClick" text="Open dir" />
-                            <Button fx:id="runButton" mnemonicParsing="false" onAction="#runListButtonClick" text="Run" />
+                            <ToggleButton fx:id="orderByJakkardButton" mnemonicParsing="false"
+                                          onAction="#orderButtonClick" text="Jakkard" toggleGroup="$orderTG"/>
+                            <Separator orientation="VERTICAL" prefHeight="200.0"/>
+                            <Button fx:id="selectButton" mnemonicParsing="false" onAction="#selectButtonClick"
+                                    text="Select"/>
+                            <Separator orientation="VERTICAL" prefHeight="200.0"/>
+                            <Button fx:id="openDirButton" mnemonicParsing="false" onAction="#openDirButtonClick"
+                                    text="Open dir"/>
+                            <Button fx:id="runButton" mnemonicParsing="false" onAction="#runListButtonClick"
+                                    text="Run"/>
                         </HBox>
                     </top>
                     <center>
-                        <SplitPane dividerPositions="0.5" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
-                            <TreeView fx:id="familyTreeView" onContextMenuRequested="#familyTreeViewContextMenuRequest" prefHeight="200.0" prefWidth="200.0">
+                        <SplitPane dividerPositions="0.5" prefHeight="200.0" prefWidth="200.0"
+                                   BorderPane.alignment="CENTER">
+                            <TreeView fx:id="familyTreeView" onContextMenuRequested="#familyTreeViewContextMenuRequest"
+                                      prefHeight="200.0" prefWidth="200.0">
                                 <contextMenu>
                                     <ContextMenu fx:id="familiesContextMenu">
                                         <items>
-                                            <MenuItem fx:id="renameFamilyMenuItem" mnemonicParsing="false" onAction="#renameFamilyMenuItemClick" text="Rename" userData="f"/>
-                                            <MenuItem fx:id="deleteFamilyMenuItem" mnemonicParsing="false" onAction="#deleteFamilyMenuItemClick" text="Delete" userData="f" />
-                                            <MenuItem fx:id="kickAwayMenuItem" mnemonicParsing="false" onAction="#kickAwayButtonClick" text="Kick away" userData="m" />
-                                            <SeparatorMenuItem mnemonicParsing="false" />
-                                            <MenuItem fx:id="openFamilyDirItem" mnemonicParsing="false" onAction="#openDirButtonClick" text="Open dir" />
-                                            <MenuItem fx:id="runFamilyItem" mnemonicParsing="false" onAction="#runListButtonClick" text="Run" />
+                                            <MenuItem fx:id="renameFamilyMenuItem" mnemonicParsing="false"
+                                                      onAction="#renameFamilyMenuItemClick" text="Rename" userData="f"/>
+                                            <MenuItem fx:id="deleteFamilyMenuItem" mnemonicParsing="false"
+                                                      onAction="#deleteFamilyMenuItemClick" text="Delete" userData="f"/>
+                                            <MenuItem fx:id="kickAwayMenuItem" mnemonicParsing="false"
+                                                      onAction="#kickAwayButtonClick" text="Kick away" userData="m"/>
+                                            <SeparatorMenuItem mnemonicParsing="false"/>
+                                            <MenuItem fx:id="openFamilyDirItem" mnemonicParsing="false"
+                                                      onAction="#openDirButtonClick" text="Open dir"/>
+                                            <MenuItem fx:id="runFamilyItem" mnemonicParsing="false"
+                                                      onAction="#runListButtonClick" text="Run"/>
                                         </items>
                                     </ContextMenu>
                                 </contextMenu>
                             </TreeView>
-                            <TreeView fx:id="orphanTreeView" onContextMenuRequested="#orphanTreeViewContextMenuRequest" prefHeight="200.0" prefWidth="200.0">
+                            <TreeView fx:id="orphanTreeView" onContextMenuRequested="#orphanTreeViewContextMenuRequest"
+                                      prefHeight="200.0" prefWidth="200.0">
                                 <contextMenu>
                                     <ContextMenu fx:id="orphanFamiliesContextMenu">
                                         <items>
-                                            <MenuItem fx:id="addToThisFamilyMenuItem" mnemonicParsing="false" onAction="#addToThisFamilyClick" text="Add to this family" userData="f" />
-                                            <MenuItem fx:id="newFamilyMenuItem" mnemonicParsing="false" onAction="#newFamilyButtonClick" text="Create new family" userData="m" />
-                                            <MenuItem fx:id="addToFamilyMenuItem" mnemonicParsing="false" onAction="#addToFamilyButtonClick" text="Add to family" userData="m" />
-                                            <MenuItem fx:id="findFamilyMenuItem" mnemonicParsing="false" onAction="#findFamilyButtonClick" text="Find a family candidate" userData="m" />
-                                            <MenuItem fx:id="findFamiliesAutoMenuItem" mnemonicParsing="false" onAction="#findFamiliesAutoButtonClick" text="Find a better family (auto)" userData="m" />
+                                            <MenuItem fx:id="addToThisFamilyMenuItem" mnemonicParsing="false"
+                                                      onAction="#addToThisFamilyClick" text="Add to this family"
+                                                      userData="f"/>
+                                            <MenuItem fx:id="newFamilyMenuItem" mnemonicParsing="false"
+                                                      onAction="#newFamilyButtonClick" text="Create new family"
+                                                      userData="m"/>
+                                            <MenuItem fx:id="addToFamilyMenuItem" mnemonicParsing="false"
+                                                      onAction="#addToFamilyButtonClick" text="Add to family"
+                                                      userData="m"/>
+                                            <MenuItem fx:id="findFamilyMenuItem" mnemonicParsing="false"
+                                                      onAction="#findFamilyButtonClick" text="Find a family candidate"
+                                                      userData="m"/>
+                                            <MenuItem fx:id="findFamiliesAutoMenuItem" mnemonicParsing="false"
+                                                      onAction="#findFamiliesAutoButtonClick"
+                                                      text="Find a better family (auto)" userData="m"/>
 
-                                            <SeparatorMenuItem mnemonicParsing="false" />
-                                            <MenuItem fx:id="openOrphanFamilyDirItem" mnemonicParsing="false" onAction="#openDirButtonClick" text="Open dir" />
-                                            <MenuItem fx:id="runOrphanFamilyItem" mnemonicParsing="false" onAction="#runListButtonClick" text="Run" />
+                                            <SeparatorMenuItem mnemonicParsing="false"/>
+                                            <MenuItem fx:id="openOrphanFamilyDirItem" mnemonicParsing="false"
+                                                      onAction="#openDirButtonClick" text="Open dir"/>
+                                            <MenuItem fx:id="runOrphanFamilyItem" mnemonicParsing="false"
+                                                      onAction="#runListButtonClick" text="Run"/>
                                         </items>
                                     </ContextMenu>
                                 </contextMenu>
@@ -123,31 +161,56 @@
             <Tab text="Families manager">
                 <BorderPane prefHeight="200.0" prefWidth="200.0">
                     <top>
-                        <HBox alignment="CENTER_LEFT" prefHeight="40.0" prefWidth="200.0" spacing="5.0" BorderPane.alignment="CENTER">
-                            <Button fx:id="expandAllButton2" mnemonicParsing="false" onAction="#expandAllButtonClick2" text="Expand all" />
-                            <Button fx:id="collapseAllButton2" mnemonicParsing="false" onAction="#collapseAllButtonClick2" text="Collapse all" />
-                            <Separator orientation="VERTICAL" prefHeight="200.0" />
-                            <Label text="Jakkard:" />
-                            <TextField fx:id="jakkardTextField2" onKeyReleased="#jakkardTextFieldKeyReleased2" prefHeight="25.0" prefWidth="64.0" />
-                            <Separator orientation="VERTICAL" prefHeight="200.0" />
-                            <Button fx:id="findRelativesButton" mnemonicParsing="false" onAction="#findRelativesButtonClick" text="Find relatives" />
-                            <Button fx:id="findAgainRelativesButton" mnemonicParsing="false" onAction="#findAgainRelativesButtonClick" text="Find relatives again" />
-                            <Button fx:id="mergeRelativesIntoButton" mnemonicParsing="false" onAction="#mergeRelativesIntoButtonClick" text="Merge into" />
-                            <Separator orientation="VERTICAL" prefHeight="200.0" />
-                            <Label text="Order by:" />
-                            <ToggleButton fx:id="orderByTitleButton2" mnemonicParsing="false" onAction="#orderButtonClick" selected="true" text="Title">
+                        <HBox alignment="CENTER_LEFT" prefHeight="40.0" prefWidth="200.0" spacing="5.0"
+                              BorderPane.alignment="CENTER">
+                            <Button fx:id="expandAllButton2" mnemonicParsing="false" onAction="#expandAllButtonClick2"
+                                    text="Expand all"/>
+                            <Button fx:id="collapseAllButton2" mnemonicParsing="false"
+                                    onAction="#collapseAllButtonClick2" text="Collapse all"/>
+                            <Separator orientation="VERTICAL" prefHeight="200.0"/>
+                            <Label text="Jakkard:"/>
+                            <TextField fx:id="jakkardTextField2" onKeyReleased="#jakkardTextFieldKeyReleased2"
+                                       prefHeight="25.0" prefWidth="64.0"/>
+                            <Separator orientation="VERTICAL" prefHeight="200.0"/>
+                            <Button fx:id="findRelativesButton" mnemonicParsing="false"
+                                    onAction="#findRelativesButtonClick" text="Find relatives"/>
+                            <Button fx:id="findAgainRelativesButton" mnemonicParsing="false"
+                                    onAction="#findAgainRelativesButtonClick" text="Find relatives again"/>
+                            <Separator orientation="VERTICAL" prefHeight="200.0"/>
+                            <Label text="Order by:"/>
+                            <ToggleButton fx:id="orderByTitleButton2" mnemonicParsing="false"
+                                          onAction="#orderButtonClick" selected="true" text="Title">
                                 <toggleGroup>
-                                    <ToggleGroup fx:id="orderTG2" />
+                                    <ToggleGroup fx:id="orderTG2"/>
                                 </toggleGroup>
                             </ToggleButton>
-                            <ToggleButton fx:id="orderByJakkardButton2" mnemonicParsing="false" onAction="#orderButtonClick" text="Jakkard" toggleGroup="$orderTG2" />
-                            <Separator orientation="VERTICAL" prefHeight="200.0" />
-                            <Button fx:id="openDirButton2" mnemonicParsing="false" onAction="#openDirButtonClick" text="Open dir" />
-                            <Button fx:id="runButton2" mnemonicParsing="false" onAction="#runListButtonClick" text="Run " />
+                            <ToggleButton fx:id="orderByJakkardButton2" mnemonicParsing="false"
+                                          onAction="#orderButtonClick" text="Jakkard" toggleGroup="$orderTG2"/>
+                            <Separator orientation="VERTICAL" prefHeight="200.0"/>
+                            <Button fx:id="openDirButton2" mnemonicParsing="false" onAction="#openDirButtonClick"
+                                    text="Open dir"/>
+                            <Button fx:id="runButton2" mnemonicParsing="false" onAction="#runListButtonClick"
+                                    text="Run "/>
                         </HBox>
                     </top>
                     <center>
-                        <TreeView fx:id="familyRelationsTreeView" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
+                        <TreeView fx:id="familyRelationsTreeView" onContextMenuRequested="#familyRelationsContextMenuRequest" prefHeight="200.0" prefWidth="200.0"
+                                  BorderPane.alignment="CENTER">
+                            <contextMenu>
+                                <ContextMenu fx:id="familyRelationsContextMenu">
+                                    <items>
+                                        <MenuItem fx:id="mergeRelativesIntoMenuItem" mnemonicParsing="false"
+                                                  onAction="#mergeRelativesIntoButtonClick" text="Merge into"
+                                                  userData="m"/>
+                                        <SeparatorMenuItem mnemonicParsing="false" userData="m"/>
+                                        <MenuItem fx:id="openFamilyRelationsDirItem" mnemonicParsing="false"
+                                                  onAction="#openDirButtonClick" text="Open dir"/>
+                                        <MenuItem fx:id="runFamilyRelationsItem" mnemonicParsing="false"
+                                                  onAction="#runListButtonClick" text="Run"/>
+                                    </items>
+                                </ContextMenu>
+                            </contextMenu>
+                        </TreeView>
                     </center>
                 </BorderPane>
             </Tab>
