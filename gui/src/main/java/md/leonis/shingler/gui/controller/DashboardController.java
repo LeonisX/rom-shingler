@@ -99,10 +99,12 @@ public class DashboardController {
         boolean dblClick = (click.getClickCount() == 2);
         String selectedItem = collectionsView.getSelectionModel().getSelectedItem();
 
-        if (selectedItem.equals("..")) {
-            handleLevelUpClick(dblClick);
-        } else {
-            handleItemClick(dblClick, selectedItem);
+        if (selectedItem != null) {
+            if (selectedItem.equals("..")) {
+                handleLevelUpClick(dblClick);
+            } else {
+                handleItemClick(dblClick, selectedItem);
+            }
         }
     }
 
