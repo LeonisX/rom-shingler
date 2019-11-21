@@ -68,13 +68,13 @@ public class ListFilesa {
         File familyFile = fullFamiliesPath().toFile();
 
         if (familyFile.exists()) { //TODO not need
-            LOGGER.info(String.format("\nReading families from file %s...", familyFile));
+            LOGGER.info("Reading families from file {}...", familyFile);
             families = IOUtils.loadFamilies(familyFile);
         } else {
-            LOGGER.info("\nGenerating families from scratch...");
+            LOGGER.info("Generating families from scratch...");
         }
 
-        LOGGER.info("\nGenerating families...");
+        LOGGER.info("Generating families...");
         Map<String, List<Name>> namesList = names.stream().filter(n -> nonHack(n.getName())).collect(Collectors.groupingBy(Name::getCleanName));
 
         /*families = namesList.entrySet().stream().filter(e -> e.getValue().size() != 1)
@@ -83,6 +83,7 @@ public class ListFilesa {
         namesList.entrySet().stream().filter(e -> e.getValue().size() != 1)
                 .forEach(e -> families.put(e.getKey(), new Family(e.getValue())));
 
+        LOGGER.info("Saving families...");
         IOUtils.createDirectories(workFamiliesPath());
         IOUtils.serialize(familyFile, families);
 
@@ -100,16 +101,17 @@ public class ListFilesa {
         File familyFile = fullFamiliesPath().toFile();
 
         if (familyFile.exists()) {
-            LOGGER.info(String.format("\nReading families from file %s...", familyFile));
+            LOGGER.info("Reading families from file {}...", familyFile);
             families = IOUtils.loadFamilies(familyFile);
         } else {
-            LOGGER.info("\nGenerating families based on GoodMerged source...");
+            LOGGER.info("Generating families based on GoodMerged source...");
             Map<String, List<Name>> namesList = new HashMap<>();
             map.forEach((key, value) -> namesList.put(key.getName(), value.stream().map(v -> new Name(new File(v), false)).collect(Collectors.toList())));
 
             families = namesList.entrySet().stream()/*.filter(e -> e.getValue().size() != 1)*/
                     .collect(Collectors.toMap(Map.Entry::getKey, e -> new Family(e.getKey(), e.getValue())));
 
+            LOGGER.info("Saving families...");
             IOUtils.createDirectories(workFamiliesPath());
             IOUtils.serialize(familyFile, families);
         }
@@ -119,7 +121,7 @@ public class ListFilesa {
 
         calculateRelations();
 
-        LOGGER.info("Saving family...");
+        LOGGER.info("Saving families...");
         IOUtils.serialize(fullFamiliesPath().toFile(), families);
 
         //saveDropCsv(families, 50);
@@ -156,16 +158,14 @@ public class ListFilesa {
 
             int relationsCount = family.getMembers().size() * (family.getMembers().size() - 1) / 2;
             if (family.getRelations().size() == relationsCount) { // x * (x - 1) / 2
-                LOGGER.debug(String.format("%nSkipping: %s... [%s]|%2.3f%%", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size()));
+                LOGGER.debug("Skipping: {}... [{}]|{}", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size());
             } else {
-                LOGGER.info(String.format("%nComparing: %s... [%s]|%2.3f%%", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size()));
+                LOGGER.info("Comparing: {}... [{}]|{}", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size());
                 doCalculateRelations(family, save);
             }
             k[0]++;
             family.selectMother();
         });
-        LOGGER.info("Saving family...");
-        IOUtils.serialize(fullFamiliesPath().toFile(), families);
     }
 
     public static void calculateRelations(Family family) {
@@ -174,7 +174,7 @@ public class ListFilesa {
 
         byTitle = romsCollection.getGids().values().stream().collect(Collectors.toMap(GID::getTitle, Function.identity()));
 
-        LOGGER.info(String.format("%nComparing: %s... [%s]", family.getName(), family.size()));
+        LOGGER.info("Comparing: {}... [{}]", family.getName(), family.size());
         doCalculateRelations(family, new int[]{0});
         family.selectMother();
     }
@@ -202,7 +202,7 @@ public class ListFilesa {
                 name2.addJakkardStatus(jakkard);
 
                 Result result = new Result(name1, name2, jakkard);
-                LOGGER.info(String.format("%s->%s: %s|%s", i, j, result, (i + 1) / family.size()));
+                LOGGER.info("{}->{}: {}|{}", i, j, result, (i + 1) / family.size());
 
                 family.addRelation(result);
                 save[0]++;
@@ -226,11 +226,11 @@ public class ListFilesa {
         Main1024a.cache.fullCleanup();
         byTitle = romsCollection.getGids().values().stream().collect(Collectors.toMap(GID::getTitle, Function.identity()));
 
-        int[] k = {0};
+        //int[] k = {0};
         long[] s1Set = ShingleUtils.loadFromCache(cache, fullShinglesPath().resolve(bytesToHex(byTitle.get(name).getSha1()) + ".shg"));
 
         return families.values().stream().filter(e -> !e.getName().equals(ignore)).collect(Collectors.toMap(Function.identity(), family -> {
-            LOGGER.info(String.format("%nComparing: %s with %s|%2.3f%%", name, family.getName(), (k[0]++ + 1) * 100.0 / families.size()));
+            //LOGGER.info("Comparing: {} with {}|{}", name, family.getName(), (k[0]++ + 1) * 100.0 / families.size());
             long[] s2Set = ShingleUtils.loadFromCache(cache, fullShinglesPath().resolve(bytesToHex(byTitle.get(family.getMother().getName()).getSha1()) + ".shg"));
 
             return doCalculateJakkard(s1Set, s2Set);
@@ -245,7 +245,7 @@ public class ListFilesa {
         families.values().forEach(family -> {
             List<Name> toDelete = getNonSiblings(family, jakkardIndex);
 
-            toDelete.forEach(td -> LOGGER.info(String.format("Dropping: %s|%2.4f%%", td.getName(), td.getJakkardStatus() / family.size())));
+            toDelete.forEach(td -> LOGGER.info("Dropping: {}|{}", td.getName(), td.getJakkardStatus() / family.size()));
 
             family.setRelations(family.getRelations().stream().filter(r -> toDelete.contains(r.getName1()) || toDelete.contains(r.getName2())).collect(Collectors.toList()));
             family.getRelationsCount().forEach((key, value) ->

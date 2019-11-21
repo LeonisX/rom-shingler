@@ -1,7 +1,8 @@
 # TODO list
 
-* Buttons to save families, relations
 * Buttons to save, save&exit
+
+* Notify when exit if need to save something;
 
 * Right click menu for all
 

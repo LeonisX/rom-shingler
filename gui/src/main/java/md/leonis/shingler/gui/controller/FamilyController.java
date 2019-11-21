@@ -49,7 +49,6 @@ public class FamilyController {
     private static final Pattern PATTERN = Pattern.compile("\\d*|\\d+\\.\\d*");
 
     private final StageManager stageManager;
-    private final ConfigHolder configHolder;
 
     public VBox vBox;
 
@@ -75,7 +74,6 @@ public class FamilyController {
     public Button collapseAllButton2;
     public TextField jakkardTextField2;
     public Button findRelativesButton;
-    public Button mergeRelativesIntoButton;
     public TabPane tabPane;
     public ToggleButton orderByTitleButton;
     public ToggleGroup orderTG;
@@ -100,7 +98,6 @@ public class FamilyController {
     public MenuItem openOrphanFamilyDirItem;
     public MenuItem runOrphanFamilyItem;
 
-    public ContextMenu orphanContextMenu;
     public MenuItem newFamilyMenuItem;
     public MenuItem addToFamilyMenuItem;
     public MenuItem findFamilyMenuItem;
@@ -110,6 +107,8 @@ public class FamilyController {
     public MenuItem openFamilyRelationsDirItem;
     public MenuItem runFamilyRelationsItem;
     public Button toCollectionsButton;
+    public Button saveFamiliesButton;
+    public Button saveRelationsButton;
 
 
     private TreeItem<NameView> familyRootItem = new TreeItem<>(NameView.EMPTY);
@@ -126,12 +125,12 @@ public class FamilyController {
     private TreeItem<NameView> lastNameView = null;
 
     @Lazy
-    public FamilyController(StageManager stageManager, ConfigHolder configHolder) {
+    public FamilyController(StageManager stageManager) {
         this.stageManager = stageManager;
-        this.configHolder = configHolder;
     }
 
     @FXML
+    @SuppressWarnings("all")
     private void initialize() {
 
         jakkardTextField.setText("" + jakkard);
@@ -162,7 +161,10 @@ public class FamilyController {
 
         familyRelationsTreeView.setOnMouseClicked(mouseEvent -> onMouseClick(familyRelationsTreeView));
         familyRelationsTreeView.addEventFilter(ContextMenuEvent.CONTEXT_MENU_REQUESTED, this::consume);
-        
+
+        saveFamiliesButton.visibleProperty().bind(familiesModified);
+        saveRelationsButton.visibleProperty().bind(familyRelationsModified);
+
         loadFamilies();
         tryToLoadFamilyRelations();
     }
@@ -333,7 +335,7 @@ public class FamilyController {
         return (p && pdCheckBox.isSelected()) || (h && hackCheckBox.isSelected()) || (g && allGoodCheckBox.isSelected());
     }
 
-    public void jakkardTextFieldKeyReleased(KeyEvent keyEvent) {
+    public void jakkardTextFieldKeyReleased() {
         try {
             jakkard = Double.parseDouble(jakkardTextField.getText());
             familyTreeView.refresh();
@@ -445,8 +447,8 @@ public class FamilyController {
             Family family = families.get(result.get());
             family.getMembers().addAll(selectedNames);
             ListFilesa.calculateRelations(family);
-            LOGGER.info("Saving family...");
-            IOUtils.serialize(fullFamiliesPath().toFile(), families);
+
+            familiesModified.setValue(true);
 
             showFamilies();
         }
@@ -473,8 +475,8 @@ public class FamilyController {
             Family family = new Family(familyName, selectedNames);
             families.put(familyName, family);
             ListFilesa.calculateRelations(family);
-            LOGGER.info("Saving family...");
-            IOUtils.serialize(fullFamiliesPath().toFile(), families);
+
+            familiesModified.setValue(true);
 
             showFamilies();
         }
@@ -497,8 +499,8 @@ public class FamilyController {
                 });
 
         modifiedFamilies.forEach(ListFilesa::calculateRelations);
-        LOGGER.info("Saving family...");
-        IOUtils.serialize(fullFamiliesPath().toFile(), families);
+
+        familiesModified.setValue(true);
 
         families = families.entrySet().stream()
                 .filter(f -> !f.getValue().getMembers().isEmpty())
@@ -582,10 +584,9 @@ public class FamilyController {
 
         }).count();
 
-        if (modified > 0) {
-            showFamilies();
-            IOUtils.serialize(fullFamiliesPath().toFile(), families);
-        }
+        familiesModified.setValue(modified > 0);
+
+        showFamilies();
     }
 
     public void findFamiliesAutoButtonClick() {
@@ -603,11 +604,11 @@ public class FamilyController {
             }
         }).filter(Objects::nonNull).peek(ListFilesa::calculateRelations).count();
 
-        if (modified > 0) {
-            showFamilies();
-            IOUtils.serialize(fullFamiliesPath().toFile(), families);
-        }
+        familiesModified.setValue(modified > 0);
+
         orphanTreeView.getSelectionModel().clearSelection();
+
+        showFamilies();
     }
 
     public void checkBoxAction() {
@@ -631,7 +632,7 @@ public class FamilyController {
     }
 
     //TODO unify
-    public void jakkardTextFieldKeyReleased2(KeyEvent keyEvent) {
+    public void jakkardTextFieldKeyReleased2() {
         try {
             jakkard = Double.parseDouble(jakkardTextField2.getText());
             familyRelationsTreeView.refresh();
@@ -665,14 +666,11 @@ public class FamilyController {
 
         LOGGER.info("Find related families...");
 
-        File familyRelationsFile = fullFamilyRelationsPath().toFile();
-
         LOGGER.info("\nGenerating family relations from scratch...");
         familyRelations = families.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getValue, e -> ListFilesa.calculateRelations(e.getValue().getMother().getName(), e.getKey()), (first, second) -> first, LinkedHashMap::new));
 
-        IOUtils.createDirectories(workFamiliesPath());
-        IOUtils.serialize(familyRelationsFile, familyRelations);
+        familyRelationsModified.setValue(true);
 
         showFamilies();
     }
@@ -699,12 +697,10 @@ public class FamilyController {
             // recalculate relations for main family
             ListFilesa.calculateRelations(mainFamily.getMother().getName(), mainFamily.getName());
 
-            showFamilies();
+            familiesModified.setValue(true);
+            familyRelationsModified.setValue(true);
 
-            // save, save
-            IOUtils.createDirectories(workFamiliesPath());
-            IOUtils.serialize(fullFamiliesPath().toFile(), families);
-            IOUtils.serialize(fullFamilyRelationsPath().toFile(), familyRelations);
+            showFamilies();
         }
     }
 
@@ -739,12 +735,10 @@ public class FamilyController {
                         });
                     });
 
-                    showFamilies();
+                    familiesModified.setValue(true);
+                    familyRelationsModified.setValue(true);
 
-                    LOGGER.info("Saving families...");
-                    IOUtils.createDirectories(workFamiliesPath());
-                    IOUtils.serialize(fullFamiliesPath().toFile(), families);
-                    IOUtils.serialize(fullFamilyRelationsPath().toFile(), familyRelations);
+                    showFamilies();
                 }
             });
         }
@@ -772,12 +766,10 @@ public class FamilyController {
                         familyRelations.forEach((key, value) -> value.entrySet().removeIf(e -> toDelete.contains(e.getKey().getName())));
                     });
 
-                    showFamilies();
+                    familiesModified.setValue(true);
+                    familyRelationsModified.setValue(true);
 
-                    LOGGER.info("Saving families...");
-                    IOUtils.createDirectories(workFamiliesPath());
-                    IOUtils.serialize(fullFamiliesPath().toFile(), families);
-                    IOUtils.serialize(fullFamilyRelationsPath().toFile(), familyRelations);
+                    showFamilies();
                 }
             });
         }
@@ -836,7 +828,27 @@ public class FamilyController {
         }
     }
 
-    public void toCollectionsButtonClick(ActionEvent actionEvent) {
+    public void toCollectionsButtonClick() {
+        if (familiesModified.getValue()) {
+            saveFamiliesButtonClick();
+        }
+        if (familyRelationsModified.getValue()) {
+            saveRelationsButtonClick();
+        }
         stageManager.showPane(FxmlView.COLLECTION);
+    }
+
+    public void saveFamiliesButtonClick() {
+        LOGGER.info("Saving families...");
+        IOUtils.createDirectories(workFamiliesPath());
+        IOUtils.serialize(fullFamiliesPath().toFile(), families);
+        familiesModified.setValue(false);
+    }
+
+    public void saveRelationsButtonClick() {
+        LOGGER.info("Saving family relations...");
+        IOUtils.createDirectories(workFamiliesPath());
+        IOUtils.serialize(fullFamilyRelationsPath().toFile(), familyRelations);
+        familyRelationsModified.setValue(false);
     }
 }

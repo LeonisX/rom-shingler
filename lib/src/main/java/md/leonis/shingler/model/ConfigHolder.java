@@ -1,5 +1,7 @@
 package md.leonis.shingler.model;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -53,11 +55,12 @@ public class ConfigHolder {
 
     public static RomsCollection romsCollection;
     public static Map<String, Family> families;
+    public static BooleanProperty familiesModified = new SimpleBooleanProperty(false);
     public static Map<String, GID> byHash;
     public static Map<String, GID> byTitle;
 
-    //TODO save/load
     public static Map<Family, Map<Family, Double>> familyRelations;
+    public static BooleanProperty familyRelationsModified = new SimpleBooleanProperty(false);
 
     //TODO from config, may be bind to platform or collection
     public static double jakkard = 50;
