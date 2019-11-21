@@ -30,17 +30,13 @@ public class Main1024a {
     private static final Logger LOGGER = LoggerFactory.getLogger(Main1024a.class);
 
     private static String GAMES_DIR = "D:\\Downloads\\games\\";
-    private static String WORK_DIR = "D:\\Downloads\\games\\";
 
     private static final int SHINGLE_MAP_THRESHOLD = 127;
 
-    static final List<Integer> SAMPLES = Arrays.asList(1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024);
+    private static final List<Integer> SAMPLES = Arrays.asList(1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024);
 
     private static final Map<Integer, File> SAMPLE_DIRS_MAP =
             SAMPLES.stream().collect(Collectors.toMap(Function.identity(), s -> new File(GAMES_DIR + "sample-" + s)));
-
-    private static final Map<Integer, Path> SAMPLE_DIRS_MAP2 =
-            SAMPLES.stream().collect(Collectors.toMap(Function.identity(), s -> Paths.get(GAMES_DIR).resolve("sample-" + s)));
 
     private static final Map<Integer, Map<String, long[]>> SHINGLE_MAP =
             SAMPLES.stream().collect(Collectors.toMap(Function.identity(), HashMap::new));
@@ -69,7 +65,7 @@ public class Main1024a {
     }
 
     public static void createSampleDirs(Path path) {
-        SAMPLES.stream().map(s -> path.resolve("sample" + s)).forEach(IOUtils::createDirectories);
+        SAMPLES.stream().map(s -> path.resolve("sample-" + s)).forEach(IOUtils::createDirectories);
     }
 
     @SuppressWarnings("all")
@@ -119,7 +115,7 @@ public class Main1024a {
 
             long[] shingles = null;
             Path file = romsFolder.resolve(entry.getKey());
-            Path shdFile = workDir.resolve("sample1").resolve(bytesToHex(entry.getValue().getSha1()) + ".shg");
+            Path shdFile = workDir.resolve("sample-1").resolve(bytesToHex(entry.getValue().getSha1()) + ".shg");
 
             if (isCorrect(shdFile)) {
                 LOGGER.debug("Skipping: {}|{}", file.toString(), ((i + 1) * 100.0 / files.size()));
@@ -142,7 +138,7 @@ public class Main1024a {
 
             // Generate samples
             for (Integer index : SAMPLES) {
-                Path sampleFile = workDir.resolve("sample" + index).resolve(bytesToHex(entry.getValue().getSha1()) + ".shg");
+                Path sampleFile = workDir.resolve("sample-" + index).resolve(bytesToHex(entry.getValue().getSha1()) + ".shg");
                 if (index > 1 && !isCorrect(sampleFile)) {
                     if (shingles == null) {
                         shingles = ShingleUtils.load(shdFile);
@@ -206,7 +202,7 @@ public class Main1024a {
                                 ShingleUtils.save(filteredShingles, sampleFile);
                             }
                         } else {
-                            LOGGER.info(String.format(Locale.US, "Reading: %s: %2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
+                            LOGGER.info(String.format(Locale.US, "Reading: %s|%2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
                             long[] filteredShingles = ShingleUtils.loadFromCache(cache, sampleFile);
                             shinglesMap.put(file.getName(), filteredShingles);
                         }
@@ -258,7 +254,7 @@ public class Main1024a {
         //TODO проходиться сиротами и смотреть куда пристроить.
     }
 
-    static void calculateRelations(Map<String, Family> families, int index, File familyFile) {
+    private static void calculateRelations(Map<String, Family> families, int index, File familyFile) {
 
         int[] k = {0};
         int[] save = {0};
@@ -266,11 +262,11 @@ public class Main1024a {
         families.values().forEach(family -> {
             int relationsCount = family.getMembers().size() * (family.getMembers().size() - 1) / 2;
             if (family.getRelations().size() == relationsCount) { // x * (x - 1) / 2
-                LOGGER.debug(String.format("%nSkipping: %s... [%s] %2.3f%%", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size()));
+                LOGGER.debug(String.format("%nSkipping: %s... [%s]|%2.3f%%", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size()));
                 k[0]++;
             } else {
 
-                LOGGER.info(String.format("%nComparing: %s... [%s] %2.3f%%", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size()));
+                LOGGER.info(String.format("%nComparing: %s... [%s]|%2.3f%%", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size()));
 
                 //family.getRelations().clear();
 
@@ -338,11 +334,11 @@ public class Main1024a {
             Family family = familyList.get(i);
 
             if (family.isSkip()) {
-                LOGGER.debug(String.format("Skipping: %s... %2.2f%%", family.getName(), k[0] * 100.0 / families.size()));
+                LOGGER.debug(String.format("Skipping: %s...|%2.2f%%", family.getName(), k[0] * 100.0 / families.size()));
                 continue;
             }
 
-            LOGGER.info(String.format("Comparing: %s... %2.2f%%", family.getName(), k[0] * 100.0 / families.size()));
+            LOGGER.info(String.format("Comparing: %s...|%2.2f%%", family.getName(), k[0] * 100.0 / families.size()));
 
             Name name1 = family.get(0);
 
@@ -404,7 +400,7 @@ public class Main1024a {
         families.values().forEach(family -> {
             List<Name> toDelete = getNonSiblings(family, jakkardIndex);
 
-            toDelete.forEach(td -> LOGGER.info(String.format("Dropping: %s (%2.4f%%)", td.getName(), td.getJakkardStatus() / family.size())));
+            toDelete.forEach(td -> LOGGER.info(String.format("Dropping: %s|%2.4f%%", td.getName(), td.getJakkardStatus() / family.size())));
 
             family.setRelations(family.getRelations().stream().filter(r -> toDelete.contains(r.getName1()) || toDelete.contains(r.getName2())).collect(Collectors.toList()));
             family.getRelationsCount().forEach((key, value) ->
@@ -590,9 +586,9 @@ public class Main1024a {
         Map<String, GID> gidMap = new LinkedHashMap<>();
 
         try {
-            int i = 0;
+            int i = 1;
             for (Path path : files) {
-                LOGGER.info("Calculating hash sums for: {}|{}", path.getFileName(), ((i + 1) * 100.0 / files.size()));
+                LOGGER.info("Calculating hash sums for: {}|{}", path.getFileName(), (i * 100.0 / files.size()));
                 byte[] bytes = IOUtils.loadBytes(path);
                 byte[] byteswh = Arrays.copyOfRange(bytes, 16, bytes.length);
                 gidMap.put(path.getFileName().toString(), new GID(path.getFileName().toString(), Files.size(path), crc32(bytes), md5(bytes), sha1(bytes), crc32(byteswh), md5(byteswh), sha1(byteswh), null));

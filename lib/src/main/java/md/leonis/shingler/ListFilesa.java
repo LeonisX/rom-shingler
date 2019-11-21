@@ -24,38 +24,6 @@ import java.util.stream.StreamSupport;
 import static md.leonis.shingler.model.ConfigHolder.*;
 import static md.leonis.shingler.utils.BinaryUtils.*;
 
-/*
- Идея такая.
- Генерируем семьи. Либо с нуля (группируем по имени, выбрасываем все размером 1), либо из архива.
-
- Показать в UI (уникальные имена, возможность убирать хаки, PD).
-
- Далее проводим аудит семей.
- Составляем список для удаления.
- Возможность регулировать жаккард для оптимального результата.
- Не одобренные игры получают флаг и больше не трогаются.
- Удаляем из семей все подозрительные игры.
- Пересчитываем рейтинг.
- Пересчитываем мать.
-
- Следующий этап - проходим сирот и пытаемся найти подходящую семью.
- Предлагать несколько вариантов.
- Ждём одобрения.
- Для утверждённых ставим флаг.
-
- Возможность ручной группировки некоторых сирот в семьи, например, многоигровок или PD.
-
- Пересчитываем жаккард, мать.
-
- Если надо то повторяем предыдущие операции в любом порядке.
-
- Когда все сироты определены, сравнить семьи, найти самые близкие и по желанию объединить.
-
- - Возможность просмотреть отмеченные (игнорируемые) игры.
- - В конце именуем семьи
-*/
-
-
 public class ListFilesa {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ListFilesa.class);
@@ -188,9 +156,9 @@ public class ListFilesa {
 
             int relationsCount = family.getMembers().size() * (family.getMembers().size() - 1) / 2;
             if (family.getRelations().size() == relationsCount) { // x * (x - 1) / 2
-                LOGGER.debug(String.format("%nSkipping: %s... [%s] %2.3f%%", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size()));
+                LOGGER.debug(String.format("%nSkipping: %s... [%s]|%2.3f%%", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size()));
             } else {
-                LOGGER.info(String.format("%nComparing: %s... [%s] %2.3f%%", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size()));
+                LOGGER.info(String.format("%nComparing: %s... [%s]|%2.3f%%", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size()));
                 doCalculateRelations(family, save);
             }
             k[0]++;
@@ -234,7 +202,7 @@ public class ListFilesa {
                 name2.addJakkardStatus(jakkard);
 
                 Result result = new Result(name1, name2, jakkard);
-                LOGGER.info(i + "->" + j + ": " + result);
+                LOGGER.info(String.format("%s->%s: %s|%s", i, j, result, (i + 1) / family.size()));
 
                 family.addRelation(result);
                 save[0]++;
@@ -262,7 +230,7 @@ public class ListFilesa {
         long[] s1Set = ShingleUtils.loadFromCache(cache, fullShinglesPath().resolve(bytesToHex(byTitle.get(name).getSha1()) + ".shg"));
 
         return families.values().stream().filter(e -> !e.getName().equals(ignore)).collect(Collectors.toMap(Function.identity(), family -> {
-            LOGGER.info(String.format("%nComparing: %s with %s %2.3f%%", name, family.getName(), (k[0]++ + 1) * 100.0 / families.size()));
+            LOGGER.info(String.format("%nComparing: %s with %s|%2.3f%%", name, family.getName(), (k[0]++ + 1) * 100.0 / families.size()));
             long[] s2Set = ShingleUtils.loadFromCache(cache, fullShinglesPath().resolve(bytesToHex(byTitle.get(family.getMother().getName()).getSha1()) + ".shg"));
 
             return doCalculateJakkard(s1Set, s2Set);
@@ -277,7 +245,7 @@ public class ListFilesa {
         families.values().forEach(family -> {
             List<Name> toDelete = getNonSiblings(family, jakkardIndex);
 
-            toDelete.forEach(td -> LOGGER.info(String.format("Dropping: %s (%2.4f%%)", td.getName(), td.getJakkardStatus() / family.size())));
+            toDelete.forEach(td -> LOGGER.info(String.format("Dropping: %s|%2.4f%%", td.getName(), td.getJakkardStatus() / family.size())));
 
             family.setRelations(family.getRelations().stream().filter(r -> toDelete.contains(r.getName1()) || toDelete.contains(r.getName2())).collect(Collectors.toList()));
             family.getRelationsCount().forEach((key, value) ->
@@ -387,7 +355,7 @@ public class ListFilesa {
                     deviation = 0;
                 }
                 if (deviation > 10 && j1 > 3) {
-                    LOGGER.info(String.format("%s:%s %2.2f->%2.2f(%2.4f%%)", family1.getName(), family1.get(j).getName(), j1, jX, deviation));
+                    LOGGER.info(String.format("%s:%s %2.2f->%2.2f(%2.4f%%)|%s", family1.getName(), family1.get(j).getName(), j1, jX, deviation, (i + 1) / families1.size()));
                 }
                 maxDeviation = Math.max(maxDeviation, deviation);
                 sumDeviation += deviation;

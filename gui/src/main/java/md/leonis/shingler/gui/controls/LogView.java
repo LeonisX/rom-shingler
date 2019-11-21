@@ -108,20 +108,13 @@ public class LogView extends ListView<LogRecord> {
         this.parentProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue == null) {
                 logTransfer.pause();
-            } else {
-                if (!paused.get()) {
-                    logTransfer.play();
-                }
+            } else if (!paused.get()) {
+                logTransfer.play();
             }
         });
 
         filterLevel.addListener((observable, oldValue, newValue) -> setItems(
-                new FilteredList<>(
-                        logItems,
-                        logRecord ->
-                                logRecord.getLevel().ordinal() >=
-                                        filterLevel.get().ordinal()
-                )
+                new FilteredList<>(logItems, logRecord -> logRecord.getLevel().ordinal() >= filterLevel.get().ordinal())
         ));
         filterLevel.set(Level.DEBUG);
 
