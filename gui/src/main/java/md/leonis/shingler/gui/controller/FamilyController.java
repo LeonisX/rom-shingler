@@ -2,6 +2,7 @@ package md.leonis.shingler.gui.controller;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -19,6 +20,7 @@ import md.leonis.shingler.gui.controls.ListViewDialog;
 import md.leonis.shingler.gui.controls.SmartChoiceDialog;
 import md.leonis.shingler.gui.dto.NameView;
 import md.leonis.shingler.gui.dto.NodeStatus;
+import md.leonis.shingler.gui.view.FxmlView;
 import md.leonis.shingler.gui.view.StageManager;
 import md.leonis.shingler.model.*;
 import md.leonis.shingler.utils.IOUtils;
@@ -107,6 +109,7 @@ public class FamilyController {
     public MenuItem mergeRelativesIntoMenuItem;
     public MenuItem openFamilyRelationsDirItem;
     public MenuItem runFamilyRelationsItem;
+    public Button toCollectionsButton;
 
 
     private TreeItem<NameView> familyRootItem = new TreeItem<>(NameView.EMPTY);
@@ -833,4 +836,7 @@ public class FamilyController {
         }
     }
 
+    public void toCollectionsButtonClick(ActionEvent actionEvent) {
+        stageManager.showPane(FxmlView.COLLECTION);
+    }
 }

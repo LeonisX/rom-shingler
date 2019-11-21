@@ -1,6 +1,5 @@
 # TODO list
 
-* Switch dashboard, family in one window
 * TRACE - signals to start/stop percentage tracing
 * Buttons to save families, relations
 * Buttons to save, save&exit

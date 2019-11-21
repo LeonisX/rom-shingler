@@ -6,6 +6,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import md.leonis.shingler.gui.controls.ListViewDialog;
@@ -29,9 +30,14 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class StageManager {
 
-    private static final Logger log = getLogger(StageManager.class);
+    private static final Logger LOGGER = getLogger(StageManager.class);
     private final Stage primaryStage;
+    private BorderPane rootLayout;
     private final SpringFXMLLoader springFXMLLoader;
+
+    public void setRootLayout(BorderPane rootLayout) {
+        this.rootLayout = rootLayout;
+    }
 
     public StageManager(SpringFXMLLoader springFXMLLoader, Stage stage) {
         this.springFXMLLoader = springFXMLLoader;
@@ -43,12 +49,12 @@ public class StageManager {
     }
 
     public void switchScene(final FxmlView view, StageStyle stageStyle) {
-        Parent viewRootNodeHierarchy = loadViewNodeHierarchy(view.getFxmlFile());
-        show(viewRootNodeHierarchy, view.getTitle(), stageStyle);
+        Parent parent = loadViewNodeHierarchy(view.getFxmlFile());
+        show(parent, view.getTitle(), stageStyle);
     }
 
-    private void show(final Parent rootnode, String title, StageStyle stageStyle) {
-        Scene scene = prepareScene(rootnode);
+    private void show(final Parent parent, String title, StageStyle stageStyle) {
+        Scene scene = prepareScene(parent);
         //scene.getStylesheets().add("/styles/Styles.css");
 
         //primaryStage.initStyle(stageStyle);
@@ -60,10 +66,15 @@ public class StageManager {
         try {
             primaryStage.show();
         } catch (Exception exception) {
-            logAndExit ("Unable to show scene for title" + title,  exception);
+            logAndExit("Unable to show scene for title" + title, exception);
         }
     }
 
+    public void showPane(final FxmlView view) {
+        Parent parent = loadViewNodeHierarchy(view.getFxmlFile());
+        rootLayout.setCenter(parent);
+        primaryStage.setTitle(view.getTitle());
+    }
 
     //TODO refactor!!!
     public void showNewWindow(final FxmlView view) {
@@ -115,10 +126,11 @@ public class StageManager {
     }
 
     private void logAndExit(String errorMsg, Exception exception) {
-        log.error(errorMsg, exception, exception.getCause());
+        LOGGER.error(errorMsg, exception, exception.getCause());
         Platform.exit();
     }
 
+    //TODO use them!!!
     public void showInformationAlert(String title, String header, String content) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(title);

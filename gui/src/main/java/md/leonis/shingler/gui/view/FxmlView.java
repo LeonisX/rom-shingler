@@ -6,6 +6,7 @@ public enum FxmlView {
 
     SPLASH("splash.title", "splash"),
     DASHBOARD("dashboard.title", "dashboard"),
+    COLLECTION("collection.title", "collection"),
     //TODO delete
     WINDOW("window.title", "window"),
     COMPARE("compare.title", "compare"),
