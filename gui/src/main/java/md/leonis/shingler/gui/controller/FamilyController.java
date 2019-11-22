@@ -2,7 +2,6 @@ package md.leonis.shingler.gui.controller;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -10,7 +9,6 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.control.*;
 import javafx.scene.input.ContextMenuEvent;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -22,7 +20,10 @@ import md.leonis.shingler.gui.dto.NameView;
 import md.leonis.shingler.gui.dto.NodeStatus;
 import md.leonis.shingler.gui.view.FxmlView;
 import md.leonis.shingler.gui.view.StageManager;
-import md.leonis.shingler.model.*;
+import md.leonis.shingler.model.CollectionType;
+import md.leonis.shingler.model.Family;
+import md.leonis.shingler.model.GID;
+import md.leonis.shingler.model.Name;
 import md.leonis.shingler.utils.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -841,14 +842,14 @@ public class FamilyController {
     public void saveFamiliesButtonClick() {
         LOGGER.info("Saving families...");
         IOUtils.createDirectories(workFamiliesPath());
-        IOUtils.serialize(fullFamiliesPath().toFile(), families);
+        stageManager.showWaitAlertAndRun("Saving families", () -> IOUtils.serialize(fullFamiliesPath().toFile(), families));
         familiesModified.setValue(false);
     }
 
     public void saveRelationsButtonClick() {
         LOGGER.info("Saving family relations...");
         IOUtils.createDirectories(workFamiliesPath());
-        IOUtils.serialize(fullFamilyRelationsPath().toFile(), familyRelations);
+        stageManager.showWaitAlertAndRun("Saving family relations", () -> IOUtils.serialize(fullFamilyRelationsPath().toFile(), familyRelations));
         familyRelationsModified.setValue(false);
     }
 }

@@ -155,6 +155,16 @@ public class StageManager {
         alert.showAndWait();
     }
 
+    public void showWaitAlertAndRun(String text, Runnable runnable) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Please, wait!");
+        alert.setHeaderText(text);
+        alert.setContentText("In progress...");
+        alert.show();
+        runnable.run();
+        alert.close();
+    }
+
     public void loadTemplate(String templateName, Parent parent, Runnable runnable) {
         FXMLLoader loader = new FXMLLoader(getClass().getResource(String.format("/fxml/template/%sTemplate.fxml", templateName)));
         loader.setController(parent);

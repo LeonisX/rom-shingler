@@ -5,12 +5,15 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import md.leonis.shingler.gui.view.FxmlView;
 import md.leonis.shingler.gui.view.StageManager;
+import md.leonis.shingler.utils.IOUtils;
 import md.leonis.shingler.utils.MeasureMethodTest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
+
+import static md.leonis.shingler.model.ConfigHolder.*;
 
 @SpringBootApplication
 public class MainApp extends Application {
@@ -50,8 +53,24 @@ public class MainApp extends Application {
 
     @Override
     public void stop() {
+
         springContext.stop();
-        // Here probably close connections to DB
+
+        if (familiesModified.getValue() || familyRelationsModified.getValue()) {
+
+            IOUtils.createDirectories(workFamiliesPath());
+
+            if (familiesModified.getValue()) {
+                LOGGER.info("Saving families...");
+                stageManager.showWaitAlertAndRun("Saving families", () -> IOUtils.serialize(fullFamiliesPath().toFile(), families));
+            }
+
+            if (familyRelationsModified.getValue()) {
+                LOGGER.info("Saving family relations...");
+                stageManager.showWaitAlertAndRun("Saving family relations", () -> IOUtils.serialize(fullFamilyRelationsPath().toFile(), familyRelations));
+            }
+
+        }
     }
 
     protected void displayInitialScene() {
