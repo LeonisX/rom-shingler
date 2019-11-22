@@ -145,27 +145,29 @@ public class ListFilesa {
 
         byTitle = romsCollection.getGids().values().stream().collect(Collectors.toMap(GID::getTitle, Function.identity()));
 
-        int[] k = {0};
-        int[] save = {0};
+        int k = 0;
 
-        families.values().forEach(family -> {
+        for (Family family : families.values()) {
 
-            if (save[0] > 100000 * getDenominator()) {
-                LOGGER.info("Saving family...");
-                IOUtils.serialize(fullFamiliesPath().toFile(), families);
-                save[0] = 0;
+            if (needToStop[0]) {
+                LOGGER.info("Execution was interrupted!");
+                /*LOGGER.info("Saving families...");
+                IOUtils.serialize(fullFamiliesPath().toFile(), families);*/
+                needToStop[0] = false;
+                break;
             }
 
             int relationsCount = family.getMembers().size() * (family.getMembers().size() - 1) / 2;
+            double percent = (k + 1) * 100.0 / families.size();
             if (family.getRelations().size() == relationsCount) { // x * (x - 1) / 2
-                LOGGER.debug("Skipping: {}... [{}]|{}", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size());
+                LOGGER.debug("Skipping: {}... [{}]|{}", family.getName(), family.size(), percent);
             } else {
-                LOGGER.info("Comparing: {}... [{}]|{}", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size());
-                doCalculateRelations(family, save);
+                LOGGER.info("Comparing: {}... [{}]|{}", family.getName(), family.size(), percent);
+                doCalculateRelations(family, percent);
             }
-            k[0]++;
+            k++;
             family.selectMother();
-        });
+        }
     }
 
     public static void calculateRelations(Family family) {
@@ -175,11 +177,11 @@ public class ListFilesa {
         byTitle = romsCollection.getGids().values().stream().collect(Collectors.toMap(GID::getTitle, Function.identity()));
 
         LOGGER.info("Comparing: {}... [{}]", family.getName(), family.size());
-        doCalculateRelations(family, new int[]{0});
+        doCalculateRelations(family, 0);
         family.selectMother();
     }
 
-    private static void doCalculateRelations(Family family, int[] save) {
+    private static void doCalculateRelations(Family family, double percent) {
 
         family.getRelations().clear();
         family.getMembers().forEach(m -> m.setJakkardStatus(0));
@@ -202,10 +204,9 @@ public class ListFilesa {
                 name2.addJakkardStatus(jakkard);
 
                 Result result = new Result(name1, name2, jakkard);
-                LOGGER.info("{}->{}: {}|{}", i, j, result, (i + 1) / family.size());
+                LOGGER.info("{}->{}: {}|{}", i, j, result, percent);
 
                 family.addRelation(result);
-                save[0]++;
             }
             name1.setDone(true);
         }

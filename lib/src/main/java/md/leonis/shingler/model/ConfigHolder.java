@@ -7,10 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Data
 @NoArgsConstructor
@@ -96,4 +93,19 @@ public class ConfigHolder {
     //TODO bad solution
     public static List<String> selectedCollections;
 
+    //TODO notifications
+    public static Boolean[] needToStop = new Boolean[]{false};
+
+    public static Set<String> runningTasks = new HashSet<>();
+
+    public static void registerRunningTask(String name) {
+        runningTasks.add(name);
+    }
+
+    public static void unRegisterRunningTask(String name) {
+        runningTasks.remove(name);
+        if (runningTasks.isEmpty()) {
+            needToStop[0] = false;
+        }
+    }
 }

@@ -54,8 +54,6 @@ public class MainApp extends Application {
     @Override
     public void stop() {
 
-        springContext.stop();
-
         if (familiesModified.getValue() || familyRelationsModified.getValue()) {
 
             IOUtils.createDirectories(workFamiliesPath());
@@ -69,8 +67,9 @@ public class MainApp extends Application {
                 LOGGER.info("Saving family relations...");
                 stageManager.showWaitAlertAndRun("Saving family relations", () -> IOUtils.serialize(fullFamilyRelationsPath().toFile(), familyRelations));
             }
-
         }
+
+        springContext.stop();
     }
 
     protected void displayInitialScene() {

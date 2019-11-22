@@ -40,6 +40,7 @@ import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static md.leonis.shingler.gui.view.StageManager.runInBackground;
 import static md.leonis.shingler.model.ConfigHolder.*;
 
 @Controller
@@ -414,8 +415,18 @@ public class FamilyController {
     }
 
     public void calculateRelationsButtonClick() {
-        ListFilesa.calculateRelations();
-        showFamilies();
+
+        runInBackground(() -> {
+            try {
+                registerRunningTask("calculateRelations");
+                ListFilesa.calculateRelations();
+                unRegisterRunningTask("calculateRelations");
+                familiesModified.setValue(true);
+                showFamilies();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     public void selectButtonClick() {

@@ -19,6 +19,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static md.leonis.shingler.Main1024.serialize;
+import static md.leonis.shingler.model.ConfigHolder.*;
+import static md.leonis.shingler.model.ConfigHolder.needToStop;
 import static md.leonis.shingler.utils.BinaryUtils.*;
 
 // NES (256 Kb) Up to 8 100% SAVE, Up to 32 SAFE, 64 relative SAFE, 256+ nonSAFE
@@ -231,7 +233,7 @@ public class Main1024a {
             families = namesList.entrySet().stream().filter(e -> e.getValue().size() != 1)
                     .collect(Collectors.toMap(Map.Entry::getKey, e -> new Family(e.getValue())));
 
-            calculateRelations(families, index, familyFile);
+            calculateRelations(families, index);
 
             IOUtils.serialize(familyFile, families);
         }
@@ -254,12 +256,19 @@ public class Main1024a {
         //TODO проходиться сиротами и смотреть куда пристроить.
     }
 
-    private static void calculateRelations(Map<String, Family> families, int index, File familyFile) {
+    private static void calculateRelations(Map<String, Family> families, int index) {
 
         int[] k = {0};
-        int[] save = {0};
 
-        families.values().forEach(family -> {
+        for (Family family : families.values()) {
+
+            if (needToStop[0]) {
+                LOGGER.info("Saving families...");
+                IOUtils.serialize(fullFamiliesPath().toFile(), families);
+                needToStop[0] = false;
+                break;
+            }
+
             int relationsCount = family.getMembers().size() * (family.getMembers().size() - 1) / 2;
             if (family.getRelations().size() == relationsCount) { // x * (x - 1) / 2
                 LOGGER.debug(String.format("%nSkipping: %s... [%s]|%2.3f%%", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size()));
@@ -271,12 +280,6 @@ public class Main1024a {
                 //family.getRelations().clear();
 
                 for (int i = 0; i < family.size() - 1; i++) {
-
-                    if (save[0] > 100000 * index) {
-                        LOGGER.info("Saving family...");
-                        IOUtils.serialize(familyFile, families);
-                        save[0] = 0;
-                    }
 
                     Name name1 = family.get(i);
 
@@ -313,14 +316,13 @@ public class Main1024a {
                         LOGGER.info(i + "->" + j + ": " + result);
 
                         family.addRelation(result);
-                        save[0]++;
                     }
                     name1.setDone(true);
                 }
                 k[0]++;
             }
             family.selectMother();
-        });
+        }
     }
 
     private static Map<String, Family> mergeFamilies(Map<String, Family> families, double jakkardIndex, int index) {
@@ -388,7 +390,7 @@ public class Main1024a {
 
         Map<String, Family> families2 = familyList.stream().collect(Collectors.toMap(Family::getName, Function.identity()));
 
-        calculateRelations(families2, 64, new File("family"));
+        calculateRelations(families2, 64);
         families2.values().forEach(f -> f.setName(f.getMother().getCleanName()));
         families2.values().forEach(Main1024a::recalculateJakkard);
 

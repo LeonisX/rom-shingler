@@ -8,10 +8,13 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import md.leonis.shingler.log.Level;
 import md.leonis.shingler.gui.controls.LogView;
 import md.leonis.shingler.gui.view.StageManager;
+import md.leonis.shingler.log.Level;
 import org.springframework.context.annotation.Lazy;
+
+import static md.leonis.shingler.model.ConfigHolder.needToStop;
+import static md.leonis.shingler.model.ConfigHolder.runningTasks;
 
 public class LogController extends VBox {
 
@@ -39,11 +42,17 @@ public class LogController extends VBox {
     private Label progressLabel;
     @FXML
     private ProgressBar progressBar;
+    @FXML
+    public Button saveStopButton;
+
+    private final StageManager stageManager;
 
     @Lazy
     public LogController(StageManager stageManager) {
 
-        stageManager.loadTemplate("log", this, () -> {});
+        this.stageManager = stageManager;
+        stageManager.loadTemplate("log", this, () -> {
+        });
 
         LogView logView = new LogView();
 
@@ -69,5 +78,19 @@ public class LogController extends VBox {
         AnchorPane.setBottomAnchor(layout, 0.0);
         AnchorPane.setLeftAnchor(layout, 0.0);
         AnchorPane.setRightAnchor(layout, 0.0);
+    }
+
+    public void saveStopButtonClick() {
+
+        if (runningTasks.isEmpty()) {
+            stageManager.showInformationAlert("No long-running tasks!", "Be patient.", "Long-running tasks are not running. Ongoing will end quickly.");
+            return;
+        }
+
+        needToStop[0] = true;
+        stageManager.showWaitAlertAndRun("Waiting for the completion of long-running tasks...", () -> {
+            while (needToStop[0]) {
+            }
+        });
     }
 }
