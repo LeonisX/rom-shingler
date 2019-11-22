@@ -4,8 +4,6 @@
 
 TODO new family, ... -> show that need calculate relations!!!
 
- * TODO order for family members, families always are sorted by title
-  
   drag-drop
   
   search in trees by keys

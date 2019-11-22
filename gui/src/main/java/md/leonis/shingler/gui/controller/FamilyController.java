@@ -316,7 +316,8 @@ public class FamilyController {
     private void updateTrees() {
 
         if (tabPane.getSelectionModel().getSelectedIndex() == 0) { // First tab
-            familyRootItem.getChildren().sort(orderByTitleButton.isSelected() ? byTitle : byJakkard);
+            familyRootItem.getChildren().forEach(c -> c.getChildren().sort(orderByTitleButton.isSelected() ? byTitle : byJakkard));
+
         } else { // Family relations tab
             if (familyRelations != null) {
                 familyRelationsRootItem.getChildren().sort(orderByTitleButton2.isSelected() ? byTitle : byJakkard);
