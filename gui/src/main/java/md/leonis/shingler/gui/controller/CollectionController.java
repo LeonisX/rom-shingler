@@ -305,10 +305,9 @@ public class CollectionController {
                     romsCollection.setGids(mergedGids);
                     break;
             }
-
             saveCollection();
-            showCollection();
-        });
+
+        }, this::showCollection);
     }
 
     public void scanCollectionHashesButtonClick() {
@@ -330,11 +329,10 @@ public class CollectionController {
                 }
 
                 saveCollection();
-                showCollection();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-        });
+        }, this::showCollection);
     }
 
     public void generateShinglesButtonClick() {
@@ -346,11 +344,10 @@ public class CollectionController {
         runInBackground(() -> {
             try {
                 Main1024a.generateShinglesNio(romsCollection, romsFolder, workShinglesPath());
-                showCollection();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-        });
+        }, this::showCollection);
         //TODO show something?
     }
 

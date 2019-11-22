@@ -1,6 +1,7 @@
 package md.leonis.shingler.gui.view;
 
 import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -183,6 +184,20 @@ public class StageManager {
         thread.start();
     }
 
+    public static void runInBackground(Runnable runnable, Runnable guiRunnable) {
+
+        Task<Void> task = new Task<Void>() {
+            @Override
+            protected Void call() {
+                runnable.run();
+                return null;
+            }
+        };
+
+        task.setOnSucceeded(workerStateEvent -> guiRunnable.run());
+
+        new Thread(task).start();
+    }
 
     private final Map<String, File> initialDirs = new HashMap<>();
 

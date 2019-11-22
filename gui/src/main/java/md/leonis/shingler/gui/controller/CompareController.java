@@ -178,7 +178,7 @@ public class CompareController {
             samePairs = hashesSame.stream().map(h -> new Pair<>(byLeftHash.get(h), byRightHash.get(h))).collect(Collectors.toList());
 
             filterResult();
-
+        }, () -> {
             waitLabel.setVisible(false);
             controlsHBox.setVisible(true);
         });

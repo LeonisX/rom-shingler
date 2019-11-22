@@ -470,16 +470,11 @@ public class FamilyController {
     public void calculateRelationsButtonClick() {
 
         runInBackground(() -> {
-            try {
                 registerRunningTask("calculateRelations");
                 ListFilesa.calculateRelations();
                 unRegisterRunningTask("calculateRelations");
                 familiesModified.setValue(true);
-                showFamilies();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
+        }, this::showFamilies);
     }
 
     public void selectButtonClick() {
@@ -487,10 +482,11 @@ public class FamilyController {
 
         Optional<String> result = dialog.showAndWait();
         if (result.isPresent()) {
+            orphanTreeView.getSelectionModel().clearSelection();
             String phrase = result.get().toLowerCase();
-            familyRootItem.getChildren().forEach(c -> {
+            orphanRootItem.getChildren().forEach(c -> {
                 if ((c.getValue().getStatus() != NodeStatus.FAMILY) && c.getValue().getName().toLowerCase().contains(phrase)) {
-                    familyTreeView.getSelectionModel().select(c);
+                    orphanTreeView.getSelectionModel().select(c);
                 }
             });
         }
@@ -508,15 +504,13 @@ public class FamilyController {
         SmartChoiceDialog<String> dialog = stageManager.getChoiceDialog("Choice Dialog", "Look, a Choice Dialog", "Select family:", choices.get(0), choices);
 
         Optional<String> result = dialog.showAndWait();
-        if (result.isPresent()) {
-            Family family = families.get(result.get());
+        result.ifPresent(s -> runInBackground(() -> {
+            Family family = families.get(s);
             family.getMembers().addAll(selectedNames);
             ListFilesa.calculateRelations(family);
 
             familiesModified.setValue(true);
-
-            showFamilies();
-        }
+        }, this::showFamilies));
     }
 
     public void newFamilyButtonClick() {
@@ -535,16 +529,14 @@ public class FamilyController {
         TextInputDialog dialog = stageManager.getTextInputDialog("Text Input Dialog", "Look, a Text Input Dialog", "Please enter new family name:", selectedNames.get(0).getCleanName());
 
         Optional<String> result = dialog.showAndWait();
-        if (result.isPresent()) {
-            String familyName = result.get();
-            Family family = new Family(familyName, selectedNames);
-            families.put(familyName, family);
+        result.ifPresent(s -> runInBackground(() -> {
+            Family family = new Family(s, selectedNames);
+            families.put(s, family);
+            registerRunningTask("calculateRelations");
             ListFilesa.calculateRelations(family);
-
+            unRegisterRunningTask("calculateRelations");
             familiesModified.setValue(true);
-
-            showFamilies();
-        }
+        }, this::showFamilies));
     }
 
     public void kickAwayButtonClick() {
@@ -563,15 +555,16 @@ public class FamilyController {
                     modifiedFamilies.add(family);
                 });
 
-        modifiedFamilies.forEach(ListFilesa::calculateRelations);
+        runInBackground(() -> {
+            modifiedFamilies.forEach(ListFilesa::calculateRelations);
 
-        familiesModified.setValue(true);
+            familiesModified.setValue(true);
 
-        families = families.entrySet().stream()
-                .filter(f -> !f.getValue().getMembers().isEmpty())
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            families = families.entrySet().stream()
+                    .filter(f -> !f.getValue().getMembers().isEmpty())
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        showFamilies();
+        }, this::showFamilies);
     }
 
     public void openDirButtonClick() {
@@ -645,6 +638,7 @@ public class FamilyController {
             Family family = families.get(nameView.getFamilyName());
             family.getMembers().add(parent);
 
+            //TODO progress
             ListFilesa.calculateRelations(family);
 
         }).count();
@@ -654,6 +648,8 @@ public class FamilyController {
         showFamilies();
     }
 
+    //TODO slow operation. progress, ability to stop
+    // надо переписать - пересчёт отношений делать в конце, если вообще делать.
     public void findFamiliesAutoButtonClick() {
 
         long modified = orphanTreeView.getSelectionModel().getSelectedItems().stream().map(selectedItem -> {
@@ -667,7 +663,7 @@ public class FamilyController {
             } else {
                 return null;
             }
-        }).filter(Objects::nonNull).peek(ListFilesa::calculateRelations).count();
+        }).filter(Objects::nonNull).peek(ListFilesa::calculateRelations).count(); //TODO progress
 
         familiesModified.setValue(modified > 0);
 
@@ -734,7 +730,7 @@ public class FamilyController {
         LOGGER.info("\nGenerating family relations from scratch...");
         //TODO progress
         familyRelations = families.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getValue, e -> ListFilesa.calculateRelations(e.getValue().getMother().getName(), e.getKey()), (first, second) -> first, LinkedHashMap::new));
+                .collect(Collectors.toMap(Map.Entry::getValue, e -> ListFilesa.calculateRelations(e.getValue().getMother().getName(), e.getKey()), (first, second) -> first, LinkedHashMap::new)); //TODO progress
 
         familyRelationsModified.setValue(true);
 
@@ -757,9 +753,11 @@ public class FamilyController {
             families.remove(newFamilyMembersTreeItem.getValue().getFamilyName());
             familyRelations.remove(newFamilyMembers);
 
+            //TODO progress
             // calculate relations (main family), select mother
             ListFilesa.calculateRelations(mainFamily);
 
+            //TODO progress
             // recalculate relations for main family
             ListFilesa.calculateRelations(mainFamily.getMother().getName(), mainFamily.getName());
 

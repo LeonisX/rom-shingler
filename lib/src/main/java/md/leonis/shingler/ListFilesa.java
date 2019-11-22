@@ -177,7 +177,7 @@ public class ListFilesa {
         byTitle = romsCollection.getGids().values().stream().collect(Collectors.toMap(GID::getTitle, Function.identity()));
 
         LOGGER.info("Comparing: {}... [{}]", family.getName(), family.size());
-        doCalculateRelations(family, 0);
+        doCalculateRelations(family, -1);
         family.selectMother();
     }
 
@@ -204,7 +204,7 @@ public class ListFilesa {
                 name2.addJakkardStatus(jakkard);
 
                 Result result = new Result(name1, name2, jakkard);
-                LOGGER.info("{}->{}: {}|{}", i, j, result, percent);
+                LOGGER.info("{}->{}: {}|{}", i, j, result, percent == -1 ? (i + 1.0) * 100 / family.size() : percent);
 
                 family.addRelation(result);
             }
@@ -356,7 +356,7 @@ public class ListFilesa {
                     deviation = 0;
                 }
                 if (deviation > 10 && j1 > 3) {
-                    LOGGER.info(String.format("%s:%s %2.2f->%2.2f(%2.4f%%)|%s", family1.getName(), family1.get(j).getName(), j1, jX, deviation, (i + 1) / families1.size()));
+                    LOGGER.info(String.format("%s:%s %2.2f->%2.2f(%2.4f%%)|%s", family1.getName(), family1.get(j).getName(), j1, jX, deviation, (i + 1.0) / families1.size()));
                 }
                 maxDeviation = Math.max(maxDeviation, deviation);
                 sumDeviation += deviation;
