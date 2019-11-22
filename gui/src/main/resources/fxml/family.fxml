@@ -20,7 +20,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="879.0" prefWidth="1220.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="md.leonis.shingler.gui.controller.FamilyController">
+<BorderPane maxHeight="4000" maxWidth="4000" minHeight="499" minWidth="499" prefHeight="1500" prefWidth="1500" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="md.leonis.shingler.gui.controller.FamilyController">
     <top>
         <HBox alignment="CENTER" prefHeight="46.0" prefWidth="1220.0" spacing="5.0" BorderPane.alignment="CENTER">
             <HBox alignment="CENTER" prefWidth="4000.0" spacing="5.0">
@@ -32,7 +32,7 @@
                 <Label fx:id="waitLabel" prefHeight="17.0" prefWidth="75.0" text="Please wait" />
                 <VBox prefHeight="46.0" prefWidth="792.0">
                     <HBox prefHeight="47.0" prefWidth="1022.0">
-                        <VBox prefHeight="47.0" prefWidth="445.0">
+                        <VBox prefHeight="47.0" prefWidth="499.0">
                             <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="5.0">
                                 <Label text="Total families:" />
                                 <Label fx:id="totalFamiliesLabel" />

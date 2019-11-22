@@ -22,9 +22,9 @@
         </MenuBar>
     </top>
     <center>
-        <SplitPane dividerPositions="0.8075601374570447" orientation="VERTICAL" prefHeight="200.0" prefWidth="160.0" BorderPane.alignment="CENTER">
+        <SplitPane dividerPositions="0.8075601374570447" orientation="VERTICAL" BorderPane.alignment="CENTER">
             <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
-                <BorderPane fx:id="container" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                <BorderPane fx:id="container" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
             </AnchorPane>
             <AnchorPane fx:id="anchorPane" minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
                 <!--<TextArea fx:id="infoTextArea" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"

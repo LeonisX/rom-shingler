@@ -1,7 +1,11 @@
 package md.leonis.shingler.gui.controller;
 
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -9,10 +13,13 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.control.*;
 import javafx.scene.input.ContextMenuEvent;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.util.Callback;
+import javafx.util.Duration;
 import md.leonis.shingler.ListFilesa;
 import md.leonis.shingler.gui.controls.ListViewDialog;
 import md.leonis.shingler.gui.controls.SmartChoiceDialog;
@@ -126,6 +133,10 @@ public class FamilyController {
 
     private TreeItem<NameView> lastNameView = null;
 
+    private Map<TreeView, String> searchMap = new HashMap<>();
+
+    private Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(2), ev -> searchMap.entrySet().forEach(e -> e.setValue(""))));
+
     @Lazy
     public FamilyController(StageManager stageManager) {
         this.stageManager = stageManager;
@@ -155,23 +166,63 @@ public class FamilyController {
             showFamilies();
         });
 
-        familyTreeView.setOnMouseClicked(mouseEvent -> onMouseClick(familyTreeView));
-        familyTreeView.addEventFilter(ContextMenuEvent.CONTEXT_MENU_REQUESTED, this::consume);
+        searchMap.put(familyTreeView, "");
+        searchMap.put(orphanTreeView, "");
+        searchMap.put(familyRelationsTreeView, "");
 
-        orphanTreeView.setOnMouseClicked(mouseEvent -> onMouseClick(orphanTreeView));
-        orphanTreeView.addEventFilter(ContextMenuEvent.CONTEXT_MENU_REQUESTED, this::consume);
-
-        familyRelationsTreeView.setOnMouseClicked(mouseEvent -> onMouseClick(familyRelationsTreeView));
-        familyRelationsTreeView.addEventFilter(ContextMenuEvent.CONTEXT_MENU_REQUESTED, this::consume);
+        searchMap.entrySet().forEach(e -> {
+            e.getKey().setOnMouseClicked(mouseEvent -> onMouseClick(e.getKey()));
+            e.getKey().addEventFilter(ContextMenuEvent.CONTEXT_MENU_REQUESTED, this::consume);
+            e.getKey().setOnKeyPressed(getKeyEventEventHandler(e.getKey()));
+        });
 
         saveFamiliesButton.visibleProperty().bind(familiesModified);
         saveRelationsButton.visibleProperty().bind(familyRelationsModified);
+
+        timeline.setCycleCount(Animation.INDEFINITE);
+        timeline.play();
 
         loadFamilies();
         tryToLoadFamilyRelations();
     }
 
+    private EventHandler<KeyEvent> getKeyEventEventHandler(TreeView<NameView> treeView) {
+
+        Set<KeyCode> codes = new HashSet<>(Arrays.asList(KeyCode.ESCAPE, KeyCode.UP, KeyCode.DOWN, KeyCode.LEFT, KeyCode.RIGHT,
+                KeyCode.ENTER, KeyCode.PAGE_DOWN, KeyCode.PAGE_UP, KeyCode.HOME, KeyCode.END, KeyCode.INSERT, KeyCode.DELETE));
+
+        return e -> {
+
+            timeline.stop();
+            final String searchString = searchMap.get(treeView);
+
+            if (codes.contains(e.getCode())) {
+                searchMap.replace(treeView, "");
+                return;
+
+            } else if (e.getCode() == KeyCode.BACK_SPACE && !searchString.isEmpty()) {
+                searchMap.replace(treeView, searchString.substring(0, searchString.length() - 1));
+
+            } else {
+                searchMap.replace(treeView, searchString + e.getText().toLowerCase());
+            }
+
+            Optional<TreeItem<NameView>> result = treeView.getRoot().getChildren().stream()
+                    .filter(c -> c.getValue().getName().toLowerCase().startsWith(searchMap.get(treeView))).findFirst();
+
+            if (result.isPresent()) {
+                int index = treeView.getRoot().getChildren().indexOf(result.get());
+                treeView.getSelectionModel().clearAndSelect(index);
+                treeView.scrollTo(index - 1);
+            } else {
+                searchMap.replace(treeView, "");
+            }
+            timeline.play();
+        };
+    }
+
     private void onMouseClick(TreeView<NameView> treeView) {
+        searchMap.forEach((key, value) -> searchMap.replace(treeView, ""));
         if (treeView.getSelectionModel().getSelectedItems().isEmpty() || treeView.getSelectionModel().getSelectedItems().get(0) == null) {
             lastNameView = null;
         } else {
@@ -250,7 +301,7 @@ public class FamilyController {
                             views.add(new NameView(name, e.getKey(), e.getValue().getJakkardStatus(i)));
                         }
 
-                        views = views.stream().sorted(Comparator.comparing(NameView::getJakkardStatus).reversed()).collect(Collectors.toList());
+                        //views = views.stream().sorted(Comparator.comparing(NameView::getJakkardStatus).reversed()).collect(Collectors.toList());
 
                         NameView root = new NameView(e, views);
                         familiesView.put(root, views);
@@ -317,6 +368,7 @@ public class FamilyController {
 
         if (tabPane.getSelectionModel().getSelectedIndex() == 0) { // First tab
             familyRootItem.getChildren().forEach(c -> c.getChildren().sort(orderByTitleButton.isSelected() ? byTitle : byJakkard));
+            orphanRootItem.getChildren().sort(orderByTitleButton.isSelected() ? byTitle : byJakkard);
 
         } else { // Family relations tab
             if (familyRelations != null) {
@@ -529,7 +581,7 @@ public class FamilyController {
             throw new RuntimeException(e);
         }
     }
-    
+
     public void runListButtonClick() {
 
         try {
@@ -680,6 +732,7 @@ public class FamilyController {
         LOGGER.info("Find related families...");
 
         LOGGER.info("\nGenerating family relations from scratch...");
+        //TODO progress
         familyRelations = families.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getValue, e -> ListFilesa.calculateRelations(e.getValue().getMother().getName(), e.getKey()), (first, second) -> first, LinkedHashMap::new));
 
