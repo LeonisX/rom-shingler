@@ -1,9 +1,8 @@
 # TODO list
 
 TODO create new separate families
-TODO bug - select in trees by shift, ctrl
 
-ODO process all TODOs in code
+TODO process all TODOs in code
 
 * Right click menu for all
 

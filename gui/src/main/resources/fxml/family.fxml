@@ -136,7 +136,7 @@
                             <Button fx:id="collapseAllButton2" mnemonicParsing="false" onAction="#collapseAllButtonClick2" text="Collapse all" />
                             <Separator orientation="VERTICAL" prefHeight="200.0" />
                             <Label text="Jakkard:" />
-                            <TextField fx:id="jakkardTextField2" onKeyReleased="#jakkardTextFieldKeyReleased2" prefHeight="25.0" prefWidth="64.0" />
+                            <TextField fx:id="jakkardTextField2" onKeyReleased="#jakkardTextFieldKeyReleased" prefHeight="25.0" prefWidth="64.0" />
                             <Separator orientation="VERTICAL" prefHeight="200.0" />
                             <Button fx:id="findRelativesButton" mnemonicParsing="false" onAction="#findRelativesButtonClick" text="Find relatives" />
                             <Button fx:id="findAgainRelativesButton" mnemonicParsing="false" onAction="#findAgainRelativesButtonClick" text="Find relatives again" />

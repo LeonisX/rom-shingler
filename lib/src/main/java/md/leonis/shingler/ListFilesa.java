@@ -163,7 +163,7 @@ public class ListFilesa {
                 LOGGER.debug("Skipping: {}... [{}]|{}", family.getName(), family.size(), percent);
             } else {
                 LOGGER.info("Comparing: {}... [{}]|{}", family.getName(), family.size(), percent);
-                doCalculateRelations(family, percent);
+                doCalculateRelations(family, percent, true);
             }
             k++;
             family.selectMother();
@@ -171,17 +171,23 @@ public class ListFilesa {
     }
 
     public static void calculateRelations(Family family) {
+        calculateRelations(family, true);
+    }
+
+    public static void calculateRelations(Family family, boolean log) {
 
         Main1024a.cache.fullCleanup();
 
         byTitle = romsCollection.getGids().values().stream().collect(Collectors.toMap(GID::getTitle, Function.identity()));
 
-        LOGGER.info("Comparing: {}... [{}]", family.getName(), family.size());
-        doCalculateRelations(family, -1);
+        if (log) {
+            LOGGER.info("Comparing: {}... [{}]", family.getName(), family.size());
+        }
+        doCalculateRelations(family, -1, log);
         family.selectMother();
     }
 
-    private static void doCalculateRelations(Family family, double percent) {
+    private static void doCalculateRelations(Family family, double percent, boolean log) {
 
         family.getRelations().clear();
         family.getMembers().forEach(m -> m.setJakkardStatus(0));
@@ -204,7 +210,9 @@ public class ListFilesa {
                 name2.addJakkardStatus(jakkard);
 
                 Result result = new Result(name1, name2, jakkard);
-                LOGGER.info("{}->{}: {}|{}", i, j, result, percent == -1 ? (i + 1.0) * 100 / family.size() : percent);
+                if (log) {
+                    LOGGER.info("{}->{}: {}|{}", i, j, result, percent == -1 ? (i + 1.0) * 100 / family.size() : percent);
+                }
 
                 family.addRelation(result);
             }
@@ -219,19 +227,25 @@ public class ListFilesa {
     }
 
     public static Map<Family, Double> calculateRelations(String name) {
-        return calculateRelations(name, "");
+        return calculateRelations(name, false);
     }
 
-    public static Map<Family, Double> calculateRelations(String name, String ignore) {
+    public static Map<Family, Double> calculateRelations(String name, boolean log) {
+        return calculateRelations(name, "", log);
+    }
+
+    public static Map<Family, Double> calculateRelations(String name, String ignore, boolean log) {
 
         Main1024a.cache.fullCleanup();
         byTitle = romsCollection.getGids().values().stream().collect(Collectors.toMap(GID::getTitle, Function.identity()));
 
-        //int[] k = {0};
+        int[] k = {0};
         long[] s1Set = ShingleUtils.loadFromCache(cache, fullShinglesPath().resolve(bytesToHex(byTitle.get(name).getSha1()) + ".shg"));
 
         return families.values().stream().filter(e -> !e.getName().equals(ignore)).collect(Collectors.toMap(Function.identity(), family -> {
-            //LOGGER.info("Comparing: {} with {}|{}", name, family.getName(), (k[0]++ + 1) * 100.0 / families.size());
+            if (log) {
+                LOGGER.info("Comparing: {} with {}|{}", name, family.getName(), (k[0]++ + 1) * 100.0 / families.size());
+            }
             long[] s2Set = ShingleUtils.loadFromCache(cache, fullShinglesPath().resolve(bytesToHex(byTitle.get(family.getMother().getName()).getSha1()) + ".shg"));
 
             return doCalculateJakkard(s1Set, s2Set);

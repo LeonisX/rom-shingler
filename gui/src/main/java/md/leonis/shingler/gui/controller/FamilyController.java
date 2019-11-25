@@ -189,7 +189,8 @@ public class FamilyController {
     private EventHandler<KeyEvent> getKeyEventEventHandler(TreeView<NameView> treeView) {
 
         Set<KeyCode> codes = new HashSet<>(Arrays.asList(KeyCode.ESCAPE, KeyCode.UP, KeyCode.DOWN, KeyCode.LEFT, KeyCode.RIGHT,
-                KeyCode.ENTER, KeyCode.PAGE_DOWN, KeyCode.PAGE_UP, KeyCode.HOME, KeyCode.END, KeyCode.INSERT, KeyCode.DELETE));
+                KeyCode.ENTER, KeyCode.PAGE_DOWN, KeyCode.PAGE_UP, KeyCode.HOME, KeyCode.END, KeyCode.INSERT, KeyCode.DELETE,
+                KeyCode.SHIFT, KeyCode.CONTROL, KeyCode.ALT));
 
         return e -> {
 
@@ -390,10 +391,11 @@ public class FamilyController {
         return (p && pdCheckBox.isSelected()) || (h && hackCheckBox.isSelected()) || (g && allGoodCheckBox.isSelected());
     }
 
-    public void jakkardTextFieldKeyReleased() {
+    public void jakkardTextFieldKeyReleased(KeyEvent event) {
         try {
-            jakkard = Double.parseDouble(jakkardTextField.getText());
-            familyTreeView.refresh();
+            TextField source = (TextField) event.getSource();
+            jakkard = Double.parseDouble(source.getText());
+            familyRelationsTreeView.refresh();
         } catch (NumberFormatException ignore) {
             jakkard = 0;
         }
@@ -631,45 +633,92 @@ public class FamilyController {
 
     public void addToThisFamilyClick() {
 
-        long modified = orphanTreeView.getSelectionModel().getSelectedItems().stream().filter(i -> NodeStatus.isFamily(i.getValue().getStatus())).peek(selectedItem -> {
-            NameView nameView = selectedItem.getValue();
+        runInBackground(() -> {
 
-            Name parent = selectedItem.getParent().getValue().toName();
-            Family family = families.get(nameView.getFamilyName());
-            family.getMembers().add(parent);
+            List<TreeItem<NameView>> items = orphanTreeView.getSelectionModel().getSelectedItems().stream().filter(i -> NodeStatus.isFamily(i.getValue().getStatus())).collect(Collectors.toList());
 
-            //TODO progress
-            ListFilesa.calculateRelations(family);
+            for (TreeItem<NameView> item : items) {
 
-        }).count();
+                if (needToStop[0]) {
+                    LOGGER.info("Execution was interrupted!");
+                    needToStop[0] = false;
+                    break;
+                }
 
-        familiesModified.setValue(modified > 0);
+                NameView nameView = item.getValue();
 
-        showFamilies();
+                Name parent = item.getParent().getValue().toName();
+                Family family = families.get(nameView.getFamilyName());
+                family.getMembers().add(parent);
+
+                ListFilesa.calculateRelations(family, true);
+            }
+
+            familiesModified.setValue(items.size() > 0);
+        }, this::showFamilies);
     }
 
-    //TODO slow operation. progress, ability to stop
-    // надо переписать - пересчёт отношений делать в конце, если вообще делать.
     public void findFamiliesAutoButtonClick() {
 
-        long modified = orphanTreeView.getSelectionModel().getSelectedItems().stream().map(selectedItem -> {
-            NameView nameView = selectedItem.getValue();
-            Map.Entry<Family, Double> entry = ListFilesa.calculateRelations(nameView.getName()).entrySet().iterator().next();
+        runInBackground(() -> {
+            registerRunningTask("findBestFamily");
 
-            if (entry.getValue() >= jakkard) {
-                Family family = entry.getKey();
-                family.getMembers().add(nameView.toName());
-                return family;
-            } else {
-                return null;
+            Set<Family> modified = new HashSet<>();
+            Map<Name, Family> mapping = new LinkedHashMap<>();
+            int size = orphanTreeView.getSelectionModel().getSelectedItems().size();
+            boolean breaked = false;
+
+            for (int i = 0; i < size; i++) {
+
+                if (needToStop[0]) {
+                    LOGGER.info("Execution was interrupted!");
+                    needToStop[0] = false;
+                    breaked = true;
+                    break;
+                }
+
+                NameView nameView = orphanTreeView.getSelectionModel().getSelectedItems().get(i).getValue();
+                LOGGER.info("Finding best family for {}|{}", nameView.getName(), (i + 1) * 100.0 / size);
+                Map.Entry<Family, Double> entry = ListFilesa.calculateRelations(nameView.getName()).entrySet().iterator().next();
+
+                if (entry.getValue() >= jakkard) {
+                    mapping.put(nameView.toName(), entry.getKey());
+                }
             }
-        }).filter(Objects::nonNull).peek(ListFilesa::calculateRelations).count(); //TODO progress
 
-        familiesModified.setValue(modified > 0);
+            unRegisterRunningTask("findBestFamily");
 
-        orphanTreeView.getSelectionModel().clearSelection();
+            if (!breaked) {
 
-        showFamilies();
+                LOGGER.info("Assigning to families...");
+                mapping.entrySet().stream().sorted(Comparator.comparing(e -> e.getValue().getName())).forEach(e -> {
+                    e.getValue().getMembers().add(e.getKey());
+                    modified.add(e.getValue());
+                });
+
+                registerRunningTask("calculateRelations");
+
+                int i = 0;
+                for (Family family : modified) {
+
+                    if (needToStop[0]) {
+                        LOGGER.info("Execution was interrupted!");
+                        needToStop[0] = false;
+                        break;
+                    }
+
+                    LOGGER.info("Calculating relations for {}|{}", family.getName(), (i + 1) * 100.0 / modified.size());
+                    ListFilesa.calculateRelations(family, false);
+                    i++;
+                }
+            }
+
+            unRegisterRunningTask("calculateRelations");
+            familiesModified.setValue(modified.size() > 0);
+        }, () -> {
+            orphanTreeView.getSelectionModel().clearSelection();
+            showFamilies();
+        });
     }
 
     public void checkBoxAction() {
@@ -690,16 +739,6 @@ public class FamilyController {
                 item.setExpanded(false);
             }
         });
-    }
-
-    //TODO unify
-    public void jakkardTextFieldKeyReleased2() {
-        try {
-            jakkard = Double.parseDouble(jakkardTextField2.getText());
-            familyRelationsTreeView.refresh();
-        } catch (NumberFormatException ignore) {
-            jakkard = 0;
-        }
     }
 
     public void findRelativesButtonClick() {
@@ -725,16 +764,29 @@ public class FamilyController {
 
     public void findAgainRelativesButtonClick() {
 
-        LOGGER.info("Find related families...");
+        runInBackground(() -> {
 
-        LOGGER.info("\nGenerating family relations from scratch...");
-        //TODO progress
-        familyRelations = families.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getValue, e -> ListFilesa.calculateRelations(e.getValue().getMother().getName(), e.getKey()), (first, second) -> first, LinkedHashMap::new)); //TODO progress
+            LOGGER.info("Generating family relations from scratch...");
 
-        familyRelationsModified.setValue(true);
+            familyRelations = new LinkedHashMap<>();
 
-        showFamilies();
+            int i = 0;
+            for (Map.Entry<String, Family> family: families.entrySet()) {
+
+                if (needToStop[0]) {
+                    LOGGER.info("Execution was interrupted!");
+                    needToStop[0] = false;
+                    break;
+                }
+
+                LOGGER.info("Calculating relations for {}|{}", family.getValue().getName(), (i + 1) * 100.0 / families.entrySet().size());
+
+                familyRelations.put(family.getValue(), ListFilesa.calculateRelations(family.getValue().getMother().getName(), family.getKey(), false));
+                i++;
+            }
+
+            familyRelationsModified.setValue(true);
+        }, this::showFamilies);
     }
 
     public void mergeRelativesIntoButtonClick() {
@@ -753,13 +805,11 @@ public class FamilyController {
             families.remove(newFamilyMembersTreeItem.getValue().getFamilyName());
             familyRelations.remove(newFamilyMembers);
 
-            //TODO progress
             // calculate relations (main family), select mother
-            ListFilesa.calculateRelations(mainFamily);
+            ListFilesa.calculateRelations(mainFamily, true);
 
-            //TODO progress
             // recalculate relations for main family
-            ListFilesa.calculateRelations(mainFamily.getMother().getName(), mainFamily.getName());
+            ListFilesa.calculateRelations(mainFamily.getMother().getName(), mainFamily.getName(), true);
 
             familiesModified.setValue(true);
             familyRelationsModified.setValue(true);
