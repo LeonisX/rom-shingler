@@ -27,7 +27,6 @@ public class SpringFXMLLoader {
     }
 
     Parent load(String fxmlPath) throws IOException {
-        //TODO every time need new instance?
         FXMLLoader loader = new FXMLLoader();
         loader.setControllerFactory(context::getBean); //Spring now FXML Controller Factory
         loader.setResources(resourceBundle);

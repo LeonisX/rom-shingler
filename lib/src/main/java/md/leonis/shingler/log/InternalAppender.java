@@ -3,7 +3,6 @@ package md.leonis.shingler.log;
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.spi.LoggingEvent;
 
-//TODO percentage
 public class InternalAppender extends AppenderSkeleton {
 
     //TODO different settings from log4j.properties
