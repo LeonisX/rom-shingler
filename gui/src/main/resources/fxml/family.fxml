@@ -89,6 +89,9 @@
                             <Separator orientation="VERTICAL" prefHeight="200.0" />
                             <Button fx:id="openDirButton" mnemonicParsing="false" onAction="#openDirButtonClick" text="Open dir" />
                             <Button fx:id="runButton" mnemonicParsing="false" onAction="#runListButtonClick" text="Run" />
+                     <Separator orientation="VERTICAL" prefHeight="200.0" />
+                     <Label text="Filter orphanes:" />
+                     <TextField fx:id="filterOrphanesTextField" onAction="#filterOrphanesTextFieldAction" />
                         </HBox>
                     </top>
                     <center>

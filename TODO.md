@@ -1,6 +1,5 @@
 # TODO list
 
-Filter
 Find in families
 
 Give back all children in orphan

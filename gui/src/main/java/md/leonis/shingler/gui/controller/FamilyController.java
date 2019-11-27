@@ -120,6 +120,7 @@ public class FamilyController {
     public MenuItem newSeparateFamiliesMenuItem;
     public MenuItem copyFamilyNameItem;
     public MenuItem copyOrphanNameItem;
+    public TextField filterOrphanesTextField;
 
 
     private TreeItem<NameView> familyRootItem = new TreeItem<>(NameView.EMPTY);
@@ -138,6 +139,8 @@ public class FamilyController {
     private Map<TreeView, String> searchMap = new HashMap<>();
 
     private Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(2), ev -> searchMap.entrySet().forEach(e -> e.setValue(""))));
+
+    private String orphanFilter = "";
 
     @Lazy
     public FamilyController(StageManager stageManager) {
@@ -391,9 +394,12 @@ public class FamilyController {
         boolean h = name.contains("(Hack)") || name.contains("(Hack)")
                 || name.contains("(Hack ") || name.contains("(Hack ")
                 || name.contains(" Hack)") || name.contains(" Hack)");
+        boolean nameFilter = orphanFilter.isEmpty() || name.toLowerCase().contains(orphanFilter);
         boolean g = !(p || h);
 
-        return (p && pdCheckBox.isSelected()) || (h && hackCheckBox.isSelected()) || (g && allGoodCheckBox.isSelected());
+        System.out.println(name + ": " + ((p && pdCheckBox.isSelected()) || (h && hackCheckBox.isSelected()) || (g && allGoodCheckBox.isSelected()) && nameFilter));
+
+        return ((p && pdCheckBox.isSelected()) || (h && hackCheckBox.isSelected()) || (g && allGoodCheckBox.isSelected())) && nameFilter;
     }
 
     public void jakkardTextFieldKeyReleased(KeyEvent event) {
@@ -1031,5 +1037,13 @@ public class FamilyController {
         Clipboard.getSystemClipboard().setContent(content);
 
         LOGGER.info("Saved {} to clipboard", name);
+    }
+
+    public void filterOrphanesTextFieldAction() {
+        String newText = filterOrphanesTextField.getText().toLowerCase();
+        if (!orphanFilter.equals(newText)) {
+            orphanFilter = newText;
+            showFamilies();
+        }
     }
 }
