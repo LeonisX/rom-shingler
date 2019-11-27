@@ -75,8 +75,6 @@ public class FamilyController {
     public CheckBox hackCheckBox;
     public Button calculateRelationsButton;
     public Button selectButton;
-    public Button openDirButton;
-    public Button runButton;
     public TreeView<NameView> familyRelationsTreeView;
     public Button expandAllButton2;
     public Button collapseAllButton2;
@@ -121,6 +119,10 @@ public class FamilyController {
     public MenuItem copyFamilyNameItem;
     public MenuItem copyOrphanNameItem;
     public TextField filterOrphanesTextField;
+    public CheckBox redCheckBox;
+    public CheckBox blackCheckBox;
+    public CheckBox redFamilyCheckBox;
+    public CheckBox blackFamilyCheckBox;
 
 
     private TreeItem<NameView> familyRootItem = new TreeItem<>(NameView.EMPTY);
@@ -139,6 +141,8 @@ public class FamilyController {
     private Map<TreeView, String> searchMap = new HashMap<>();
 
     private Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(2), ev -> searchMap.entrySet().forEach(e -> e.setValue(""))));
+
+    private Map<String, List<TreeItem<NameView>>> orphanChildren = new HashMap<>();
 
     private String orphanFilter = "";
 
@@ -296,6 +300,8 @@ public class FamilyController {
             families = new HashMap<>();
         }
 
+        orphanChildren.clear();
+
         showFamilies();
     }
 
@@ -335,7 +341,9 @@ public class FamilyController {
             familiesView.forEach((key, value) -> {
                 TreeItem<NameView> node = new TreeItem<>(key);
                 value.forEach(c -> node.getChildren().add(new TreeItem<>(c)));
-                familyRootItem.getChildren().add(node);
+                if (isAllowedColor(redFamilyCheckBox, blackFamilyCheckBox, node)) {
+                    familyRootItem.getChildren().add(node);
+                }
             });
 
             List<NameView> orphanList = new ArrayList<>();
@@ -346,10 +354,9 @@ public class FamilyController {
 
             orphanedNames.stream().filter(this::filter).forEach(name -> orphanList.add(new NameView(name)));
 
-            Map<String, List<TreeItem<NameView>>> currentChildren = new HashMap<>();
             orphanRootItem.getChildren().forEach(c -> {
                 if (!c.getChildren().isEmpty()) {
-                    currentChildren.put(c.getValue().getName(), c.getChildren());
+                    orphanChildren.put(c.getValue().getName(), c.getChildren());
                 }
             });
 
@@ -357,13 +364,15 @@ public class FamilyController {
 
             orphanList.forEach(o -> {
                 TreeItem<NameView> node = new TreeItem<>(o);
-                List<TreeItem<NameView>> ch = currentChildren.get(o.getName());
+                List<TreeItem<NameView>> ch = orphanChildren.get(o.getName());
                 if (ch != null && !ch.isEmpty()) {
                     o.setJakkardStatus(ch.get(0).getValue().getJakkardStatus());
                     o.setItems(ch.stream().map(TreeItem::getValue).collect(Collectors.toList()));
                     node.getChildren().addAll(ch);
                 }
-                orphanRootItem.getChildren().add(node);
+                if (isAllowedColor(redCheckBox, blackCheckBox, node)) {
+                    orphanRootItem.getChildren().add(node);
+                }
             });
 
         } else { // Family relations tab
@@ -385,6 +394,11 @@ public class FamilyController {
         }
 
         updateTrees();
+    }
+
+    private boolean isAllowedColor(CheckBox redCheckBox, CheckBox blackCheckBox, TreeItem<NameView> node) {
+        boolean red = isRed(node.getValue());
+        return (red && redCheckBox.isSelected()) || (!red && blackCheckBox.isSelected());
     }
 
     private void updateTrees() {
@@ -410,8 +424,6 @@ public class FamilyController {
                 || name.contains(" Hack)") || name.contains(" Hack)");
         boolean nameFilter = orphanFilter.isEmpty() || name.toLowerCase().contains(orphanFilter);
         boolean g = !(p || h);
-
-        System.out.println(name + ": " + ((p && pdCheckBox.isSelected()) || (h && hackCheckBox.isSelected()) || (g && allGoodCheckBox.isSelected()) && nameFilter));
 
         return ((p && pdCheckBox.isSelected()) || (h && hackCheckBox.isSelected()) || (g && allGoodCheckBox.isSelected())) && nameFilter;
     }
@@ -496,6 +508,7 @@ public class FamilyController {
         } else {
             ListFilesa.archiveToFamilies();
         }
+        orphanChildren.clear();
         showFamilies();
     }
 
@@ -506,6 +519,7 @@ public class FamilyController {
             ListFilesa.calculateRelations();
             unRegisterRunningTask("calculateRelations");
             familiesModified.setValue(true);
+            orphanChildren.clear();
         }, this::showFamilies);
     }
 

@@ -50,8 +50,10 @@
                                 <Button fx:id="calculateRelationsButton" mnemonicParsing="false" onAction="#calculateRelationsButtonClick" text="Calculate relations" />
                             </HBox>
                         </VBox>
-                        <VBox alignment="CENTER" prefHeight="47.0" prefWidth="200.0" spacing="5.0">
+                        <VBox alignment="CENTER" prefHeight="47.0" prefWidth="276.0" spacing="5.0">
                             <HBox alignment="CENTER" spacing="5.0">
+                                <CheckBox fx:id="redCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="RED" />
+                                <CheckBox fx:id="blackCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="BLACK" />
                                 <CheckBox fx:id="allGoodCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="Good" />
                                 <CheckBox fx:id="pdCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="PD" />
                                 <CheckBox fx:id="hackCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="Hack" />
@@ -87,8 +89,10 @@
                             <Separator orientation="VERTICAL" prefHeight="200.0" />
                             <Button fx:id="selectButton" mnemonicParsing="false" onAction="#selectButtonClick" text="Select" />
                             <Separator orientation="VERTICAL" prefHeight="200.0" />
-                            <Button fx:id="openDirButton" mnemonicParsing="false" onAction="#openDirButtonClick" text="Open dir" />
-                            <Button fx:id="runButton" mnemonicParsing="false" onAction="#runListButtonClick" text="Run" />
+                            <HBox alignment="CENTER" spacing="5.0">
+                                <CheckBox fx:id="redFamilyCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="RED" />
+                                <CheckBox fx:id="blackFamilyCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="BLACK" />
+                            </HBox>
                      <Separator orientation="VERTICAL" prefHeight="200.0" />
                      <Label text="Filter orphanes:" />
                      <TextField fx:id="filterOrphanesTextField" onAction="#filterOrphanesTextFieldAction" />

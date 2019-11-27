@@ -1,7 +1,5 @@
 # TODO list
 
-Filter red/black
-
 Find in families
 
 TODO manage families - in bg + window (please wait)
