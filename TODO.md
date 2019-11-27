@@ -1,6 +1,15 @@
 # TODO list
 
-TODO create new separate families
+Copy name
+Filter
+Find in families
+
+Give back all children in orphan
+
+
+TODO manage families - in bg + window (please wait)
+
+TODO sort by children count
 
 TODO process all TODOs in code
 
