@@ -187,6 +187,21 @@ public class FamilyController {
         familiesContextMenu.setUserData(familyTreeView);
         orphanFamiliesContextMenu.setUserData(orphanTreeView);
 
+        familyTreeView.setRoot(familyRootItem);
+        familyTreeView.setShowRoot(false);
+        familyTreeView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        familyTreeView.setCellFactory(treeViewCellFactory());
+
+        orphanTreeView.setRoot(orphanRootItem);
+        orphanTreeView.setShowRoot(false);
+        orphanTreeView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        orphanTreeView.setCellFactory(treeViewCellFactory());
+
+        familyRelationsTreeView.setRoot(familyRelationsRootItem);
+        familyRelationsTreeView.setShowRoot(false);
+        familyRelationsTreeView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        familyRelationsTreeView.setCellFactory(treeViewCellFactory());
+
         timeline.setCycleCount(Animation.INDEFINITE);
         timeline.play();
 
@@ -285,7 +300,6 @@ public class FamilyController {
     }
 
     private Map<NameView, List<NameView>> familiesView = new LinkedHashMap<>();
-    private Map<NameView, List<NameView>> orphanView = new LinkedHashMap<>();
     private Map<NameView, List<NameView>> familyRelationsView = new LinkedHashMap<>();
 
     // TODO expand all previously expanded after operations (group, kick)
@@ -317,10 +331,6 @@ public class FamilyController {
                     });
 
             familyRootItem.getChildren().clear();
-            familyTreeView.setRoot(familyRootItem);
-            familyTreeView.setShowRoot(false);
-            familyTreeView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-            familyTreeView.setCellFactory(treeViewCellFactory());
 
             familiesView.forEach((key, value) -> {
                 TreeItem<NameView> node = new TreeItem<>(key);
@@ -328,23 +338,31 @@ public class FamilyController {
                 familyRootItem.getChildren().add(node);
             });
 
-            orphanView = new LinkedHashMap<>();
+            List<NameView> orphanList = new ArrayList<>();
 
             Set<String> familyNames = families.values().stream().flatMap(f -> f.getMembers().stream().map(Name::getName)).collect(Collectors.toSet());
             Set<String> orphanedNames = romsCollection.getGids().values().stream().map(GID::getTitle).collect(Collectors.toSet());
             orphanedNames.removeAll(familyNames);
 
-            orphanedNames.stream().filter(this::filter).forEach(name -> orphanView.put(new NameView(name), new ArrayList<>()));
+            orphanedNames.stream().filter(this::filter).forEach(name -> orphanList.add(new NameView(name)));
+
+            Map<String, List<TreeItem<NameView>>> currentChildren = new HashMap<>();
+            orphanRootItem.getChildren().forEach(c -> {
+                if (!c.getChildren().isEmpty()) {
+                    currentChildren.put(c.getValue().getName(), c.getChildren());
+                }
+            });
 
             orphanRootItem.getChildren().clear();
-            orphanTreeView.setRoot(orphanRootItem);
-            orphanTreeView.setShowRoot(false);
-            orphanTreeView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-            orphanTreeView.setCellFactory(treeViewCellFactory());
 
-            orphanView.forEach((key, value) -> {
-                TreeItem<NameView> node = new TreeItem<>(key);
-                value.forEach(c -> node.getChildren().add(new TreeItem<>(c)));
+            orphanList.forEach(o -> {
+                TreeItem<NameView> node = new TreeItem<>(o);
+                List<TreeItem<NameView>> ch = currentChildren.get(o.getName());
+                if (ch != null && !ch.isEmpty()) {
+                    o.setJakkardStatus(ch.get(0).getValue().getJakkardStatus());
+                    o.setItems(ch.stream().map(TreeItem::getValue).collect(Collectors.toList()));
+                    node.getChildren().addAll(ch);
+                }
                 orphanRootItem.getChildren().add(node);
             });
 
@@ -357,10 +375,6 @@ public class FamilyController {
                         value1.entrySet().stream().map(en -> new NameView(en.getKey(), en.getValue())).collect(Collectors.toList())));
 
                 familyRelationsRootItem.getChildren().clear();
-                familyRelationsTreeView.setRoot(familyRelationsRootItem);
-                familyRelationsTreeView.setShowRoot(false);
-                familyRelationsTreeView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-                familyRelationsTreeView.setCellFactory(treeViewCellFactory());
 
                 familyRelationsView.forEach((key, value) -> {
                     TreeItem<NameView> node = new TreeItem<>(key);
@@ -444,23 +458,8 @@ public class FamilyController {
                     public void updateItem(NameView item, boolean empty) {
                         super.updateItem(item, empty);
                         if (!isEmpty() && !(null == item)) {
-                            Color color = Color.BLACK;
-
-                            double minIndex = item.getJakkardStatus();
-
-                            if (item.getStatus() == NodeStatus.FAMILY || item.getStatus() == NodeStatus.ORPHAN) {
-                                if (item.getItems().size() >= 2) {
-                                    minIndex = item.getItems().stream().min(Comparator.comparing(NameView::getJakkardStatus)).map(NameView::getJakkardStatus).orElse(0.0);
-                                } else {
-                                    minIndex = 100;
-                                }
-                            }
-
-                            if (minIndex < jakkard) {
-                                color = Color.RED;
-                            }
                             setText(item.toString());
-                            setTextFill(color);
+                            setTextFill(isRed(item) ? Color.RED : Color.BLACK);
                             familyTreeView.refresh();
                         } else {
                             setText(null);
@@ -469,6 +468,26 @@ public class FamilyController {
                 };
             }
         };
+    }
+
+    private boolean isRed(NameView item) {
+        double minIndex = item.getJakkardStatus();
+
+        if (item.getStatus() == NodeStatus.FAMILY) {
+            if (item.getItems().size() >= 2) {
+                minIndex = item.getItems().stream().min(Comparator.comparing(NameView::getJakkardStatus)).map(NameView::getJakkardStatus).orElse(0.0);
+            } else {
+                minIndex = 100;
+            }
+        } else if (item.getStatus() == NodeStatus.ORPHAN) {
+            if (item.getItems().size() >= 1) {
+                minIndex = item.getItems().stream().max(Comparator.comparing(NameView::getJakkardStatus)).map(NameView::getJakkardStatus).orElse(0.0);
+            } else {
+                minIndex = 100;
+            }
+        }
+
+        return minIndex < jakkard;
     }
 
     public void generateFamiliesButtonClick() {
@@ -659,7 +678,7 @@ public class FamilyController {
         }
     }
 
-    public void findFamilyButtonClick() {
+    public void findFamilyCandidatesButtonClick() {
 
         runInBackground(() -> {
         List<TreeItem<NameView>> selectedItems = new ArrayList<>(orphanTreeView.getSelectionModel().getSelectedItems());
@@ -681,9 +700,12 @@ public class FamilyController {
                     .map(e -> new NameView(e.getKey(), e.getValue())).collect(Collectors.toList());
 
             nameView.setItems(items);
+            nameView.setJakkardStatus(items.get(0).getJakkardStatus());
+
+            selectedItems.get(i).setValue(nameView);
 
             selectedItems.get(i).getChildren().setAll(items.stream().map(TreeItem::new).collect(Collectors.toList()));
-            nameView.setJakkardStatus(items.get(0).getJakkardStatus());
+
         }
 
         unRegisterRunningTask("findFamilyCandidates");

@@ -78,7 +78,7 @@ class NameView {
             return String.format("%-48s   (%2.3f%%)", name, jakkardStatus);
         } if (status == NodeStatus.ORPHAN) {
             if (items.size() > 0) {
-                return String.format("%-48s   (%2.3f%%)", name, items.get(0).jakkardStatus);
+                return String.format("%-48s   (%2.3f%%)", name, jakkardStatus);
             } else {
                 return String.format("%-48s", name);
             }

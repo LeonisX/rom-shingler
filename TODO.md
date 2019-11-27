@@ -1,9 +1,8 @@
 # TODO list
 
+Filter red/black
+
 Find in families
-
-Give back all children in orphan
-
 
 TODO manage families - in bg + window (please wait)
 

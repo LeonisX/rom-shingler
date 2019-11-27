@@ -122,7 +122,7 @@
                                             <MenuItem fx:id="newFamilyMenuItem" mnemonicParsing="false" onAction="#newFamilyButtonClick" text="Create new family" userData="m" />
                                             <MenuItem fx:id="newSeparateFamiliesMenuItem" mnemonicParsing="false" onAction="#newSeparateFamiliesButtonClick" text="Create new separate families" userData="m" />
                                             <MenuItem fx:id="addToFamilyMenuItem" mnemonicParsing="false" onAction="#addToFamilyButtonClick" text="Add to family" userData="m" />
-                                            <MenuItem fx:id="findFamilyMenuItem" mnemonicParsing="false" onAction="#findFamilyButtonClick" text="Find a family candidate" userData="m" />
+                                            <MenuItem fx:id="findFamilyMenuItem" mnemonicParsing="false" onAction="#findFamilyCandidatesButtonClick" text="Find a family candidate" userData="m" />
                                             <MenuItem fx:id="findFamiliesAutoMenuItem" mnemonicParsing="false" onAction="#findFamiliesAutoButtonClick" text="Find a better family (auto)" userData="m" />
 
                                             <SeparatorMenuItem mnemonicParsing="false" />

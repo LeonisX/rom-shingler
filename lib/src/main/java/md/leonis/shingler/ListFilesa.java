@@ -246,6 +246,7 @@ public class ListFilesa {
             if (log) {
                 LOGGER.info("Comparing: {} with {}|{}", name, family.getName(), (k[0]++ + 1) * 100.0 / families.size());
             }
+            //TODO here if no shingle file (or NPE) - we don't see this error at all!!!
             long[] s2Set = ShingleUtils.loadFromCache(cache, fullShinglesPath().resolve(bytesToHex(byTitle.get(family.getMother().getName()).getSha1()) + ".shg"));
 
             return doCalculateJakkard(s1Set, s2Set);
