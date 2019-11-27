@@ -1,5 +1,6 @@
 # TODO list
 
+TODO probably bug when delete family
 
 Export families to other precisions
 
