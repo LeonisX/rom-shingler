@@ -935,19 +935,21 @@ public class FamilyController {
                     family.setName(newFamilyName);
                     families.put(family.getName(), family);
 
-                    familyRelations.forEach((key, value) -> {
-                        if (key.getName().equals(familyName)) {
-                            key.setName(newFamilyName);
-                        }
-                        value.forEach((key1, value1) -> {
-                            if (key1.getName().equals(familyName)) {
-                                key1.setName(newFamilyName);
+                    if (familyRelations != null) {
+                        familyRelations.forEach((key, value) -> {
+                            if (key.getName().equals(familyName)) {
+                                key.setName(newFamilyName);
                             }
+                            value.forEach((key1, value1) -> {
+                                if (key1.getName().equals(familyName)) {
+                                    key1.setName(newFamilyName);
+                                }
+                            });
                         });
-                    });
+                        familyRelationsModified.setValue(true);
+                    }
 
                     familiesModified.setValue(true);
-                    familyRelationsModified.setValue(true);
 
                     showFamilies();
                 }
