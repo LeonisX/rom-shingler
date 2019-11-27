@@ -1,6 +1,5 @@
 # TODO list
 
-Copy name
 Filter
 Find in families
 

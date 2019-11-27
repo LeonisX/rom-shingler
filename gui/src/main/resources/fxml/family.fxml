@@ -100,6 +100,10 @@
                                             <MenuItem fx:id="renameFamilyMenuItem" mnemonicParsing="false" onAction="#renameFamilyMenuItemClick" text="Rename" userData="f" />
                                             <MenuItem fx:id="deleteFamilyMenuItem" mnemonicParsing="false" onAction="#deleteFamilyMenuItemClick" text="Delete" userData="f" />
                                             <MenuItem fx:id="kickAwayMenuItem" mnemonicParsing="false" onAction="#kickAwayButtonClick" text="Kick away" userData="m" />
+
+                                            <SeparatorMenuItem mnemonicParsing="false" />
+                                            <MenuItem fx:id="copyFamilyNameItem" mnemonicParsing="false" onAction="#copyNameButtonClick" text="Copy name to clipboard" />
+
                                             <SeparatorMenuItem mnemonicParsing="false" />
                                             <MenuItem fx:id="openFamilyDirItem" mnemonicParsing="false" onAction="#openDirButtonClick" text="Open dir" />
                                             <MenuItem fx:id="runFamilyItem" mnemonicParsing="false" onAction="#runListButtonClick" text="Run" />
@@ -117,6 +121,9 @@
                                             <MenuItem fx:id="addToFamilyMenuItem" mnemonicParsing="false" onAction="#addToFamilyButtonClick" text="Add to family" userData="m" />
                                             <MenuItem fx:id="findFamilyMenuItem" mnemonicParsing="false" onAction="#findFamilyButtonClick" text="Find a family candidate" userData="m" />
                                             <MenuItem fx:id="findFamiliesAutoMenuItem" mnemonicParsing="false" onAction="#findFamiliesAutoButtonClick" text="Find a better family (auto)" userData="m" />
+
+                                            <SeparatorMenuItem mnemonicParsing="false" />
+                                            <MenuItem fx:id="copyOrphanNameItem" mnemonicParsing="false" onAction="#copyNameButtonClick" text="Copy name to clipboard" />
 
                                             <SeparatorMenuItem mnemonicParsing="false" />
                                             <MenuItem fx:id="openOrphanFamilyDirItem" mnemonicParsing="false" onAction="#openDirButtonClick" text="Open dir" />

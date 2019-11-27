@@ -5,6 +5,7 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -12,9 +13,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.control.*;
-import javafx.scene.input.ContextMenuEvent;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
+import javafx.scene.input.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -119,6 +118,8 @@ public class FamilyController {
     public Button saveFamiliesButton;
     public Button saveRelationsButton;
     public MenuItem newSeparateFamiliesMenuItem;
+    public MenuItem copyFamilyNameItem;
+    public MenuItem copyOrphanNameItem;
 
 
     private TreeItem<NameView> familyRootItem = new TreeItem<>(NameView.EMPTY);
@@ -179,6 +180,9 @@ public class FamilyController {
 
         saveFamiliesButton.visibleProperty().bind(familiesModified);
         saveRelationsButton.visibleProperty().bind(familyRelationsModified);
+
+        familiesContextMenu.setUserData(familyTreeView);
+        orphanFamiliesContextMenu.setUserData(orphanTreeView);
 
         timeline.setCycleCount(Animation.INDEFINITE);
         timeline.play();
@@ -1014,5 +1018,18 @@ public class FamilyController {
         IOUtils.createDirectories(workFamiliesPath());
         stageManager.showWaitAlertAndRun("Saving family relations", () -> IOUtils.serialize(fullFamilyRelationsPath().toFile(), familyRelations));
         familyRelationsModified.setValue(false);
+    }
+
+    @SuppressWarnings("unchecked")
+    public void copyNameButtonClick(ActionEvent event) {
+
+        TreeView<NameView> source = (TreeView<NameView>) ((MenuItem) event.getSource()).getParentPopup().getUserData();
+        String name = source.getSelectionModel().getSelectedItem().getValue().getName();
+
+        ClipboardContent content = new ClipboardContent();
+        content.putString(name);
+        Clipboard.getSystemClipboard().setContent(content);
+
+        LOGGER.info("Saved {} to clipboard", name);
     }
 }
