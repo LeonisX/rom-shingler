@@ -47,6 +47,11 @@ public class IOUtils {
 
     @Measured
     public static void serialize(File file, Object object) {
+
+        if (file.exists()) {
+            file.renameTo(new File(file.getAbsolutePath() + ".bak"));
+        }
+
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
             oos.writeObject(object);
         } catch (Exception e) {
