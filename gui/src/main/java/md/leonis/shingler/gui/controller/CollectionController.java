@@ -114,9 +114,9 @@ public class CollectionController {
 
         if (showPlatforms) {
             if (dblClick) {
-                showPlatformCollections(platforms.get(selectedItem));
+                showPlatformCollections(platforms.get(selectedItem).getCpu());
             } else {
-                showPlatformStatus(platforms.get(selectedItem));
+                showPlatformStatus(platforms.get(selectedItem).getCpu());
             }
         } else {
             selectCollection(selectedItem);

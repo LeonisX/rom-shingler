@@ -39,6 +39,7 @@ public class Family implements Serializable, Cloneable {
         relations = new ArrayList<>();
         relationsCount = new HashMap<>();
         individualRelations = new HashSet<>();
+        this.type = FamilyType.FAMILY;
     }
 
     public Family(Family family) {

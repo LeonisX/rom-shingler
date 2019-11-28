@@ -122,6 +122,8 @@ public class FamilyController {
     public CheckBox blackFamilyCheckBox;
     public MenuItem newGroupMenuItem;
     public MenuItem switchFamilyTypeMenuItem;
+    public CheckBox badCheckBox;
+    public Button reCalculateRelationsButton;
     /*public Button saveFamiliesButtonS;
     public Button saveFamiliesButtonJ;*/
 
@@ -404,14 +406,22 @@ public class FamilyController {
     private static Comparator<TreeItem<NameView>> byJakkard = Comparator.comparing((TreeItem<NameView> n) -> n.getValue().getJakkardStatus()).reversed();
 
     private boolean filter(String name) {
-        boolean p = name.contains("(PD)") || name.contains("(PD)");
-        boolean h = name.contains("(Hack)") || name.contains("(Hack)")
-                || name.contains("(Hack ") || name.contains("(Hack ")
-                || name.contains(" Hack)") || name.contains(" Hack)");
-        boolean nameFilter = orphanFilter.isEmpty() || name.toLowerCase().contains(orphanFilter);
-        boolean g = !(p || h);
 
-        return ((p && pdCheckBox.isSelected()) || (h && hackCheckBox.isSelected()) || (g && allGoodCheckBox.isSelected())) && nameFilter;
+        Platform platform = platformsByCpu.get(ConfigHolder.platform);
+
+        boolean p = platform.isPD(name);
+        boolean h = platform.isHack(name);
+        boolean b = platform.isBad(name);
+        boolean nameFilter = orphanFilter.isEmpty() || name.toLowerCase().contains(orphanFilter);
+        boolean g = !(p || h || b);
+
+        boolean showPd = (p && pdCheckBox.isSelected());
+        boolean showHack = (h && hackCheckBox.isSelected());
+        boolean showBad = (b && badCheckBox.isSelected());
+
+        return ((showPd || showHack || showBad) || (g && allGoodCheckBox.isSelected())) && nameFilter;
+
+        //((p && pdCheckBox.isSelected()) || (h && hackCheckBox.isSelected()) || (g && allGoodCheckBox.isSelected()))
     }
 
     public void jakkardTextFieldKeyReleased(KeyEvent event) {
@@ -507,6 +517,13 @@ public class FamilyController {
             familiesModified.setValue(true);
             orphanChildren.clear();
         }, this::showFamilies);
+    }
+
+
+    public void reCalculateRelationsButtonClick() {
+
+        families.values().forEach(f -> f.getRelations().clear());
+        calculateRelationsButtonClick();
     }
 
     public void selectButtonClick() {
@@ -1059,8 +1076,7 @@ public class FamilyController {
     }
 
     private void loadFamilies() {
-        //File familyFile = fullFamiliesPath().toFile();
-        File familyFile = fullFamiliesJsonPath().toFile();
+        File familyFile = fullFamiliesPath().toFile();
 
         if (familyFile.exists()) {
             //System.out.println(String.format("%nReading families from file %s...", familyFile));
@@ -1086,7 +1102,7 @@ public class FamilyController {
     public void saveFamiliesButtonClick() {
         LOGGER.info("Saving families as JSON...");
         IOUtils.createDirectories(workFamiliesPath());
-        stageManager.showWaitAlertAndRun("Saving families", () -> IOUtils.serializeFamiliesAsJson(fullFamiliesJsonPath().toFile(), families));
+        stageManager.showWaitAlertAndRun("Saving families", () -> IOUtils.serializeFamiliesAsJson(fullFamiliesPath().toFile(), families));
         familiesModified.setValue(false);
     }
 
@@ -1136,4 +1152,5 @@ public class FamilyController {
             showFamilies();
         }
     }
+
 }

@@ -45,7 +45,8 @@ public class ConfigHolder {
     public static Path collectionsDir = rootWorkDir.resolve("collections");
     public static Path familiesDir = rootWorkDir.resolve("families");
 
-    public static LinkedHashMap<String, String> platforms = new LinkedHashMap<>();
+    public static LinkedHashMap<String, Platform> platforms = new LinkedHashMap<>();
+    public static HashMap<String, Platform> platformsByCpu = new HashMap<>();
 
     public static String platform;
     public static String collection;
@@ -84,10 +85,6 @@ public class ConfigHolder {
 
     public static Path fullFamiliesPath() {
         return workFamiliesPath().resolve(collection + "-" + denominator);
-    }
-
-    public static Path fullFamiliesJsonPath() {
-        return workFamiliesPath().resolve(collection + "-" + denominator + ".json");
     }
 
     public static Path fullFamilyRelationsPath() {

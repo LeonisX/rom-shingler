@@ -26,6 +26,7 @@
                 <CheckBox fx:id="allGoodCheckBox" mnemonicParsing="false" selected="true" text="Good"/>
                 <CheckBox fx:id="pdCheckBox" mnemonicParsing="false" selected="true" text="PD"/>
                 <CheckBox fx:id="hackCheckBox" mnemonicParsing="false" selected="true" text="Hack"/>
+                <CheckBox fx:id="badCheckBox" mnemonicParsing="false" selected="true" text="Bad"/>
             </HBox>
         </HBox>
     </top>

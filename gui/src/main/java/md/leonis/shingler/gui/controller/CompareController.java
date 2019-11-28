@@ -10,9 +10,10 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.util.Callback;
 import javafx.util.Pair;
-import md.leonis.shingler.model.ConfigHolder;
 import md.leonis.shingler.gui.view.StageManager;
+import md.leonis.shingler.model.ConfigHolder;
 import md.leonis.shingler.model.GID;
+import md.leonis.shingler.model.Platform;
 import md.leonis.shingler.model.RomsCollection;
 import md.leonis.shingler.utils.IOUtils;
 import org.slf4j.Logger;
@@ -24,9 +25,8 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static md.leonis.shingler.model.ConfigHolder.selectedCollections;
-import static md.leonis.shingler.model.ConfigHolder.workCollectionsPath;
 import static md.leonis.shingler.gui.view.StageManager.runInBackground;
+import static md.leonis.shingler.model.ConfigHolder.*;
 import static md.leonis.shingler.utils.BinaryUtils.bytesToHex;
 
 @Controller
@@ -55,7 +55,8 @@ public class CompareController {
     public CheckBox allGoodCheckBox;
     public CheckBox pdCheckBox;
     public CheckBox hackCheckBox;
-    
+    public CheckBox badCheckBox;
+
     public Label waitLabel;
 
     private final StageManager stageManager;
@@ -219,14 +220,19 @@ public class CompareController {
     //TODO can use filtered from tableView.getItems()
     private List<Pair<GID, GID>> filter(List<Pair<GID, GID>> pairs) {
 
-        return pairs.stream().filter(pair -> {
-            boolean p = pair.getKey().getTitle().contains("(PD)")  || pair.getValue().getTitle().contains("(PD)");
-            boolean h = pair.getKey().getTitle().contains("(Hack)")  || pair.getValue().getTitle().contains("(Hack)")
-                    || pair.getKey().getTitle().contains("(Hack ") || pair.getValue().getTitle().contains("(Hack ")
-                    ||pair.getKey().getTitle().contains(" Hack)") || pair.getValue().getTitle().contains(" Hack)");
-            boolean g = !(p || h);
+        Platform platform = platformsByCpu.get(ConfigHolder.platform);
 
-            return (p && pdCheckBox.isSelected()) || (h && hackCheckBox.isSelected()) || (g && allGoodCheckBox.isSelected());
+        return pairs.stream().filter(pair -> {
+            boolean p = platform.isPD(pair.getKey().getTitle())  || platform.isPD(pair.getValue().getTitle());
+            boolean h = platform.isHack(pair.getKey().getTitle())  || platform.isHack(pair.getValue().getTitle());
+            boolean b = platform.isBad(pair.getKey().getTitle())  || platform.isBad(pair.getValue().getTitle());
+            boolean g = !(p || h || b);
+
+            boolean showPd = (p && pdCheckBox.isSelected());
+            boolean showHack = (h && hackCheckBox.isSelected());
+            boolean showBad = (b && badCheckBox.isSelected());
+
+            return (showPd || showHack || showBad) || (g && allGoodCheckBox.isSelected());
         }).collect(Collectors.toList());
     }
 

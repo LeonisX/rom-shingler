@@ -85,7 +85,7 @@ public class ListFilesa {
 
         LOGGER.info("Saving families...");
         IOUtils.createDirectories(workFamiliesPath());
-        IOUtils.serialize(familyFile, families);
+        IOUtils.serializeFamiliesAsJson(familyFile, families);
 
         //saveUniqueListToFile(filteredMap);
     }
@@ -113,7 +113,7 @@ public class ListFilesa {
 
             LOGGER.info("Saving families...");
             IOUtils.createDirectories(workFamiliesPath());
-            IOUtils.serialize(familyFile, families);
+            IOUtils.serializeFamiliesAsJson(familyFile, families);
         }
     }
 
@@ -122,7 +122,7 @@ public class ListFilesa {
         calculateRelations();
 
         LOGGER.info("Saving families...");
-        IOUtils.serialize(fullFamiliesPath().toFile(), families);
+        IOUtils.serializeFamiliesAsJson(fullFamiliesPath().toFile(), families);
 
         //saveDropCsv(families, 50);
 
@@ -152,7 +152,7 @@ public class ListFilesa {
             if (needToStop[0]) {
                 LOGGER.info("Execution was interrupted!");
                 /*LOGGER.info("Saving families...");
-                IOUtils.serialize(fullFamiliesPath().toFile(), families);*/
+                IOUtils.serializeFamiliesAsJson(fullFamiliesPath().toFile(), families);*/
                 needToStop[0] = false;
                 break;
             }
@@ -195,6 +195,7 @@ public class ListFilesa {
 
         family.getRelations().clear();
         family.getMembers().forEach(m -> m.setJakkardStatus(0));
+        Platform platform = platformsByCpu.get(ConfigHolder.platform);
 
         for (int i = 0; i < family.size() - 1; i++) {
 
@@ -210,7 +211,12 @@ public class ListFilesa {
 
                 double jakkard = doCalculateJakkard(s1Set, s2Set);
 
-                name1.addJakkardStatus(jakkard);
+                if (platform.isGood(name2.getName())) {
+                    name1.addJakkardStatus(jakkard);
+                } else {
+                    //LOGGER.info("{} is bad", name2.getName());
+                    name1.addJakkardStatus(100);
+                }
                 name2.addJakkardStatus(jakkard);
 
                 Result result = new Result(name1, name2, jakkard);
