@@ -296,11 +296,11 @@ public class FamilyController {
 
     // TODO expand all previously expanded after operations (group, kick)
     private void showFamilies() {
-        int total = romsCollection.getGids().size();
+        int total = romsCollection.getGidsMap().size();
         int inFamily = families.values().stream().map(Family::size).mapToInt(Integer::intValue).sum();
 
         totalFamiliesLabel.setText("" + families.size());
-        totalGamesLabel.setText("" + romsCollection.getGids().size());
+        totalGamesLabel.setText("" + romsCollection.getGidsMap().size());
         groupedGamesLabel.setText("" + inFamily);
         orphanedGamesLabel.setText("" + (total - inFamily));
 
@@ -335,7 +335,7 @@ public class FamilyController {
             List<NameView> orphanList = new ArrayList<>();
 
             Set<String> familyNames = families.values().stream().flatMap(f -> f.getMembers().stream().map(Name::getName)).collect(Collectors.toSet());
-            Set<String> orphanedNames = romsCollection.getGids().values().stream().map(GID::getTitle).collect(Collectors.toSet());
+            Set<String> orphanedNames = romsCollection.getGidsMap().values().stream().map(GID::getTitle).collect(Collectors.toSet());
             orphanedNames.removeAll(familyNames);
 
             orphanedNames.stream().filter(this::filter).forEach(name -> orphanList.add(new NameView(name)));

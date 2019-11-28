@@ -109,7 +109,7 @@ public class Main1024a {
 
     public static void generateShinglesNio(RomsCollection collection, Path romsFolder, Path workDir) throws IOException {
 
-        Map<String, GID> files = collection.getGids();
+        Map<String, GID> files = collection.getGidsMap();
         LOGGER.info("Generating shingles...");
 
         int i = 0;

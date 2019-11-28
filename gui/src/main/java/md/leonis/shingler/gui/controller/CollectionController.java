@@ -138,7 +138,7 @@ public class CollectionController {
     private void showPlatformStatus(String selectedItem) {
 
         platform = selectedItem;
-        List<Path> collections = IOUtils.listFiles(workCollectionsPath());
+        List<Path> collections = IOUtils.listFiles(workCollectionsPath()).stream().filter(f -> !f.getFileName().toString().endsWith(".bak")).collect(Collectors.toList());
         textArea.setText("Collections: " + collections.size());
     }
 
@@ -148,7 +148,7 @@ public class CollectionController {
         platform = selectedItem;
         collectionsView.setItems(FXCollections.observableArrayList(".."));
 
-        List<Path> collections = IOUtils.listFiles(workCollectionsPath());
+        List<Path> collections = IOUtils.listFiles(workCollectionsPath()).stream().filter(f -> !f.getFileName().toString().endsWith(".bak")).collect(Collectors.toList());
         collectionsView.getItems().addAll(FXCollections.observableArrayList(collections.stream().map(c -> c.getFileName().toString()).collect(Collectors.toList())));
         //collectionsView.getSelectionModel().selectFirst();
         textArea.setText("");
@@ -166,13 +166,13 @@ public class CollectionController {
         textArea.setText(collection);
         textArea.appendText("\nType: " + romsCollection.getType());
         textArea.appendText("\nRoms path: " + (null == romsCollection.getRomsPathString() ? "---" : romsCollection.getRomsPathString()));
-        boolean isEmpty = romsCollection.getGids().isEmpty();
-        textArea.appendText("\nRoms count: " + (isEmpty ? "---" : romsCollection.getGids().size()));
+        boolean isEmpty = romsCollection.getGidsMap().isEmpty();
+        textArea.appendText("\nRoms count: " + (isEmpty ? "---" : romsCollection.getGidsMap().size()));
 
         typeButton.setText(romsCollection.getType().toString());
 
-        boolean hasShaHash = !isEmpty && !(null == romsCollection.getGids().values().iterator().next().getSha1());
-        boolean hasCrcHash = !isEmpty && !(null == romsCollection.getGids().values().iterator().next().getCrc32());
+        boolean hasShaHash = !isEmpty && !(null == romsCollection.getGidsMap().values().iterator().next().getSha1());
+        boolean hasCrcHash = !isEmpty && !(null == romsCollection.getGidsMap().values().iterator().next().getCrc32());
 
         if (hasShaHash) {
             textArea.appendText("\nHashes: YES");
@@ -182,7 +182,7 @@ public class CollectionController {
             textArea.appendText("\nHashes: ---");
         }
 
-        textArea.appendText("\nFamilies: " + (isEmpty || null == romsCollection.getGids().values().iterator().next().getFamily() ? "---" : "YES"));
+        textArea.appendText("\nFamilies: " + (isEmpty || null == romsCollection.getGidsMap().values().iterator().next().getFamily() ? "---" : "YES"));
         //TODO verify shingles count
         textArea.appendText("\nShingles: TODO");
     }
@@ -254,11 +254,11 @@ public class CollectionController {
     }
 
     private void loadCollection() {
-        romsCollection = IOUtils.loadCollection(fullCollectionsPath().toFile());
+        romsCollection = IOUtils.loadCollectionAsJson(fullCollectionsPath().toFile());
     }
 
     private void saveCollection() {
-        IOUtils.serialize(fullCollectionsPath().toFile(), romsCollection);
+        IOUtils.serializeAsJson(fullCollectionsPath().toFile(), romsCollection);
     }
 
     private void deleteCollection(String currentCollection) {
@@ -297,12 +297,12 @@ public class CollectionController {
                 case PLAIN:
                     List<Path> romsPaths = IOUtils.listFiles(Paths.get(romsCollection.getRomsPathString()));
                     Map<String, GID> gids = Main1024a.GIDsFromFiles(romsPaths);
-                    romsCollection.setGids(gids);
+                    romsCollection.setGidsMap(gids);
                     break;
                 case MERGED:
                     List<Path> familiesPaths = IOUtils.listFiles(Paths.get(romsCollection.getRomsPathString()));
                     Map<String, GID> mergedGids = Main1024a.GIDsFromMergedFile(familiesPaths.stream().filter(f -> f.getFileName().toString().endsWith(".7z")).collect(Collectors.toList()));
-                    romsCollection.setGids(mergedGids);
+                    romsCollection.setGidsMap(mergedGids);
                     break;
             }
             saveCollection();
@@ -319,12 +319,12 @@ public class CollectionController {
                         //TODO may be use saved GIDs
                         List<Path> romsPaths = IOUtils.listFiles(Paths.get(romsCollection.getRomsPathString()));
                         Map<String, GID> gids = Main1024a.calculateHashes(romsPaths);
-                        romsCollection.setGids(gids);
+                        romsCollection.setGidsMap(gids);
                         break;
                     case MERGED:
                         List<Path> familiesPaths = IOUtils.listFiles(Paths.get(romsCollection.getRomsPathString()));
                         Map<String, GID> mergedGids = Main1024a.calculateMergedHashes(familiesPaths.stream().filter(f -> f.getFileName().toString().endsWith(".7z")).collect(Collectors.toList()));
-                        romsCollection.setGids(mergedGids);
+                        romsCollection.setGidsMap(mergedGids);
                         break;
                 }
 

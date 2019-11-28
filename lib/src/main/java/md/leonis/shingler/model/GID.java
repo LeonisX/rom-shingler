@@ -2,15 +2,14 @@ package md.leonis.shingler.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.io.Serializable;
 import java.util.Arrays;
 
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
-public class GID implements Serializable {
-
-    private static final long serialVersionUID = -54694L;
+public class GID {
 
     public static GID EMPTY = new GID("", 0, null, null, null, null, null, null, null);
 

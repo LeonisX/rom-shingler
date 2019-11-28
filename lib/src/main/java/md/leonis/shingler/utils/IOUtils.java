@@ -139,6 +139,15 @@ public class IOUtils {
         }
     }
 
+    @Measured
+    public static RomsCollection loadCollectionAsJson(File file) {
+        try {
+            return new ObjectMapper().readValue(file, RomsCollection.class);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     @Measured
     public static void serializeAsJson(File file, Object object) {
@@ -173,10 +182,6 @@ public class IOUtils {
             Map<Integer, Name> names = new HashMap<>();
 
             families.values().forEach(f -> f.getMembers().forEach(m -> {
-                //TODO unique????
-                /*if (names.containsKey(m.hashCode())) {
-                    throw new RuntimeException(m.getName());
-                }*/
                 names.putIfAbsent(m.hashCode(), m);
             }));
 
@@ -189,8 +194,8 @@ public class IOUtils {
             });
 
             FamiliesDto familiesDto = new FamiliesDto(
-                    familyDtos/*.stream().sorted(Comparator.comparing(FamilyDto::getName)).collect(Collectors.toList())*/,
-                    names.values()/*.stream().sorted(Comparator.comparing(Name::getName)).collect(Collectors.toList())*/
+                    familyDtos,
+                    names.values()
             );
             new ObjectMapper().writeValue(file, familiesDto);
         } catch (IOException e) {
@@ -202,7 +207,7 @@ public class IOUtils {
     public static Map<String, Family> loadFamiliesAsJson(File file) {
 
         try {
-            FamiliesDto familiesDto =  new ObjectMapper().readValue(file, FamiliesDto.class);
+            FamiliesDto familiesDto = new ObjectMapper().readValue(file, FamiliesDto.class);
             Map<Integer, Name> names = familiesDto.getNames().stream().collect(Collectors.toMap(Name::hashCode, Function.identity()));
             return familiesDto.getFamilies().stream().map(f -> {
                 List<Name> members = f.getMembers().stream().map(names::get).collect(Collectors.toList());
@@ -215,16 +220,6 @@ public class IOUtils {
             throw new RuntimeException(e);
         }
     }
-
-    /*@Measured
-    public static Map<String, Family> loadFamiliesAsJson(File file) {
-
-        try {
-            return new ObjectMapper().readValue(file, new TypeReference<Map<String, Family>>() {});
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }*/
 
     @Measured
     public static Path extractFromArchive(Path file, String fileName) {

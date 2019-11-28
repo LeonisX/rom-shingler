@@ -157,8 +157,8 @@ public class CompareController {
             RomsCollection romsCollection2 = IOUtils.loadCollection(workCollectionsPath().resolve(collection2).toFile());
 
             LOGGER.info("Prepare hashes...");
-            Set<String> hashesLeft = romsCollection1.getGids().values().stream().map(h -> bytesToHex(h.getSha1())).collect(Collectors.toSet());
-            Set<String> hashesRight = romsCollection2.getGids().values().stream().map(h -> bytesToHex(h.getSha1())).collect(Collectors.toSet());
+            Set<String> hashesLeft = romsCollection1.getGidsMap().values().stream().map(h -> bytesToHex(h.getSha1())).collect(Collectors.toSet());
+            Set<String> hashesRight = romsCollection2.getGidsMap().values().stream().map(h -> bytesToHex(h.getSha1())).collect(Collectors.toSet());
 
             LOGGER.info("Processing hashes...");
             Set<String> hashesLeftUnique = new HashSet<>(hashesLeft);
@@ -168,8 +168,8 @@ public class CompareController {
             Set<String> hashesSame = new HashSet<>(hashesLeft);
             hashesSame.retainAll(hashesRight);
 
-            Map<String, GID> byLeftHash = romsCollection1.getGids().values().stream().collect(Collectors.toMap(h -> bytesToHex(h.getSha1()), Function.identity()));
-            Map<String, GID> byRightHash = romsCollection2.getGids().values().stream().collect(Collectors.toMap(h -> bytesToHex(h.getSha1()), Function.identity()));
+            Map<String, GID> byLeftHash = romsCollection1.getGidsMap().values().stream().collect(Collectors.toMap(h -> bytesToHex(h.getSha1()), Function.identity()));
+            Map<String, GID> byRightHash = romsCollection2.getGidsMap().values().stream().collect(Collectors.toMap(h -> bytesToHex(h.getSha1()), Function.identity()));
 
             LOGGER.info("Preparing added/deleted/modified collections...");
 

@@ -1,9 +1,8 @@
 package md.leonis.shingler.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
-import java.io.Serializable;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -14,26 +13,30 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Data
-@NoArgsConstructor
-public class RomsCollection implements Serializable {
-
-    private static final long serialVersionUID = 424258085469L;
+public class RomsCollection {
 
     private String title;
     private String platform;
     private CollectionType type = CollectionType.PLAIN;
     private String romsPathString;
-    private List<GID> gids = new ArrayList<>();
+    private List<GID> gids;
 
+    public RomsCollection() {
+        gids = new ArrayList<>();
+    }
+
+    @JsonIgnore
     public Path getRomsPath() {
         return romsPathString == null ? null : Paths.get(romsPathString);
     }
 
-    public void setGids(Map<String, GID> gids) {
+    @JsonIgnore
+    public void setGidsMap(Map<String, GID> gids) {
         this.gids = new ArrayList<>(gids.values());
     }
 
-    public Map<String, GID> getGids() {
+    @JsonIgnore
+    public Map<String, GID> getGidsMap() {
         return gids.stream().collect(Collectors.toMap(GID::getTitle, Function.identity(), (e1, e2) -> e2, LinkedHashMap::new));
     }
 }

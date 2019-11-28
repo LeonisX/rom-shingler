@@ -59,7 +59,7 @@ public class ListFilesa {
         List<Path> files = IOUtils.listFiles(romsCollection.getRomsPath());
 
         Set<String> familyNames = families.values().stream().flatMap(f -> f.getMembers().stream().map(Name::getName)).collect(Collectors.toSet());
-        Set<String> orphanedNames = romsCollection.getGids().values().stream().map(GID::getTitle).collect(Collectors.toSet());
+        Set<String> orphanedNames = romsCollection.getGidsMap().values().stream().map(GID::getTitle).collect(Collectors.toSet());
         orphanedNames.removeAll(familyNames);
 
         //List<Name> names = files.stream().map(f -> new Name(f.toFile(), false)).collect(Collectors.toList());
@@ -143,7 +143,7 @@ public class ListFilesa {
 
         Main1024a.cache.fullCleanup();
 
-        byTitle = romsCollection.getGids().values().stream().collect(Collectors.toMap(GID::getTitle, Function.identity()));
+        byTitle = romsCollection.getGidsMap().values().stream().collect(Collectors.toMap(GID::getTitle, Function.identity()));
 
         int k = 0;
 
@@ -181,7 +181,7 @@ public class ListFilesa {
         if (family.getType() == FamilyType.FAMILY) {
             Main1024a.cache.fullCleanup();
 
-            byTitle = romsCollection.getGids().values().stream().collect(Collectors.toMap(GID::getTitle, Function.identity()));
+            byTitle = romsCollection.getGidsMap().values().stream().collect(Collectors.toMap(GID::getTitle, Function.identity()));
 
             if (log) {
                 LOGGER.info("Comparing: {}... [{}]", family.getName(), family.size());
@@ -241,7 +241,7 @@ public class ListFilesa {
     public static Map<Family, Double> calculateRelations(String name, String ignore, boolean log) {
 
         Main1024a.cache.fullCleanup();
-        byTitle = romsCollection.getGids().values().stream().collect(Collectors.toMap(GID::getTitle, Function.identity()));
+        byTitle = romsCollection.getGidsMap().values().stream().collect(Collectors.toMap(GID::getTitle, Function.identity()));
 
         int[] k = {0};
         long[] s1Set = ShingleUtils.loadFromCache(cache, fullShinglesPath().resolve(bytesToHex(byTitle.get(name).getSha1()) + ".shg"));

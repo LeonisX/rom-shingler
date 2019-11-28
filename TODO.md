@@ -1,7 +1,5 @@
 # TODO list
 
-TODO save collections as JSON, measure
-
 TODO при стандартной упаковке паковать как есть. при продвинутой для плохих жаккартов искать семьи поудачнее.
 
 TODO calculate relations: -hacks. Probably ignore [o, b] too - optional - the same for family relations
@@ -20,6 +18,8 @@ Find in families
 TODO manage families - in bg + window (please wait)
 
 TODO sort by children count
+
+TODO collections list - update on key pressing
 
 TODO process all TODOs in code
 
