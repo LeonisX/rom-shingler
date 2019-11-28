@@ -10,6 +10,10 @@ public class Result implements Serializable {
     private Name name2;
     private double jakkard;
 
+    public Result() {
+        //For Jackson
+    }
+
     public Result(Name name1, Name name2, double jakkard) {
         this.name1 = name1;
         this.name2 = name2;

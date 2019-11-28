@@ -1,5 +1,19 @@
 # TODO list
 
+
+TODO special collections - don't calculate relations
+Family type: FAMILY, GROUP
+save as json, test
+
+TODO при стандартной упаковке паковать как есть. при продвинутой для плохих жаккартов искать семьи поудачнее.
+
+TODO calculate relations: -hacks. Probably ignore [o, b] too - optional - the same for family relations
+TODO expand/hide - for orphanes
+TODO update jakkard - recalculate red/black filter
+
+TODO break calculate relations
+TODO calculate relations selectively (menu)
+
 TODO probably bug when delete family
 
 Export families to other precisions

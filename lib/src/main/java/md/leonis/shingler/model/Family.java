@@ -18,6 +18,10 @@ public class Family implements Serializable, Cloneable {
 
     private boolean skip = false;
 
+    public Family() {
+        // For Jackson
+    }
+
     public Family(String name, List<Name> members) {
         this.members = members;
         this.name = name;
@@ -43,6 +47,16 @@ public class Family implements Serializable, Cloneable {
         setIndividualRelations(new HashSet<>(family.getIndividualRelations()));
         setSkip(family.isSkip());
         this.members.sort((d1, d2) -> Double.compare(d2.getJakkardStatus(), d1.getJakkardStatus()));
+    }
+
+    public Family(String name, List<Name> members, Name mother, List<Result> relations, Map<String, Integer> relationsCount, Set<String> individualRelations, boolean skip) {
+        this.name = name;
+        this.members = members;
+        this.mother = mother;
+        this.relations = relations;
+        this.relationsCount = relationsCount;
+        this.individualRelations = individualRelations;
+        this.skip = skip;
     }
 
     @Override

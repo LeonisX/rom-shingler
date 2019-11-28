@@ -43,6 +43,9 @@ public class MeasureMethodTest {
                 long ms = ((System.nanoTime() - start) / 1000000);
                 if (method.getAnnotationsByType(Measured.class).length > 0 && ms > 5) {
                     String params = Arrays.stream(args).map(Object::toString).collect(Collectors.joining(", "));
+                    if (params.length() > 1024) {
+                        params = params.substring(0, 1024) + "...";
+                    }
                     System.out.println(method.getReturnType().getSimpleName() + " " + method.getName() + "("+ params +") took " + ms + " ms");
                 }
             }

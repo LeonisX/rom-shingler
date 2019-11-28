@@ -86,6 +86,10 @@ public class ConfigHolder {
         return workFamiliesPath().resolve(collection + "-" + denominator);
     }
 
+    public static Path fullFamiliesJsonPath() {
+        return workFamiliesPath().resolve(collection + "-" + denominator + ".json");
+    }
+
     public static Path fullFamilyRelationsPath() {
         return workFamiliesPath().resolve(collection + "-relations-" + denominator);
     }

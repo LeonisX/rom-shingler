@@ -28,6 +28,10 @@
                     <Button fx:id="toCollectionsButton" mnemonicParsing="false" onAction="#toCollectionsButtonClick" prefHeight="25.0" prefWidth="107.0" text="&lt;&lt; to collections" />
                <Button fx:id="saveFamiliesButton" mnemonicParsing="false" onAction="#saveFamiliesButtonClick" style="-fx-background-color: #ff8888; -fx-border-color: #888888;" text="Save families" />
                <Button fx:id="saveRelationsButton" mnemonicParsing="false" onAction="#saveRelationsButtonClick" style="-fx-background-color: #ff8888; -fx-border-color: #888888;" text="Save relations" />
+                <!--
+                    <Button fx:id="saveFamiliesButtonS" mnemonicParsing="false" onAction="#saveFamiliesButtonClick" text="Save Ser" />
+                    <Button fx:id="saveFamiliesButtonJ" mnemonicParsing="false" onAction="#saveFamiliesJsonButtonClick" text="Save Json" />
+                -->
                 </HBox>
                 <Label fx:id="waitLabel" prefHeight="17.0" prefWidth="75.0" text="Please wait" />
                 <VBox prefHeight="46.0" prefWidth="792.0">

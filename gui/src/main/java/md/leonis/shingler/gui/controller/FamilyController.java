@@ -123,6 +123,8 @@ public class FamilyController {
     public CheckBox blackCheckBox;
     public CheckBox redFamilyCheckBox;
     public CheckBox blackFamilyCheckBox;
+    /*public Button saveFamiliesButtonS;
+    public Button saveFamiliesButtonJ;*/
 
 
     private TreeItem<NameView> familyRootItem = new TreeItem<>(NameView.EMPTY);
@@ -289,21 +291,6 @@ public class FamilyController {
             };
         }
     };
-
-    private void loadFamilies() {
-        File familyFile = fullFamiliesPath().toFile();
-
-        if (familyFile.exists()) {
-            System.out.println(String.format("%nReading families from file %s...", familyFile));
-            families = IOUtils.loadFamilies(familyFile);
-        } else {
-            families = new HashMap<>();
-        }
-
-        orphanChildren.clear();
-
-        showFamilies();
-    }
 
     private Map<NameView, List<NameView>> familiesView = new LinkedHashMap<>();
     private Map<NameView, List<NameView>> familyRelationsView = new LinkedHashMap<>();
@@ -1050,10 +1037,35 @@ public class FamilyController {
         stageManager.showPane(FxmlView.COLLECTION);
     }
 
-    public void saveFamiliesButtonClick() {
+    private void loadFamilies() {
+        //File familyFile = fullFamiliesPath().toFile();
+        File familyFile = fullFamiliesJsonPath().toFile();
+
+        if (familyFile.exists()) {
+            //System.out.println(String.format("%nReading families from file %s...", familyFile));
+            System.out.println(String.format("%nReading families from JSON file %s...", familyFile));
+            //families = IOUtils.loadFamilies(familyFile);
+            families = IOUtils.loadFamiliesAsJson(familyFile);
+        } else {
+            families = new HashMap<>();
+        }
+
+        orphanChildren.clear();
+
+        showFamilies();
+    }
+
+    /*public void saveFamiliesButtonClick() {
         LOGGER.info("Saving families...");
         IOUtils.createDirectories(workFamiliesPath());
         stageManager.showWaitAlertAndRun("Saving families", () -> IOUtils.serialize(fullFamiliesPath().toFile(), families));
+        familiesModified.setValue(false);
+    }*/
+
+    public void saveFamiliesButtonClick() {
+        LOGGER.info("Saving families as JSON...");
+        IOUtils.createDirectories(workFamiliesPath());
+        stageManager.showWaitAlertAndRun("Saving families", () -> IOUtils.serializeFamiliesAsJson(fullFamiliesJsonPath().toFile(), families));
         familiesModified.setValue(false);
     }
 

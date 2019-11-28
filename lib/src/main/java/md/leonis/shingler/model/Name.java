@@ -1,9 +1,11 @@
 package md.leonis.shingler.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.Objects;
 
 @AllArgsConstructor
 public class Name implements Serializable {
@@ -15,6 +17,10 @@ public class Name implements Serializable {
     private int index = 100;
 
     private double jakkardStatus = 0;
+
+    public Name() {
+        // For Jackson
+    }
 
     public Name(File file, boolean done, double jakkardStatus) {
         this(file, done);
@@ -99,10 +105,12 @@ public class Name implements Serializable {
         this.file = file;
     }
 
+    @JsonIgnore
     public String getName() {
         return file.getName();
     }
 
+    @JsonIgnore
     public String getCleanName() {
         String result = file.getName();
         int braceIndex = result.indexOf("(");
@@ -134,5 +142,21 @@ public class Name implements Serializable {
 
     public void addJakkardStatus(double status) {
         jakkardStatus += status;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Name name = (Name) o;
+        return done == name.done &&
+                index == name.index &&
+                Double.compare(name.jakkardStatus, jakkardStatus) == 0 &&
+                Objects.equals(file.getName(), name.file.getName());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(file.getName(), done, index, jakkardStatus);
     }
 }

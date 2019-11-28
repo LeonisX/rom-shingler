@@ -1,8 +1,10 @@
 package md.leonis.shingler.utils;
 
-import md.leonis.shingler.model.Family;
-import md.leonis.shingler.model.GID;
-import md.leonis.shingler.model.RomsCollection;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import md.leonis.shingler.model.*;
+import md.leonis.shingler.model.dto.FamiliesDto;
+import md.leonis.shingler.model.dto.FamilyDto;
+import md.leonis.shingler.model.dto.ResultDto;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 import org.slf4j.Logger;
@@ -13,6 +15,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -49,7 +52,11 @@ public class IOUtils {
     public static void serialize(File file, Object object) {
 
         if (file.exists()) {
-            file.renameTo(new File(file.getAbsolutePath() + ".bak"));
+            File backupFile = new File(file.getAbsolutePath() + ".bak");
+            if (backupFile.exists()) {
+                backupFile.delete();
+            }
+            file.renameTo(backupFile);
         }
 
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
@@ -131,6 +138,93 @@ public class IOUtils {
             throw new RuntimeException(e);
         }
     }
+
+
+    @Measured
+    public static void serializeAsJson(File file, Object object) {
+
+        if (file.exists()) {
+            File backupFile = new File(file.getAbsolutePath() + ".bak");
+            if (backupFile.exists()) {
+                backupFile.delete();
+            }
+            file.renameTo(backupFile);
+        }
+
+        try {
+            new ObjectMapper().writeValue(file, object);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Measured
+    public static void serializeFamiliesAsJson(File file, Map<String, Family> families) {
+
+        if (file.exists()) {
+            File backupFile = new File(file.getAbsolutePath() + ".bak");
+            if (backupFile.exists()) {
+                backupFile.delete();
+            }
+            file.renameTo(backupFile);
+        }
+
+        try {
+            Map<Integer, Name> names = new HashMap<>();
+
+            families.values().forEach(f -> f.getMembers().forEach(m -> {
+                //TODO unique????
+                /*if (names.containsKey(m.hashCode())) {
+                    throw new RuntimeException(m.getName());
+                }*/
+                names.putIfAbsent(m.hashCode(), m);
+            }));
+
+            List<FamilyDto> familyDtos = new ArrayList<>();
+
+            families.values().forEach(f -> {
+                List<Integer> members = f.getMembers().stream().map(Object::hashCode).collect(Collectors.toList());
+                List<ResultDto> relations = f.getRelations().stream().map(r -> new ResultDto(r.getName1().hashCode(), r.getName2().hashCode(), r.getJakkard())).collect(Collectors.toList());
+                familyDtos.add(new FamilyDto(f.getName(), members, f.getMother().hashCode(), relations, f.isSkip()));
+            });
+
+            FamiliesDto familiesDto = new FamiliesDto(
+                    familyDtos/*.stream().sorted(Comparator.comparing(FamilyDto::getName)).collect(Collectors.toList())*/,
+                    names.values()/*.stream().sorted(Comparator.comparing(Name::getName)).collect(Collectors.toList())*/
+            );
+            new ObjectMapper().writeValue(file, familiesDto);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Measured
+    public static Map<String, Family> loadFamiliesAsJson(File file) {
+
+        try {
+            FamiliesDto familiesDto =  new ObjectMapper().readValue(file, FamiliesDto.class);
+            Map<Integer, Name> names = familiesDto.getNames().stream().collect(Collectors.toMap(Name::hashCode, Function.identity()));
+            return familiesDto.getFamilies().stream().map(f -> {
+                List<Name> members = f.getMembers().stream().map(names::get).collect(Collectors.toList());
+                List<Result> relations = f.getRelations().stream().map(r -> new Result(names.get(r.getName1()), names.get(r.getName2()), r.getJakkard())).collect(Collectors.toList());
+                return new Family(f.getName(), members, names.get(f.getMother()), relations, new HashMap<>(), new HashSet<>(), f.isSkip());
+
+            }).collect(Collectors.toMap(Family::getName, Function.identity()));
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /*@Measured
+    public static Map<String, Family> loadFamiliesAsJson(File file) {
+
+        try {
+            return new ObjectMapper().readValue(file, new TypeReference<Map<String, Family>>() {});
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }*/
 
     @Measured
     public static Path extractFromArchive(Path file, String fileName) {
