@@ -109,7 +109,7 @@ public class ListFilesa {
             map.forEach((key, value) -> namesList.put(key.getName(), value.stream().map(v -> new Name(new File(v), false)).collect(Collectors.toList())));
 
             families = namesList.entrySet().stream()/*.filter(e -> e.getValue().size() != 1)*/
-                    .collect(Collectors.toMap(Map.Entry::getKey, e -> new Family(e.getKey(), e.getValue())));
+                    .collect(Collectors.toMap(Map.Entry::getKey, e -> new Family(e.getKey(), e.getValue(), FamilyType.FAMILY)));
 
             LOGGER.info("Saving families...");
             IOUtils.createDirectories(workFamiliesPath());
@@ -157,13 +157,15 @@ public class ListFilesa {
                 break;
             }
 
-            int relationsCount = family.getMembers().size() * (family.getMembers().size() - 1) / 2;
-            double percent = (k + 1) * 100.0 / families.size();
-            if (family.getRelations().size() == relationsCount) { // x * (x - 1) / 2
-                LOGGER.debug("Skipping: {}... [{}]|{}", family.getName(), family.size(), percent);
-            } else {
-                LOGGER.info("Comparing: {}... [{}]|{}", family.getName(), family.size(), percent);
-                doCalculateRelations(family, percent, true);
+            if (family.getType() == FamilyType.FAMILY) {
+                int relationsCount = family.getMembers().size() * (family.getMembers().size() - 1) / 2;
+                double percent = (k + 1) * 100.0 / families.size();
+                if (family.getRelations().size() == relationsCount) { // x * (x - 1) / 2
+                    LOGGER.debug("Skipping: {}... [{}]|{}", family.getName(), family.size(), percent);
+                } else {
+                    LOGGER.info("Comparing: {}... [{}]|{}", family.getName(), family.size(), percent);
+                    doCalculateRelations(family, percent, true);
+                }
             }
             k++;
             family.selectMother();
@@ -176,15 +178,17 @@ public class ListFilesa {
 
     public static void calculateRelations(Family family, boolean log) {
 
-        Main1024a.cache.fullCleanup();
+        if (family.getType() == FamilyType.FAMILY) {
+            Main1024a.cache.fullCleanup();
 
-        byTitle = romsCollection.getGids().values().stream().collect(Collectors.toMap(GID::getTitle, Function.identity()));
+            byTitle = romsCollection.getGids().values().stream().collect(Collectors.toMap(GID::getTitle, Function.identity()));
 
-        if (log) {
-            LOGGER.info("Comparing: {}... [{}]", family.getName(), family.size());
+            if (log) {
+                LOGGER.info("Comparing: {}... [{}]", family.getName(), family.size());
+            }
+            doCalculateRelations(family, -1, log);
+            family.selectMother();
         }
-        doCalculateRelations(family, -1, log);
-        family.selectMother();
     }
 
     private static void doCalculateRelations(Family family, double percent, boolean log) {
@@ -242,7 +246,7 @@ public class ListFilesa {
         int[] k = {0};
         long[] s1Set = ShingleUtils.loadFromCache(cache, fullShinglesPath().resolve(bytesToHex(byTitle.get(name).getSha1()) + ".shg"));
 
-        return families.values().stream().filter(e -> !e.getName().equals(ignore)).collect(Collectors.toMap(Function.identity(), family -> {
+        return families.values().stream().filter(e -> !e.getName().equals(ignore)).filter(e -> e.getType() == FamilyType.FAMILY).collect(Collectors.toMap(Function.identity(), family -> {
             if (log) {
                 LOGGER.info("Comparing: {} with {}|{}", name, family.getName(), (k[0]++ + 1) * 100.0 / families.size());
             }

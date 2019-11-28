@@ -1,9 +1,6 @@
 # TODO list
 
-
-TODO special collections - don't calculate relations
-Family type: FAMILY, GROUP
-save as json, test
+TODO save collections as JSON, measure
 
 TODO при стандартной упаковке паковать как есть. при продвинутой для плохих жаккартов искать семьи поудачнее.
 

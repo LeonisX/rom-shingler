@@ -26,10 +26,7 @@ import md.leonis.shingler.gui.dto.NameView;
 import md.leonis.shingler.gui.dto.NodeStatus;
 import md.leonis.shingler.gui.view.FxmlView;
 import md.leonis.shingler.gui.view.StageManager;
-import md.leonis.shingler.model.CollectionType;
-import md.leonis.shingler.model.Family;
-import md.leonis.shingler.model.GID;
-import md.leonis.shingler.model.Name;
+import md.leonis.shingler.model.*;
 import md.leonis.shingler.utils.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -123,6 +120,8 @@ public class FamilyController {
     public CheckBox blackCheckBox;
     public CheckBox redFamilyCheckBox;
     public CheckBox blackFamilyCheckBox;
+    public MenuItem newGroupMenuItem;
+    public MenuItem switchFamilyTypeMenuItem;
     /*public Button saveFamiliesButtonS;
     public Button saveFamiliesButtonJ;*/
 
@@ -559,13 +558,35 @@ public class FamilyController {
 
         Optional<String> result = dialog.showAndWait();
         result.ifPresent(s -> runInBackground(() -> {
-            Family family = new Family(s, selectedNames);
+            Family family = new Family(s, selectedNames, FamilyType.FAMILY);
             families.put(s, family);
             registerRunningTask("calculateRelations");
             ListFilesa.calculateRelations(family, true);
             unRegisterRunningTask("calculateRelations");
             familiesModified.setValue(true);
         }, this::showFamilies));
+    }
+
+
+    public void newGroupButtonClick() {
+
+        List<Name> selectedNames = getSelectedOrphanes();
+
+        if (selectedNames.isEmpty()) {
+            LOGGER.warn("Games are not selected");
+            return;
+        }
+
+        TextInputDialog dialog = stageManager.getTextInputDialog("Text Input Dialog", "Look, a Text Input Dialog", "Please enter new group name:", selectedNames.get(0).getCleanName());
+
+        Optional<String> result = dialog.showAndWait();
+        result.ifPresent(s -> {
+            Family family = new Family(s, selectedNames, FamilyType.GROUP);
+            families.put(s, family);
+            familiesModified.setValue(true);
+
+            showFamilies();
+        });
     }
 
     private List<Name> getSelectedOrphanes() {
@@ -597,7 +618,7 @@ public class FamilyController {
                 }
                 ArrayList<Name> names = new ArrayList<>();
                 names.add(selectedName);
-                Family family = new Family(familyName, names);
+                Family family = new Family(familyName, names, FamilyType.FAMILY);
                 families.put(familyName, family);
                 registerRunningTask("calculateRelations");
                 ListFilesa.calculateRelations(family);
@@ -682,34 +703,34 @@ public class FamilyController {
     public void findFamilyCandidatesButtonClick() {
 
         runInBackground(() -> {
-        List<TreeItem<NameView>> selectedItems = new ArrayList<>(orphanTreeView.getSelectionModel().getSelectedItems());
+            List<TreeItem<NameView>> selectedItems = new ArrayList<>(orphanTreeView.getSelectionModel().getSelectedItems());
 
-        registerRunningTask("findFamilyCandidates");
+            registerRunningTask("findFamilyCandidates");
 
-        for (int i = 0; i < selectedItems.size(); i++) {
+            for (int i = 0; i < selectedItems.size(); i++) {
 
-            if (needToStop[0]) {
-                LOGGER.info("Execution was interrupted!");
-                needToStop[0] = false;
-                break;
+                if (needToStop[0]) {
+                    LOGGER.info("Execution was interrupted!");
+                    needToStop[0] = false;
+                    break;
+                }
+
+                NameView nameView = selectedItems.get(i).getValue();
+                LOGGER.info("Finding family candidates for {}|{}", nameView.getName(), (i + 1) * 100.0 / selectedItems.size());
+
+                List<NameView> items = ListFilesa.calculateRelations(nameView.getName()).entrySet().stream()
+                        .map(e -> new NameView(e.getKey(), e.getValue())).collect(Collectors.toList());
+
+                nameView.setItems(items);
+                nameView.setJakkardStatus(items.get(0).getJakkardStatus());
+
+                selectedItems.get(i).setValue(nameView);
+
+                selectedItems.get(i).getChildren().setAll(items.stream().map(TreeItem::new).collect(Collectors.toList()));
+
             }
 
-            NameView nameView = selectedItems.get(i).getValue();
-            LOGGER.info("Finding family candidates for {}|{}", nameView.getName(), (i + 1) * 100.0 / selectedItems.size());
-
-            List<NameView> items = ListFilesa.calculateRelations(nameView.getName()).entrySet().stream()
-                    .map(e -> new NameView(e.getKey(), e.getValue())).collect(Collectors.toList());
-
-            nameView.setItems(items);
-            nameView.setJakkardStatus(items.get(0).getJakkardStatus());
-
-            selectedItems.get(i).setValue(nameView);
-
-            selectedItems.get(i).getChildren().setAll(items.stream().map(TreeItem::new).collect(Collectors.toList()));
-
-        }
-
-        unRegisterRunningTask("findFamilyCandidates");
+            unRegisterRunningTask("findFamilyCandidates");
         }, this::updateTrees);
     }
 
@@ -1093,6 +1114,25 @@ public class FamilyController {
         String newText = filterOrphanesTextField.getText().toLowerCase();
         if (!orphanFilter.equals(newText)) {
             orphanFilter = newText;
+            showFamilies();
+        }
+    }
+
+    public void switchFamilyTypeClick() {
+
+        ObservableList<TreeItem<NameView>> selectedItems = familyTreeView.getSelectionModel().getSelectedItems();
+
+        if (selectedItems.size() == 1 && selectedItems.get(0).getValue().getStatus() == NodeStatus.FAMILY) {
+
+            String familyName = selectedItems.get(0).getValue().getFamilyName();
+
+            Family family = families.get(familyName);
+            family.setType(family.getType().equals(FamilyType.FAMILY) ? FamilyType.GROUP : FamilyType.FAMILY);
+            families.put(family.getName(), family);
+
+            ListFilesa.calculateRelations(family);
+            familiesModified.setValue(true);
+
             showFamilies();
         }
     }

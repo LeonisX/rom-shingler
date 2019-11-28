@@ -3,6 +3,7 @@ package md.leonis.shingler.model.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import md.leonis.shingler.model.FamilyType;
 
 import java.util.List;
 
@@ -20,4 +21,5 @@ public class FamilyDto {
 
     private boolean skip = false;
 
+    private FamilyType type;
 }

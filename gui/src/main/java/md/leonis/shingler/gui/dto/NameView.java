@@ -3,6 +3,7 @@ package md.leonis.shingler.gui.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import md.leonis.shingler.model.Family;
+import md.leonis.shingler.model.FamilyType;
 import md.leonis.shingler.model.Name;
 
 import java.io.File;
@@ -15,7 +16,7 @@ import java.util.Map;
 public
 class NameView {
 
-    public static NameView EMPTY = new NameView(null, "", "", 0.0D, NodeStatus.FAMILY, new ArrayList<>());
+    public static NameView EMPTY = new NameView(null, "", "", 0.0D, NodeStatus.FAMILY, new ArrayList<>(), null);
 
     //TODO Need???
     private File file;
@@ -25,6 +26,8 @@ class NameView {
 
     private NodeStatus status;
     private List<NameView> items;
+
+    private FamilyType type;
 
     // Name to NameView
     public NameView(Name name, String familyName, double jakkardStatus) {
@@ -54,6 +57,7 @@ class NameView {
         this.jakkardStatus = entry.getValue().getMembers().size();
         this.status = NodeStatus.FAMILY;
         this.items = views;
+        this.type = entry.getValue().getType();
     }
 
     // Family + Jakkard to NameView
@@ -64,6 +68,7 @@ class NameView {
         this.jakkardStatus = jakkardStatus;
         this.status = NodeStatus.FAMILY_LIST;
         this.items = new ArrayList<>();
+        this.type = family.getType();
     }
 
     public Name toName() {
@@ -73,7 +78,8 @@ class NameView {
     @Override
     public String toString() {
         if (status == NodeStatus.FAMILY) {
-            return String.format("%-48s   [%1.0f]", name, jakkardStatus);
+            String prefix = (type != null && type == FamilyType.GROUP) ? "* " : "";
+            return String.format("%-48s   [%1.0f]", prefix + name, jakkardStatus);
         } if (status == NodeStatus.FAMILY_LIST) {
             return String.format("%-48s   (%2.3f%%)", name, jakkardStatus);
         } if (status == NodeStatus.ORPHAN) {

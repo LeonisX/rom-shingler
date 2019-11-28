@@ -16,18 +16,21 @@ public class Family implements Serializable, Cloneable {
     private Map<String, Integer> relationsCount;
     private Set<String> individualRelations;
 
+    private FamilyType type;
+
     private boolean skip = false;
 
     public Family() {
         // For Jackson
     }
 
-    public Family(String name, List<Name> members) {
+    public Family(String name, List<Name> members, FamilyType type) {
         this.members = members;
         this.name = name;
         relations = new ArrayList<>();
         relationsCount = new HashMap<>();
         individualRelations = new HashSet<>();
+        this.type = type;
     }
 
     public Family(List<Name> members) {
@@ -46,10 +49,11 @@ public class Family implements Serializable, Cloneable {
         setRelationsCount(new HashMap<>(family.getRelationsCount()));
         setIndividualRelations(new HashSet<>(family.getIndividualRelations()));
         setSkip(family.isSkip());
+        setType(family.getType());
         this.members.sort((d1, d2) -> Double.compare(d2.getJakkardStatus(), d1.getJakkardStatus()));
     }
 
-    public Family(String name, List<Name> members, Name mother, List<Result> relations, Map<String, Integer> relationsCount, Set<String> individualRelations, boolean skip) {
+    public Family(String name, List<Name> members, Name mother, List<Result> relations, Map<String, Integer> relationsCount, Set<String> individualRelations, boolean skip, FamilyType type) {
         this.name = name;
         this.members = members;
         this.mother = mother;
@@ -57,11 +61,20 @@ public class Family implements Serializable, Cloneable {
         this.relationsCount = relationsCount;
         this.individualRelations = individualRelations;
         this.skip = skip;
+        this.type = type;
     }
 
     @Override
     public String toString() {
         return name + ": " + members;
+    }
+
+    public FamilyType getType() {
+        return type;
+    }
+
+    public void setType(FamilyType type) {
+        this.type = type;
     }
 
     public boolean isSkip() {

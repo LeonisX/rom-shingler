@@ -112,6 +112,9 @@
                                             <MenuItem fx:id="deleteFamilyMenuItem" mnemonicParsing="false" onAction="#deleteFamilyMenuItemClick" text="Delete" userData="f" />
                                             <MenuItem fx:id="kickAwayMenuItem" mnemonicParsing="false" onAction="#kickAwayButtonClick" text="Kick away" userData="m" />
 
+                                            <SeparatorMenuItem mnemonicParsing="false"  userData="f" />
+                                            <MenuItem fx:id="switchFamilyTypeMenuItem" mnemonicParsing="false" onAction="#switchFamilyTypeClick" text="Switch family type" userData="f" />
+
                                             <SeparatorMenuItem mnemonicParsing="false" />
                                             <MenuItem fx:id="copyFamilyNameItem" mnemonicParsing="false" onAction="#copyNameButtonClick" text="Copy name to clipboard" />
 
@@ -132,6 +135,9 @@
                                             <MenuItem fx:id="addToFamilyMenuItem" mnemonicParsing="false" onAction="#addToFamilyButtonClick" text="Add to family" userData="m" />
                                             <MenuItem fx:id="findFamilyMenuItem" mnemonicParsing="false" onAction="#findFamilyCandidatesButtonClick" text="Find a family candidate" userData="m" />
                                             <MenuItem fx:id="findFamiliesAutoMenuItem" mnemonicParsing="false" onAction="#findFamiliesAutoButtonClick" text="Find a better family (auto)" userData="m" />
+
+                                            <SeparatorMenuItem mnemonicParsing="false" />
+                                            <MenuItem fx:id="newGroupMenuItem" mnemonicParsing="false" onAction="#newGroupButtonClick" text="Create new group" userData="m" />
 
                                             <SeparatorMenuItem mnemonicParsing="false" />
                                             <MenuItem fx:id="copyOrphanNameItem" mnemonicParsing="false" onAction="#copyNameButtonClick" text="Copy name to clipboard" />
