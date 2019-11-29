@@ -126,6 +126,7 @@ public class FamilyController {
     public Button reCalculateRelationsButton;
     public MenuItem findFamilyCandidatesMenuItem;
     public MenuItem addToThisFamilyMenuItem2;
+    public TextField candidatesTextField;
     /*public Button saveFamiliesButtonS;
     public Button saveFamiliesButtonJ;*/
 
@@ -179,6 +180,8 @@ public class FamilyController {
             jakkardTextField2.setText("" + jakkard);
             showFamilies();
         });
+
+        candidatesTextField.setText(Integer.toString(candidates));
 
         searchMap.put(familyTreeView, "");
         searchMap.put(orphanTreeView, "");
@@ -1172,6 +1175,13 @@ public class FamilyController {
         if (!orphanFilter.equals(newText)) {
             orphanFilter = newText;
             showFamilies();
+        }
+    }
+
+    public void candidatesTextFieldAction() {
+        try {
+            candidates = Integer.parseInt(candidatesTextField.getText());
+        } catch (Exception ignored) {
         }
     }
 

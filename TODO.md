@@ -2,8 +2,6 @@
 
 TODO при стандартной упаковке паковать как есть. при продвинутой для плохих жаккартов искать семьи поудачнее.
 
-TODO setup family candidates count
-
 TODO expand/hide - for orphanes
 TODO update jakkard - recalculate red/black filter
 
@@ -11,6 +9,8 @@ TODO break calculate relations
 TODO calculate relations selectively (menu)
 
 TODO bug when delete family!!!
+
+TODO not 100% progress when add orphanes to existing family
 
 Export families to other precisions
 

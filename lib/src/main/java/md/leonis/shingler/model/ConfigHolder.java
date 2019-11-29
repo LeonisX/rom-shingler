@@ -109,4 +109,6 @@ public class ConfigHolder {
             needToStop[0] = false;
         }
     }
+
+    public static int candidates = 8;
 }

@@ -262,7 +262,7 @@ public class ListFilesa {
             return doCalculateJakkard(s1Set, s2Set);
         })).entrySet().stream()
                 .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
-                .limit(8)
+                .limit(candidates)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (first, second) -> first, LinkedHashMap::new));
     }
 

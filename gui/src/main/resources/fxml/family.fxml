@@ -102,6 +102,9 @@
                      <Separator orientation="VERTICAL" prefHeight="200.0" />
                      <Label text="Filter orphanes:" />
                      <TextField fx:id="filterOrphanesTextField" onAction="#filterOrphanesTextFieldAction" />
+                     <Separator orientation="VERTICAL" prefHeight="200.0" />
+                     <Label text="# candidates:" />
+                     <TextField fx:id="candidatesTextField" onAction="#candidatesTextFieldAction" prefHeight="25.0" prefWidth="37.0" />
                         </HBox>
                     </top>
                     <center>
