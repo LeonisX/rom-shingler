@@ -124,6 +124,8 @@ public class FamilyController {
     public MenuItem switchFamilyTypeMenuItem;
     public CheckBox badCheckBox;
     public Button reCalculateRelationsButton;
+    public MenuItem findFamilyCandidatesMenuItem;
+    public MenuItem addToThisFamilyMenuItem2;
     /*public Button saveFamiliesButtonS;
     public Button saveFamiliesButtonJ;*/
 
@@ -315,12 +317,12 @@ public class FamilyController {
                         List<NameView> views = new ArrayList<>();
                         for (int i = 0; i < e.getValue().getMembers().size(); i++) {
                             Name name = e.getValue().getMembers().get(i);
-                            views.add(new NameView(name, e.getKey(), e.getValue().getJakkardStatus(i)));
+                            views.add(new NameView(name, e.getKey(), e.getValue().getJakkardStatus(i), 2));
                         }
 
                         //views = views.stream().sorted(Comparator.comparing(NameView::getJakkardStatus).reversed()).collect(Collectors.toList());
 
-                        NameView root = new NameView(e, views);
+                        NameView root = new NameView(e, views, 1);
                         familiesView.put(root, views);
                     });
 
@@ -340,7 +342,7 @@ public class FamilyController {
             Set<String> orphanedNames = romsCollection.getGidsMap().values().stream().map(GID::getTitle).collect(Collectors.toSet());
             orphanedNames.removeAll(familyNames);
 
-            orphanedNames.stream().filter(this::filter).forEach(name -> orphanList.add(new NameView(name)));
+            orphanedNames.stream().filter(this::filter).forEach(name -> orphanList.add(new NameView(name, 1)));
 
             orphanRootItem.getChildren().forEach(c -> {
                 if (!c.getChildren().isEmpty()) {
@@ -368,8 +370,8 @@ public class FamilyController {
             if (familyRelations != null) {
                 familyRelationsView = new LinkedHashMap<>();
 
-                familyRelations.forEach((key1, value1) -> familyRelationsView.put(new NameView(key1, (value1.isEmpty() ? 0 : value1.entrySet().iterator().next().getValue())),
-                        value1.entrySet().stream().map(en -> new NameView(en.getKey(), en.getValue())).collect(Collectors.toList())));
+                familyRelations.forEach((key1, value1) -> familyRelationsView.put(new NameView(key1, (value1.isEmpty() ? 0 : value1.entrySet().iterator().next().getValue()), 1),
+                        value1.entrySet().stream().map(en -> new NameView(en.getKey(), en.getValue(), 2)).collect(Collectors.toList())));
 
                 familyRelationsRootItem.getChildren().clear();
 
@@ -534,7 +536,7 @@ public class FamilyController {
             orphanTreeView.getSelectionModel().clearSelection();
             String phrase = result.get().toLowerCase();
             orphanRootItem.getChildren().forEach(c -> {
-                if ((c.getValue().getStatus() != NodeStatus.FAMILY) && c.getValue().getName().toLowerCase().contains(phrase)) {
+                if ((c.getValue().getLevel() == 1) && c.getValue().getName().toLowerCase().contains(phrase)) {
                     orphanTreeView.getSelectionModel().select(c);
                 }
             });
@@ -544,8 +546,7 @@ public class FamilyController {
     public void addToFamilyButtonClick() {
 
         List<Name> selectedNames = orphanTreeView.getSelectionModel().getSelectedItems().stream()
-                .filter(t -> NodeStatus.isMember(t.getValue().getStatus()))
-                .filter(t -> t.getParent().equals(orphanRootItem))
+                .filter(t -> t.getValue().getLevel() == 1)
                 .map(t -> t.getValue().toName())
                 .collect(Collectors.toList());
 
@@ -609,8 +610,7 @@ public class FamilyController {
     private List<Name> getSelectedOrphanes() {
 
         return orphanTreeView.getSelectionModel().getSelectedItems().stream()
-                .filter(t -> t.getValue().getStatus() != NodeStatus.FAMILY)
-                .filter(t -> t.getParent().equals(orphanRootItem))
+                .filter(t -> t.getValue().getLevel() == 1)
                 .map(t -> t.getValue().toName())
                 .collect(Collectors.toList());
     }
@@ -651,8 +651,7 @@ public class FamilyController {
         List<TreeItem<NameView>> selectedItems = new ArrayList<>(familyTreeView.getSelectionModel().getSelectedItems());
 
         selectedItems.stream()
-                .filter(t -> NodeStatus.isMember(t.getValue().getStatus()))
-                .filter(t -> !t.getParent().equals(familyRootItem))
+                .filter(t -> t.getValue().getLevel() == 2)
                 .forEach(t -> {
                     String name = t.getValue().getName();
                     String familyName = t.getValue().getFamilyName();
@@ -701,7 +700,7 @@ public class FamilyController {
                             bestCandidate = family.getMembers().stream().filter(n -> n.getName().equals(result.get())).findFirst().orElse(bestCandidate);
                         }
 
-                        nameView = new NameView(bestCandidate, bestCandidate.getName(), -1);
+                        nameView = new NameView(bestCandidate, bestCandidate.getName(), -1, nameView.getLevel());
                     }
                 }
 
@@ -720,7 +719,9 @@ public class FamilyController {
     public void findFamilyCandidatesButtonClick() {
 
         runInBackground(() -> {
-            List<TreeItem<NameView>> selectedItems = new ArrayList<>(orphanTreeView.getSelectionModel().getSelectedItems());
+            List<TreeItem<NameView>> selectedItems = orphanTreeView.getSelectionModel().getSelectedItems().stream()
+                    .filter(t -> t.getValue().getLevel() == 1)
+                    .collect(Collectors.toList());
 
             registerRunningTask("findFamilyCandidates");
 
@@ -736,12 +737,12 @@ public class FamilyController {
                 LOGGER.info("Finding family candidates for {}|{}", nameView.getName(), (i + 1) * 100.0 / selectedItems.size());
 
                 List<NameView> items = ListFilesa.calculateRelations(nameView.getName()).entrySet().stream()
-                        .map(e -> new NameView(e.getKey(), e.getValue())).collect(Collectors.toList());
+                        .map(e -> new NameView(e.getKey(), e.getValue(), 2)).collect(Collectors.toList());
 
                 nameView.setItems(items);
                 nameView.setJakkardStatus(items.get(0).getJakkardStatus());
 
-                selectedItems.get(i).setValue(nameView);
+                //selectedItems.get(i).setValue(nameView);
 
                 selectedItems.get(i).getChildren().setAll(items.stream().map(TreeItem::new).collect(Collectors.toList()));
 
@@ -751,10 +752,50 @@ public class FamilyController {
         }, this::updateTrees);
     }
 
-    public void addToThisFamilyClick() {
+    public void findFamilyCandidatesButtonClick2() {
 
         runInBackground(() -> {
-            List<TreeItem<NameView>> items = orphanTreeView.getSelectionModel().getSelectedItems().stream().filter(i -> NodeStatus.isFamily(i.getValue().getStatus())).collect(Collectors.toList());
+            List<TreeItem<NameView>> selectedItems = familyTreeView.getSelectionModel().getSelectedItems().stream()
+                    .filter(t -> t.getValue().getLevel() == 2)
+                    .collect(Collectors.toList());
+
+            registerRunningTask("findFamilyCandidates");
+
+            for (int i = 0; i < selectedItems.size(); i++) {
+
+                if (needToStop[0]) {
+                    LOGGER.info("Execution was interrupted!");
+                    needToStop[0] = false;
+                    break;
+                }
+
+                NameView nameView = selectedItems.get(i).getValue();
+                LOGGER.info("Finding family candidates for {}|{}", nameView.getName(), (i + 1) * 100.0 / selectedItems.size());
+
+                List<NameView> items = ListFilesa.calculateRelations(nameView.getName()).entrySet().stream()
+                        .map(e -> new NameView(e.getKey(), e.getValue(), 3)).collect(Collectors.toList());
+
+                nameView.setItems(items);
+
+                selectedItems.get(i).getChildren().setAll(items.stream().map(TreeItem::new).collect(Collectors.toList()));
+                selectedItems.get(i).setExpanded(true);
+            }
+
+            unRegisterRunningTask("findFamilyCandidates");
+        }, this::updateTrees);
+    }
+
+    public void addToThisFamilyClick() {
+        addToThisFamily(orphanTreeView.getSelectionModel().getSelectedItems().stream().filter(i -> NodeStatus.isFamily(i.getValue().getStatus())).collect(Collectors.toList()));
+    }
+
+    public void addToThisFamilyClick2() {
+        addToThisFamily(familyTreeView.getSelectionModel().getSelectedItems().stream().filter(i -> NodeStatus.isFamily(i.getValue().getStatus())).collect(Collectors.toList()));
+    }
+
+    private void addToThisFamily(List<TreeItem<NameView>> items) {
+
+        runInBackground(() -> {
 
             for (TreeItem<NameView> item : items) {
 
@@ -948,7 +989,7 @@ public class FamilyController {
 
         ObservableList<TreeItem<NameView>> selectedItems = familyTreeView.getSelectionModel().getSelectedItems();
 
-        if (selectedItems.size() == 1 && selectedItems.get(0).getValue().getStatus() == NodeStatus.FAMILY) {
+        if (selectedItems.size() == 1 && selectedItems.get(0).getValue().getLevel() == 1) {
 
             String familyName = selectedItems.get(0).getValue().getFamilyName();
 
@@ -986,7 +1027,7 @@ public class FamilyController {
 
         ObservableList<TreeItem<NameView>> selectedItems = familyTreeView.getSelectionModel().getSelectedItems();
 
-        List<String> toDelete = selectedItems.stream().filter(i -> i.getValue().getStatus() == NodeStatus.FAMILY).map(i -> i.getValue().getFamilyName()).collect(Collectors.toList());
+        List<String> toDelete = selectedItems.stream().filter(i -> i.getValue().getLevel() == 1).map(i -> i.getValue().getFamilyName()).collect(Collectors.toList());
 
         if (!toDelete.isEmpty()) {
             String text = toDelete.size() == 1 ? toDelete.get(0) : toDelete.size() + " families";
@@ -1025,13 +1066,13 @@ public class FamilyController {
 
         if (lastNameView != null && findRoot(lastNameView) == rootItem) {
 
-            String hideId = (NodeStatus.isFamily(lastNameView.getValue().getStatus())) ? "m" : "f";
+            String showId = (NodeStatus.isMember(lastNameView.getValue().getStatus())) ? "m" : (lastNameView.getValue().getLevel() == 3) ? "f2" : "f";
 
             contextMenu.getItems().forEach(item -> {
-                if (item.getUserData() != null && item.getUserData().equals(hideId)) {
-                    item.setVisible(false);
-                } else {
+                if (item.getUserData() == null || item.getUserData().equals(showId)) {
                     item.setVisible(true);
+                } else {
+                    item.setVisible(false);
                 }
             });
 
@@ -1138,7 +1179,7 @@ public class FamilyController {
 
         ObservableList<TreeItem<NameView>> selectedItems = familyTreeView.getSelectionModel().getSelectedItems();
 
-        if (selectedItems.size() == 1 && selectedItems.get(0).getValue().getStatus() == NodeStatus.FAMILY) {
+        if (selectedItems.size() == 1 && selectedItems.get(0).getValue().getLevel() == 1) {
 
             String familyName = selectedItems.get(0).getValue().getFamilyName();
 
@@ -1152,5 +1193,4 @@ public class FamilyController {
             showFamilies();
         }
     }
-
 }

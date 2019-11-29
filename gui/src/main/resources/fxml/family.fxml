@@ -113,9 +113,11 @@
                                             <MenuItem fx:id="renameFamilyMenuItem" mnemonicParsing="false" onAction="#renameFamilyMenuItemClick" text="Rename" userData="f" />
                                             <MenuItem fx:id="deleteFamilyMenuItem" mnemonicParsing="false" onAction="#deleteFamilyMenuItemClick" text="Delete" userData="f" />
                                             <MenuItem fx:id="kickAwayMenuItem" mnemonicParsing="false" onAction="#kickAwayButtonClick" text="Kick away" userData="m" />
+                                            <MenuItem fx:id="findFamilyCandidatesMenuItem" mnemonicParsing="false" onAction="#findFamilyCandidatesButtonClick2" text="Find better family candidate" userData="m" />
 
                                             <SeparatorMenuItem mnemonicParsing="false" userData="f" />
                                             <MenuItem fx:id="switchFamilyTypeMenuItem" mnemonicParsing="false" onAction="#switchFamilyTypeClick" text="Switch family type" userData="f" />
+                                            <MenuItem fx:id="addToThisFamilyMenuItem2" mnemonicParsing="false" onAction="#addToThisFamilyClick2" text="Add to this family" userData="f2" />
 
                                             <SeparatorMenuItem mnemonicParsing="false" />
                                             <MenuItem fx:id="copyFamilyNameItem" mnemonicParsing="false" onAction="#copyNameButtonClick" text="Copy name to clipboard" />

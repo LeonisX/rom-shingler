@@ -2,6 +2,8 @@
 
 TODO при стандартной упаковке паковать как есть. при продвинутой для плохих жаккартов искать семьи поудачнее.
 
+TODO setup family candidates count
+
 TODO expand/hide - for orphanes
 TODO update jakkard - recalculate red/black filter
 
