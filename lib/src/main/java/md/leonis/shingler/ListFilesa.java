@@ -221,7 +221,7 @@ public class ListFilesa {
 
                 Result result = new Result(name1, name2, jakkard);
                 if (log) {
-                    LOGGER.info("{}->{}: {}|{}", i, j, result, percent == -1 ? (i + 1.0) * 100 / family.size() : percent);
+                    LOGGER.info("{}->{}: {}|{}", i, j, result, percent == -1 ? (i + 2.0) * 100 / family.size() : percent);
                 }
 
                 family.addRelation(result);

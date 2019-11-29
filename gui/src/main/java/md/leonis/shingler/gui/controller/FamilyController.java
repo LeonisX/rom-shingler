@@ -580,14 +580,15 @@ public class FamilyController {
         List<String> choices = families.keySet().stream().sorted().collect(Collectors.toList());
         SmartChoiceDialog<String> dialog = stageManager.getChoiceDialog("Choice Dialog", "Look, a Choice Dialog", "Select family:", choices.get(0), choices);
 
-        Optional<String> result = dialog.showAndWait();
-        result.ifPresent(s -> runInBackground(() -> {
-            Family family = families.get(s);
-            family.getMembers().addAll(selectedNames);
-            ListFilesa.calculateRelations(family);
+        dialog.showAndWait().ifPresent(s ->
+                runInBackground(() -> {
+                    Family family = families.get(s);
+                    family.getMembers().addAll(selectedNames);
+                    ListFilesa.calculateRelations(family);
 
-            familiesModified.setValue(true);
-        }, this::showFamilies));
+                    familiesModified.setValue(true);
+                }, this::showFamilies)
+        );
     }
 
     public void newFamilyButtonClick() {

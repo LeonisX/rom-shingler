@@ -7,8 +7,6 @@ TODO calculate relations selectively (menu)
 
 TODO bug when delete family!!!
 
-TODO not 100% progress when add orphanes to existing family
-
 Export families to other precisions
 
 Find in families
