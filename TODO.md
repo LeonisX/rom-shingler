@@ -2,8 +2,6 @@
 
 TODO при стандартной упаковке паковать как есть. при продвинутой для плохих жаккартов искать семьи поудачнее.
 
-TODO update jakkard - recalculate red/black filter
-
 TODO break calculate relations
 TODO calculate relations selectively (menu)
 
@@ -19,6 +17,8 @@ TODO manage families - in bg + window (please wait)
 
 TODO sort by children count
 
+TODO when merge families - delete from treeview 2 families, not only one
+
 TODO collections list - update on key pressing
 
 TODO process all TODOs in code
@@ -31,6 +31,5 @@ TODO new family, ... -> show that need calculate relations!!!
   
   * Images for families
 
-* Display all Main1024a activity in UI
 * Disable logging
 * Clear logs

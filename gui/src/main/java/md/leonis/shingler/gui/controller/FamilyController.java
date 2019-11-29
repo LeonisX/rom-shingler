@@ -434,10 +434,14 @@ public class FamilyController {
     public void jakkardTextFieldKeyReleased(KeyEvent event) {
         try {
             TextField source = (TextField) event.getSource();
-            jakkard = Double.parseDouble(source.getText());
+            double newJakkard = Double.parseDouble(source.getText());
             familyRelationsTreeView.refresh();
+
+            if (newJakkard != jakkard) {
+                jakkard = newJakkard;
+                checkBoxAction();
+            }
         } catch (NumberFormatException ignore) {
-            jakkard = 0;
         }
     }
 
