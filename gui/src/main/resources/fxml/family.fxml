@@ -105,6 +105,10 @@
                      <Separator orientation="VERTICAL" prefHeight="200.0" />
                      <Label text="# candidates:" />
                      <TextField fx:id="candidatesTextField" onAction="#candidatesTextFieldAction" prefHeight="25.0" prefWidth="37.0" />
+
+                            <Separator orientation="VERTICAL" prefHeight="200.0" />
+                            <Button fx:id="expandAllButton3" mnemonicParsing="false" onAction="#expandAllButtonClick3" text="Expand all" />
+                            <Button fx:id="collapseAllButton3" mnemonicParsing="false" onAction="#collapseAllButtonClick3" text="Collapse all" />
                         </HBox>
                     </top>
                     <center>

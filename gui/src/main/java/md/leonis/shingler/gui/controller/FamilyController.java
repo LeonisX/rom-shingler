@@ -127,6 +127,8 @@ public class FamilyController {
     public MenuItem findFamilyCandidatesMenuItem;
     public MenuItem addToThisFamilyMenuItem2;
     public TextField candidatesTextField;
+    public Button expandAllButton3;
+    public Button collapseAllButton3;
     /*public Button saveFamiliesButtonS;
     public Button saveFamiliesButtonJ;*/
 
@@ -449,6 +451,24 @@ public class FamilyController {
 
     public void collapseAllButtonClick() {
         familyRootItem.getChildren().forEach(item -> {
+            if (item != null && !item.isLeaf()) {
+                item.setExpanded(false);
+            }
+        });
+    }
+
+    //TODO unify
+    public void expandAllButtonClick3() {
+        orphanRootItem.getChildren().forEach(item -> {
+            if (item != null && !item.isLeaf()) {
+                //TODO unify
+                item.setExpanded(true);
+            }
+        });
+    }
+
+    public void collapseAllButtonClick3() {
+        orphanRootItem.getChildren().forEach(item -> {
             if (item != null && !item.isLeaf()) {
                 item.setExpanded(false);
             }
