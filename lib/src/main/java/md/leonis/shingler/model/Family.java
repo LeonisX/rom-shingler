@@ -189,4 +189,19 @@ public class Family implements Serializable, Cloneable {
         Name name = members.get(index);
         return name.getJakkardStatus() / (members.size() - 1);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Family family = (Family) o;
+        return Objects.equals(name, family.name) &&
+                type == family.type;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, type);
+    }
+
 }

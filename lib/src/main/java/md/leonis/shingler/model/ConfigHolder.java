@@ -110,5 +110,6 @@ public class ConfigHolder {
         }
     }
 
-    public static int candidates = 8;
+    public static int candidates = 12;
+    public static int showCandidates = 8;
 }

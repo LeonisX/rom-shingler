@@ -183,7 +183,7 @@ public class FamilyController {
             showFamilies();
         });
 
-        candidatesTextField.setText(Integer.toString(candidates));
+        candidatesTextField.setText(Integer.toString(showCandidates));
 
         searchMap.put(familyTreeView, "");
         searchMap.put(orphanTreeView, "");
@@ -764,7 +764,7 @@ public class FamilyController {
                 NameView nameView = selectedItems.get(i).getValue();
                 LOGGER.info("Finding family candidates for {}|{}", nameView.getName(), (i + 1) * 100.0 / selectedItems.size());
 
-                List<NameView> items = ListFilesa.calculateRelations(nameView.getName()).entrySet().stream()
+                List<NameView> items = ListFilesa.calculateRelations(nameView.getName()).entrySet().stream().limit(showCandidates)
                         .map(e -> new NameView(e.getKey(), e.getValue(), 2)).collect(Collectors.toList());
 
                 nameView.setItems(items);
@@ -773,7 +773,6 @@ public class FamilyController {
                 //selectedItems.get(i).setValue(nameView);
 
                 selectedItems.get(i).getChildren().setAll(items.stream().map(TreeItem::new).collect(Collectors.toList()));
-
             }
 
             unRegisterRunningTask("findFamilyCandidates");
@@ -800,7 +799,7 @@ public class FamilyController {
                 NameView nameView = selectedItems.get(i).getValue();
                 LOGGER.info("Finding family candidates for {}|{}", nameView.getName(), (i + 1) * 100.0 / selectedItems.size());
 
-                List<NameView> items = ListFilesa.calculateRelations(nameView.getName()).entrySet().stream()
+                List<NameView> items = ListFilesa.calculateRelations(nameView.getName()).entrySet().stream().limit(showCandidates)
                         .map(e -> new NameView(e.getKey(), e.getValue(), 3)).collect(Collectors.toList());
 
                 nameView.setItems(items);
@@ -984,28 +983,36 @@ public class FamilyController {
 
         if (familyRelationsTreeView.getSelectionModel().getSelectedItems().size() == 1) {
 
-            TreeItem<NameView> mainFamilyTreeItem = familyRelationsTreeView.getSelectionModel().getSelectedItem();
-            TreeItem<NameView> newFamilyMembersTreeItem = mainFamilyTreeItem.getParent();
+            runInBackground(() -> {
+                TreeItem<NameView> mainFamilyTreeItem = familyRelationsTreeView.getSelectionModel().getSelectedItem();
+                TreeItem<NameView> newFamilyMembersTreeItem = mainFamilyTreeItem.getParent();
 
-            // move all members
-            Family mainFamily = families.get(mainFamilyTreeItem.getValue().getFamilyName());
-            Family newFamilyMembers = families.get(newFamilyMembersTreeItem.getValue().getFamilyName());
-            mainFamily.getMembers().addAll(newFamilyMembers.getMembers());
+                // move all members
+                Family mainFamily = families.get(mainFamilyTreeItem.getValue().getFamilyName());
+                Family newFamilyMembers = families.get(newFamilyMembersTreeItem.getValue().getFamilyName());
+                mainFamily.getMembers().addAll(newFamilyMembers.getMembers());
 
-            // delete empty family
-            families.remove(newFamilyMembersTreeItem.getValue().getFamilyName());
-            familyRelations.remove(newFamilyMembers);
+                // delete empty family
+                families.remove(newFamilyMembersTreeItem.getValue().getFamilyName());
+                familyRelations.remove(newFamilyMembers);
 
-            // calculate relations (main family), select mother
-            ListFilesa.calculateRelations(mainFamily, true);
+                // calculate relations (main family), select mother
+                ListFilesa.calculateRelations(mainFamily, true);
 
-            // recalculate relations for main family
-            ListFilesa.calculateRelations(mainFamily.getMother().getName(), mainFamily.getName(), true);
+                // recalculate relations for main family
+                ListFilesa.calculateRelations(mainFamily.getMother().getName(), mainFamily.getName(), true);
 
-            familiesModified.setValue(true);
-            familyRelationsModified.setValue(true);
+                // delete old from all relations
+                int i = 0;
+                for (Map.Entry<Family, Map<Family, Double>> m : familyRelations.entrySet()) {
+                    LOGGER.info("Update relations for {}|{}", m.getKey().getName(), (i + 2.0) * 100 / familyRelations.size());
+                    m.getValue().remove(newFamilyMembers);
+                    i++;
+                }
 
-            showFamilies();
+                familiesModified.setValue(true);
+                familyRelationsModified.setValue(true);
+            }, this::showFamilies);
         }
     }
 
@@ -1205,7 +1212,7 @@ public class FamilyController {
 
     public void candidatesTextFieldAction() {
         try {
-            candidates = Integer.parseInt(candidatesTextField.getText());
+            showCandidates = Integer.parseInt(candidatesTextField.getText());
         } catch (Exception ignored) {
         }
     }
