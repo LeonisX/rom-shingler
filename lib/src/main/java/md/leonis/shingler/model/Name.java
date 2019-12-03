@@ -3,7 +3,6 @@ package md.leonis.shingler.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 
-import java.io.File;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -12,7 +11,7 @@ public class Name implements Serializable {
 
     private static final long serialVersionUID = 292207904602980582L;
 
-    private File file;
+    private String name;
     private boolean done;
     private int index = 100;
 
@@ -22,71 +21,71 @@ public class Name implements Serializable {
         // For Jackson
     }
 
-    public Name(File file, boolean done, double jakkardStatus) {
-        this(file, done);
+    public Name(String name, boolean done, double jakkardStatus) {
+        this(name, done);
         this.jakkardStatus = jakkardStatus;
     }
 
-    public Name(File file, boolean done) {
-        this.file = file;
+    public Name(String name, boolean done) {
+        this.name = name;
         this.done = done;
 
-        if (file.getName().contains("(U)")) {
+        if (name.contains("(U)")) {
             index += 100;
         }
-        if (file.getName().contains("(W)")) {
+        if (name.contains("(W)")) {
             index += 99;
         }
-        if (file.getName().contains("(E)")) {
+        if (name.contains("(E)")) {
             index += 80;
         }
-        if (file.getName().contains("(F)")) {
+        if (name.contains("(F)")) {
             index += 70;
         }
-        if (file.getName().contains("(G)")) {
+        if (name.contains("(G)")) {
             index += 70;
         }
-        if (file.getName().contains("(J)")) {
+        if (name.contains("(J)")) {
             index += 60;
         }
-        if (file.getName().contains("[b")) {
+        if (name.contains("[b")) {
             index -= 50;
         }
-        if (file.getName().contains("[a")) {
+        if (name.contains("[a")) {
             index -= 5;
         }
-        if (file.getName().contains("[h")) {
+        if (name.contains("[h")) {
             index -= 20;
         }
-        if (file.getName().contains("[t")) {
+        if (name.contains("[t")) {
             index -= 10;
         }
-        if (file.getName().contains("[p")) {
+        if (name.contains("[p")) {
             index -= 10;
         }
-        if (file.getName().contains("[f")) {
+        if (name.contains("[f")) {
             index -= 10;
         }
-        if (file.getName().contains("[T")) {
+        if (name.contains("[T")) {
             index -= 10;
         }
-        if (file.getName().contains("[!]")) {
+        if (name.contains("[!]")) {
             index += 10;
         }
-        if (file.getName().contains("(PD)")) {
+        if (name.contains("(PD)")) {
             index -= 45;
         }
-        if (file.getName().contains("(Hack") || file.getName().contains("Hack)")) {
+        if (name.contains("(Hack") || name.contains("Hack)")) {
             index -= 45;
         }
-        if (file.getName().contains("+")) {
+        if (name.contains("+")) {
             index -= 2;
         }
     }
 
     @Override
     public String toString() {
-        return file.getName() + ": " + jakkardStatus;
+        return name + ": " + jakkardStatus;
     }
 
     public int getIndex() {
@@ -97,22 +96,17 @@ public class Name implements Serializable {
         this.index = index;
     }
 
-    public File getFile() {
-        return file;
-    }
-
-    public void setFile(File file) {
-        this.file = file;
-    }
-
-    @JsonIgnore
     public String getName() {
-        return file.getName();
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     @JsonIgnore
     public String getCleanName() {
-        String result = file.getName();
+        String result = name;
         int braceIndex = result.indexOf("(");
         if (braceIndex > 0) {
             result = result.substring(0, braceIndex);
@@ -152,11 +146,11 @@ public class Name implements Serializable {
         return done == name.done &&
                 index == name.index &&
                 Double.compare(name.jakkardStatus, jakkardStatus) == 0 &&
-                Objects.equals(file.getName(), name.file.getName());
+                Objects.equals(name.name, this.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(file.getName(), done, index, jakkardStatus);
+        return Objects.hash(name, done, index, jakkardStatus);
     }
 }

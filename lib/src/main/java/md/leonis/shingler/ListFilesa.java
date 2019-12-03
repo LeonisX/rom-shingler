@@ -63,7 +63,7 @@ public class ListFilesa {
         orphanedNames.removeAll(familyNames);
 
         //List<Name> names = files.stream().map(f -> new Name(f.toFile(), false)).collect(Collectors.toList());
-        List<Name> names = files.stream().filter(f -> orphanedNames.contains(f.getFileName().toString())).map(f -> new Name(f.toFile(), false)).collect(Collectors.toList());
+        List<Name> names = files.stream().filter(f -> orphanedNames.contains(f.getFileName().toString())).map(f -> new Name(f.getFileName().toString(), false)).collect(Collectors.toList());
 
         File familyFile = fullFamiliesPath().toFile();
 
@@ -106,7 +106,7 @@ public class ListFilesa {
         } else {
             LOGGER.info("Generating families based on GoodMerged source...");
             Map<String, List<Name>> namesList = new HashMap<>();
-            map.forEach((key, value) -> namesList.put(key.getName(), value.stream().map(v -> new Name(new File(v), false)).collect(Collectors.toList())));
+            map.forEach((key, value) -> namesList.put(key.getName(), value.stream().map(v -> new Name(v, false)).collect(Collectors.toList())));
 
             families = namesList.entrySet().stream()/*.filter(e -> e.getValue().size() != 1)*/
                     .collect(Collectors.toMap(Map.Entry::getKey, e -> new Family(e.getKey(), e.getValue(), FamilyType.FAMILY)));

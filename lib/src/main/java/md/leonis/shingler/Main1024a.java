@@ -60,7 +60,7 @@ public class Main1024a {
 
         loadSamplesInCache(files);
 
-        List<Name> names = files.stream().map(f -> new Name(f, false)).collect(Collectors.toList());
+        List<Name> names = files.stream().map(f -> new Name(f.getName(), false)).collect(Collectors.toList());
 
         //TODO revert 1 or 16, 1 is the better solution
         //generateFamilies(names, 64, 20); // generate families

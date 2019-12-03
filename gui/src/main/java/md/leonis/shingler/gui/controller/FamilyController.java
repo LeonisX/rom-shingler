@@ -135,7 +135,6 @@ public class FamilyController {
     public Button collapseAllButton3;
     public Button compressButton;
     public Button ultraCompressButton;
-    public Button fixDirsButton;
     /*public Button saveFamiliesButtonS;
     public Button saveFamiliesButtonJ;*/
 
@@ -1278,19 +1277,23 @@ public class FamilyController {
                                 //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", "-mmt=off", '"' + name + ".7z\"")
 
                                 // 7z a -mx9 -m0=LZMA -md1536m -mfb273 -ms8g <archive_name> [<file_names>...]
-                                System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", '"' + name + ".7z\"")
+                                //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", '"' + name + ".7z\"")
 
                                 // 7z a -mx9 -mmt=off <archive_name> [<file_names>...]
+                                //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-mmt=off", '"' + name + ".7z\"")
+
                                 // 7z a -mx9 -mmt2 <archive_name> [<file_names>...]
+                                System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-mmt2", '"' + name + ".7z\"")
+
                                 // 7z a -mx9 -mmt4 <archive_name> [<file_names>...]
                                 // 7z a -mx9 <archive_name> [<file_names>...]
                         );
                         if (members.size() > 50) {
                             File tmp = File.createTempFile("shg", "7z");
-                            Files.write(tmp.toPath(), members.stream().map(n -> n.getFile().getAbsolutePath()).collect(Collectors.toList()), Charset.defaultCharset());
+                            Files.write(tmp.toPath(), members.stream().map(n -> romsCollection.getRomsPath().resolve(n.getName()).toString()).collect(Collectors.toList()), Charset.defaultCharset());
                             args.add("@" + tmp.getAbsolutePath());
                         } else {
-                            args.addAll(members.stream().map(n -> '"' + n.getFile().getAbsolutePath() + '"').collect(Collectors.toList()));
+                            args.addAll(members.stream().map(n -> '"' + romsCollection.getRomsPath().resolve(n.getName()).toString() + '"').collect(Collectors.toList()));
                         }
 
                         processBuilder.command(args);
@@ -1326,13 +1329,5 @@ public class FamilyController {
 
     //TODO find best family if jakkard < ???
     public void ultraCompressButtonClick() {
-    }
-
-    public void fixDirsButtonClick() {
-
-        LOGGER.info("Fixing roms paths...");
-        families.values().forEach(f -> f.getMembers().forEach(m -> m.setFile(romsCollection.getRomsPath().resolve(m.getFile().getName()).toFile())));
-
-        familiesModified.setValue(true);
     }
 }

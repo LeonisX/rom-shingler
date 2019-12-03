@@ -6,7 +6,6 @@ import md.leonis.shingler.model.Family;
 import md.leonis.shingler.model.FamilyType;
 import md.leonis.shingler.model.Name;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -16,10 +15,8 @@ import java.util.Map;
 public
 class NameView {
 
-    public static NameView EMPTY = new NameView(null, "", "", 0.0D, NodeStatus.FAMILY, new ArrayList<>(), null, 0);
+    public static NameView EMPTY = new NameView("", "", 0.0D, NodeStatus.FAMILY, new ArrayList<>(), null, 0);
 
-    //TODO Need???
-    private File file;
     private String name;
     private String familyName;
     private double jakkardStatus;
@@ -33,8 +30,7 @@ class NameView {
 
     // Name to NameView
     public NameView(Name name, String familyName, double jakkardStatus, int level) {
-        this.file = name.getFile();
-        this.name = this.file.getName();
+        this.name = name.getName();
         this.familyName = familyName;
         this.jakkardStatus = jakkardStatus;
         this.status = NodeStatus.MEMBER;
@@ -44,7 +40,6 @@ class NameView {
 
     // String (orphaned Name) to NameView
     public NameView(String title, int level) {
-        this.file = new File(title);
         this.name = title;
         this.familyName = null;
         this.jakkardStatus = 0;
@@ -55,7 +50,6 @@ class NameView {
 
     // Family to NameView
     public NameView(Map.Entry<String, Family> entry, List<NameView> views, int level) {
-        this.file = null;
         this.name = entry.getKey();
         this.familyName = entry.getKey();
         this.jakkardStatus = entry.getValue().getMembers().size();
@@ -67,7 +61,6 @@ class NameView {
 
     // Family + Jakkard to NameView
     public NameView(Family family, double jakkardStatus, int level) {
-        this.file = null;
         this.name = family.getName();
         this.familyName = family.getName();
         this.jakkardStatus = jakkardStatus;
@@ -78,7 +71,7 @@ class NameView {
     }
 
     public Name toName() {
-        return new Name(file, false, jakkardStatus);
+        return new Name(name, false, jakkardStatus);
     }
 
     @Override
