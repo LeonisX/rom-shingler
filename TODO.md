@@ -2,9 +2,7 @@
 
 TODO при стандартной упаковке паковать как есть. при продвинутой для плохих жаккартов искать семьи поудачнее.
 
-TODO families with sha1 or other id
-
-TODO bug when delete family!!!
+TODO families with sha1 or other id!!!
 
 Export families to other precisions
 

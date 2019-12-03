@@ -1080,8 +1080,10 @@ public class FamilyController {
                 if (result == ButtonType.OK) {
                     toDelete.forEach(familyName -> {
                         families.remove(familyName);
-                        familyRelations.entrySet().removeIf(e -> toDelete.contains(e.getKey().getName()));
-                        familyRelations.forEach((key, value) -> value.entrySet().removeIf(e -> toDelete.contains(e.getKey().getName())));
+                        if (familyRelations != null) {
+                            familyRelations.entrySet().removeIf(e -> toDelete.contains(e.getKey().getName()));
+                            familyRelations.forEach((key, value) -> value.entrySet().removeIf(e -> toDelete.contains(e.getKey().getName())));
+                        }
                     });
 
                     familiesModified.setValue(true);
