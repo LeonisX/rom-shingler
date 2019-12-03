@@ -177,6 +177,10 @@
                             <Button fx:id="findRelativesButton" mnemonicParsing="false" onAction="#findRelativesButtonClick" text="Find relatives" />
                             <Button fx:id="findAgainRelativesButton" mnemonicParsing="false" onAction="#findAgainRelativesButtonClick" text="Find relatives again" />
                             <Separator orientation="VERTICAL" prefHeight="200.0" />
+                     <Button fx:id="fixDirsButton" mnemonicParsing="false" onAction="#fixDirsButtonClick" text="Fix dirs" />
+                            <Button fx:id="compressButton" mnemonicParsing="false" onAction="#compressButtonClick" text="Compress" />
+                            <Button fx:id="ultraCompressButton" mnemonicParsing="false" onAction="#ultraCompressButtonClick" text="Ultra Compression" />
+                            <Separator orientation="VERTICAL" prefHeight="200.0" />
                             <Label text="Order by:" />
                             <ToggleButton fx:id="orderByTitleButton2" mnemonicParsing="false" onAction="#orderButtonClick" selected="true" text="Title">
                                 <toggleGroup>

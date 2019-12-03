@@ -34,8 +34,12 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
 
 import java.awt.*;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.*;
@@ -129,6 +133,9 @@ public class FamilyController {
     public TextField candidatesTextField;
     public Button expandAllButton3;
     public Button collapseAllButton3;
+    public Button compressButton;
+    public Button ultraCompressButton;
+    public Button fixDirsButton;
     /*public Button saveFamiliesButtonS;
     public Button saveFamiliesButtonJ;*/
 
@@ -1240,5 +1247,89 @@ public class FamilyController {
 
             showFamilies();
         }
+    }
+
+    // 7z a -mx9 -m0=LZMA -md1536m -mfb273 -ms8g -mmt=off <archive_name> [<file_names>...]
+    // 7z a -mx9 -m0=LZMA -md1536m -mfb273 -ms8g <archive_name> [<file_names>...]
+    // 7z a -mx9 -mmt=off <archive_name> [<file_names>...]
+    // 7z a -mx9 -mmt2 <archive_name> [<file_names>...]
+    // 7z a -mx9 -mmt4 <archive_name> [<file_names>...]
+    // 7z a -mx9 <archive_name> [<file_names>...]
+    public void compressButtonClick() {
+
+        runInBackground(() -> {
+            int i = 0;
+            for (Map.Entry<String, Family> entry : families.entrySet()) {
+                String name = entry.getKey();
+                Family family = entry.getValue();
+                List<Name> members = family.getMembers();
+
+                if (needToStop[0]) {
+                    LOGGER.info("Execution was interrupted!");
+                    needToStop[0] = false;
+                    break;
+                }
+
+                LOGGER.info("Compressing: {} [{}]|{}", name, members.size(), (i++ + 1) * 100.0 / families.size());
+
+                boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
+                ProcessBuilder processBuilder = new ProcessBuilder();
+
+                List<String> args = null;
+
+                try {
+                    if (isWindows) {
+                        args = new ArrayList<>(Arrays.asList(
+                                System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", "-mmt=off", '"' + name + ".7z\"")
+                        );
+                        if (members.size() > 50) {
+                            File tmp = File.createTempFile("shg", "7z");
+                            Files.write(tmp.toPath(), members.stream().map(n -> n.getFile().getAbsolutePath()).collect(Collectors.toList()), Charset.defaultCharset());
+                            args.add("@" + tmp.getAbsolutePath());
+                        } else {
+                            args.addAll(members.stream().map(n -> '"' + n.getFile().getAbsolutePath() + '"').collect(Collectors.toList()));
+                        }
+
+                        processBuilder.command(args);
+                    } else {
+                        //TODO test
+                        processBuilder.command("7z", "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", "-mmt=off", "archive.7z", "", "", "", "");
+                    }
+
+                    Process proc = processBuilder.start();
+                    BufferedReader errBR = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
+                    BufferedReader outBR = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+
+                    int code = proc.waitFor();
+
+                    switch (code) {
+                        case 0:
+                            break;
+                        default:
+                            LOGGER.warn("Exit code: {}", code);
+                            LOGGER.warn("Out message: {}", errBR.lines().collect(Collectors.joining("\n")));
+                            LOGGER.warn("Error message: {}", outBR.lines().collect(Collectors.joining("\n")));
+                            System.out.println(args);
+                            break;
+                    }
+
+                } catch (Exception ex) {
+                    LOGGER.error("Compression error", ex);
+                }
+
+            }
+        });
+    }
+
+    //TODO find best family if jakkard < ???
+    public void ultraCompressButtonClick() {
+    }
+
+    public void fixDirsButtonClick() {
+
+        LOGGER.info("Fixing roms paths...");
+        families.values().forEach(f -> f.getMembers().forEach(m -> m.setFile(romsCollection.getRomsPath().resolve(m.getFile().getName()).toFile())));
+
+        familiesModified.setValue(true);
     }
 }
