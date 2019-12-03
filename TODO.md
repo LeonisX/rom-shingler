@@ -2,8 +2,6 @@
 
 TODO при стандартной упаковке паковать как есть. при продвинутой для плохих жаккартов искать семьи поудачнее.
 
-TODO family relations -> JSON - too hard. need to combine with families
-
 TODO families with sha1 or other id
 
 TODO break calculate relations

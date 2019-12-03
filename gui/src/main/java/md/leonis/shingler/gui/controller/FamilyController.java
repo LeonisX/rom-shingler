@@ -947,7 +947,7 @@ public class FamilyController {
 
         if (familyRelationsFile.exists()) {
             LOGGER.info(String.format("\nReading family relations from file %s...", familyRelationsFile));
-            familyRelations = IOUtils.loadFamilyRelations(familyRelationsFile);
+            familyRelations = IOUtils.loadFamilyRelationsAsJson(familyRelationsFile);
         }
         return familyRelations;
     }
@@ -1185,7 +1185,7 @@ public class FamilyController {
     public void saveRelationsButtonClick() {
         LOGGER.info("Saving family relations...");
         IOUtils.createDirectories(workFamiliesPath());
-        stageManager.showWaitAlertAndRun("Saving family relations", () -> IOUtils.serialize(fullFamilyRelationsPath().toFile(), familyRelations));
+        stageManager.showWaitAlertAndRun("Saving family relations", () -> IOUtils.serializeFamilyRelationsAsJson(fullFamilyRelationsPath().toFile(), familyRelations));
         familyRelationsModified.setValue(false);
     }
 

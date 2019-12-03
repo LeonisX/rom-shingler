@@ -1,5 +1,6 @@
 package md.leonis.shingler.utils;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import md.leonis.shingler.model.*;
 import md.leonis.shingler.model.dto.FamiliesDto;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static md.leonis.shingler.model.ConfigHolder.families;
 import static md.leonis.shingler.utils.BinaryUtils.*;
 
 public class IOUtils {
@@ -51,13 +53,7 @@ public class IOUtils {
     @Measured
     public static void serialize(File file, Object object) {
 
-        if (file.exists()) {
-            File backupFile = new File(file.getAbsolutePath() + ".bak");
-            if (backupFile.exists()) {
-                backupFile.delete();
-            }
-            file.renameTo(backupFile);
-        }
+        backupFile(file);
 
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
             oos.writeObject(object);
@@ -152,13 +148,7 @@ public class IOUtils {
     @Measured
     public static void serializeAsJson(File file, Object object) {
 
-        if (file.exists()) {
-            File backupFile = new File(file.getAbsolutePath() + ".bak");
-            if (backupFile.exists()) {
-                backupFile.delete();
-            }
-            file.renameTo(backupFile);
-        }
+        backupFile(file);
 
         try {
             new ObjectMapper().writeValue(file, object);
@@ -170,13 +160,7 @@ public class IOUtils {
     @Measured
     public static void serializeFamiliesAsJson(File file, Map<String, Family> families) {
 
-        if (file.exists()) {
-            File backupFile = new File(file.getAbsolutePath() + ".bak");
-            if (backupFile.exists()) {
-                backupFile.delete();
-            }
-            file.renameTo(backupFile);
-        }
+        backupFile(file);
 
         try {
             Map<Integer, Name> names = new HashMap<>();
@@ -204,6 +188,36 @@ public class IOUtils {
     }
 
     @Measured
+    public static void serializeFamilyRelationsAsJson(File file, Map<Family, Map<Family, Double>> familyRelations) {
+
+        backupFile(file);
+
+        try {
+            Map<String, Map<String, Double>> model = new LinkedHashMap<>();
+
+            familyRelations.forEach((key1, value1) -> {
+                Map<String, Double> children = new LinkedHashMap<>();
+                value1.forEach((key, value) -> children.put(key.getName(), value));
+                model.put(key1.getName(), children);
+            });
+
+            new ObjectMapper().writeValue(file, model);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void backupFile(File file) {
+        if (file.exists()) {
+            File backupFile = new File(file.getAbsolutePath() + ".bak");
+            if (backupFile.exists()) {
+                backupFile.delete();
+            }
+            file.renameTo(backupFile);
+        }
+    }
+
+    @Measured
     public static Map<String, Family> loadFamiliesAsJson(File file) {
 
         try {
@@ -215,6 +229,35 @@ public class IOUtils {
                 return new Family(f.getName(), members, names.get(f.getMother()), relations, new HashMap<>(), new HashSet<>(), f.isSkip(), f.getType());
 
             }).collect(Collectors.toMap(Family::getName, Function.identity()));
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Measured
+    public static Map<Family, Map<Family, Double>> loadFamilyRelationsAsJson(File file) {
+
+        try {
+            TypeReference<LinkedHashMap<String, LinkedHashMap<String, Double>>> typeRef = new TypeReference<LinkedHashMap<String, LinkedHashMap<String, Double>>>() {};
+            LinkedHashMap<String, LinkedHashMap<String, Double>> model = new ObjectMapper().readValue(file, typeRef);
+
+            Map<Family, Map<Family, Double>> result = new LinkedHashMap<>();
+
+            model.forEach((key1, value1) -> {
+                LinkedHashMap<Family, Double> children = new LinkedHashMap<>();
+                value1.forEach((key, value) -> {
+                    Family family = families.get(key);
+                    if (family != null) {
+                        children.put(families.get(key), value);
+                    } else {
+                        LOGGER.warn("Unknown family: {}", key1);
+                    }
+                });
+                result.put(families.get(key1), children);
+            });
+
+            return result;
 
         } catch (IOException e) {
             throw new RuntimeException(e);
