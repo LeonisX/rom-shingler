@@ -548,10 +548,12 @@ public class FamilyController {
         }, this::showFamilies);
     }
 
-
     public void reCalculateRelationsButtonClick() {
 
-        families.values().forEach(f -> f.getRelations().clear());
+        families.values().forEach(f -> {
+            f.getRelations().clear();
+            f.getMembers().forEach(m -> m.setJakkardStatus(0));
+        });
         calculateRelationsButtonClick();
     }
 
@@ -997,6 +999,8 @@ public class FamilyController {
                 familyRelations.remove(newFamilyMembers);
 
                 // calculate relations (main family), select mother
+                mainFamily.getRelations().clear();
+                mainFamily.getMembers().forEach(m -> m.setJakkardStatus(0));
                 ListFilesa.calculateRelations(mainFamily, true);
 
                 // recalculate relations for main family

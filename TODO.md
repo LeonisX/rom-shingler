@@ -4,9 +4,6 @@ TODO при стандартной упаковке паковать как ес
 
 TODO families with sha1 or other id
 
-TODO break calculate relations
-TODO calculate relations selectively (menu)
-
 TODO bug when delete family!!!
 
 Export families to other precisions

@@ -159,8 +159,9 @@ public class ListFilesa {
 
             if (family.getType() == FamilyType.FAMILY) {
                 int relationsCount = family.getMembers().size() * (family.getMembers().size() - 1) / 2;
+                boolean allJakkard = family.getMembers().stream().anyMatch(m -> m.getJakkardStatus() > 0);
                 double percent = (k + 1) * 100.0 / families.size();
-                if (family.getRelations().size() == relationsCount) { // x * (x - 1) / 2
+                if ((family.getRelations().size() == relationsCount && allJakkard) || family.getMembers().size() == 0) { // x * (x - 1) / 2
                     LOGGER.debug("Skipping: {}... [{}]|{}", family.getName(), family.size(), percent);
                 } else {
                     LOGGER.info("Comparing: {}... [{}]|{}", family.getName(), family.size(), percent);
@@ -198,6 +199,14 @@ public class ListFilesa {
         Platform platform = platformsByCpu.get(ConfigHolder.platform);
 
         for (int i = 0; i < family.size() - 1; i++) {
+
+            if (needToStop[0]) {
+                LOGGER.info("Execution was interrupted!");
+                if (percent == -1) {
+                    needToStop[0] = false;
+                }
+                break;
+            }
 
             Name name1 = family.get(i);
 
