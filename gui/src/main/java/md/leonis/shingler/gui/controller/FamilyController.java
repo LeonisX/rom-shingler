@@ -1249,17 +1249,11 @@ public class FamilyController {
         }
     }
 
-    // 7z a -mx9 -m0=LZMA -md1536m -mfb273 -ms8g -mmt=off <archive_name> [<file_names>...]
-    // 7z a -mx9 -m0=LZMA -md1536m -mfb273 -ms8g <archive_name> [<file_names>...]
-    // 7z a -mx9 -mmt=off <archive_name> [<file_names>...]
-    // 7z a -mx9 -mmt2 <archive_name> [<file_names>...]
-    // 7z a -mx9 -mmt4 <archive_name> [<file_names>...]
-    // 7z a -mx9 <archive_name> [<file_names>...]
     public void compressButtonClick() {
 
         runInBackground(() -> {
             int i = 0;
-            for (Map.Entry<String, Family> entry : families.entrySet()) {
+            for (Map.Entry<String, Family> entry : families.entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).collect(Collectors.toList())) {
                 String name = entry.getKey();
                 Family family = entry.getValue();
                 List<Name> members = family.getMembers();
@@ -1280,7 +1274,16 @@ public class FamilyController {
                 try {
                     if (isWindows) {
                         args = new ArrayList<>(Arrays.asList(
-                                System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", "-mmt=off", '"' + name + ".7z\"")
+                                // 7z a -mx9 -m0=LZMA -md1536m -mfb273 -ms8g -mmt=off <archive_name> [<file_names>...]
+                                //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", "-mmt=off", '"' + name + ".7z\"")
+
+                                // 7z a -mx9 -m0=LZMA -md1536m -mfb273 -ms8g <archive_name> [<file_names>...]
+                                System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", '"' + name + ".7z\"")
+
+                                // 7z a -mx9 -mmt=off <archive_name> [<file_names>...]
+                                // 7z a -mx9 -mmt2 <archive_name> [<file_names>...]
+                                // 7z a -mx9 -mmt4 <archive_name> [<file_names>...]
+                                // 7z a -mx9 <archive_name> [<file_names>...]
                         );
                         if (members.size() > 50) {
                             File tmp = File.createTempFile("shg", "7z");

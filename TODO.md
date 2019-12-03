@@ -1,5 +1,7 @@
 # TODO list
 
+TODO name - remove file, use name
+
 TODO при стандартной упаковке паковать как есть. при продвинутой для плохих жаккартов искать семьи поудачнее.
 
 TODO families with sha1 or other id!!!
