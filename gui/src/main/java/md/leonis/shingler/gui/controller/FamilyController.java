@@ -728,17 +728,17 @@ public class FamilyController {
                         Optional<String> result = dialog.showAndWait();
                         if (result.isPresent()) {
                             bestCandidate = family.getMembers().stream().filter(n -> n.getName().equals(result.get())).findFirst().orElse(bestCandidate);
+
+                            nameView = new NameView(bestCandidate, bestCandidate.getName(), -1, nameView.getLevel());
+
+                            if (romsCollection.getType() == CollectionType.PLAIN) {
+                                Desktop.getDesktop().open(romsCollection.getRomsPath().resolve(nameView.getName()).toFile());
+                            } else {
+                                Path path = IOUtils.extractFromArchive(romsCollection.getRomsPath().resolve(nameView.getFamilyName()), nameView.getName());
+                                Desktop.getDesktop().open(path.toFile());
+                            }
                         }
-
-                        nameView = new NameView(bestCandidate, bestCandidate.getName(), -1, nameView.getLevel());
                     }
-                }
-
-                if (romsCollection.getType() == CollectionType.PLAIN) {
-                    Desktop.getDesktop().open(romsCollection.getRomsPath().resolve(nameView.getName()).toFile());
-                } else {
-                    Path path = IOUtils.extractFromArchive(romsCollection.getRomsPath().resolve(nameView.getFamilyName()), nameView.getName());
-                    Desktop.getDesktop().open(path.toFile());
                 }
             }
         } catch (IOException e) {

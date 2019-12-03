@@ -12,8 +12,6 @@ TODO manage families - in bg + window (please wait)
 
 TODO sort by children count
 
-TODO when merge families - delete from treeview 2 families, not only one
-
 TODO collections list - update on key pressing
 
 TODO process all TODOs in code
