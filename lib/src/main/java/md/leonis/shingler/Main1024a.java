@@ -225,7 +225,7 @@ public class Main1024a {
         Map<String, Family> families;
         if (familyFile.exists()) {
             LOGGER.info("\nReading families from file...");
-            families = IOUtils.loadFamilies(familyFile);
+            families = IOUtils.loadFamiliesAsJson(familyFile);
         } else {
             LOGGER.info("\nGenerating families...");
             Map<String, List<Name>> namesList = names.stream().collect(Collectors.groupingBy(Name::getCleanName));
@@ -235,7 +235,7 @@ public class Main1024a {
 
             calculateRelations(families, index);
 
-            IOUtils.serialize(familyFile, families);
+            IOUtils.serializeFamiliesAsJson(familyFile, families);
         }
 
         int inFamily = families.values().stream().map(Family::size).mapToInt(Integer::intValue).sum();
@@ -264,7 +264,7 @@ public class Main1024a {
 
             if (needToStop[0]) {
                 LOGGER.info("Saving families...");
-                IOUtils.serialize(fullFamiliesPath().toFile(), families);
+                IOUtils.serializeFamiliesAsJson(fullFamiliesPath().toFile(), families);
                 needToStop[0] = false;
                 break;
             }

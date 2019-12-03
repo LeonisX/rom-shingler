@@ -154,8 +154,8 @@ public class CompareController {
             String collection2 = selectedCollections.get(1);
 
             LOGGER.info("Reading from disk...");
-            RomsCollection romsCollection1 = IOUtils.loadCollection(workCollectionsPath().resolve(collection1).toFile());
-            RomsCollection romsCollection2 = IOUtils.loadCollection(workCollectionsPath().resolve(collection2).toFile());
+            RomsCollection romsCollection1 = IOUtils.loadCollectionAsJson(workCollectionsPath().resolve(collection1).toFile());
+            RomsCollection romsCollection2 = IOUtils.loadCollectionAsJson(workCollectionsPath().resolve(collection2).toFile());
 
             LOGGER.info("Prepare hashes...");
             Set<String> hashesLeft = romsCollection1.getGidsMap().values().stream().map(h -> bytesToHex(h.getSha1())).collect(Collectors.toSet());

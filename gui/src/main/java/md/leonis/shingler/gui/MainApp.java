@@ -60,12 +60,12 @@ public class MainApp extends Application {
 
             if (familiesModified.getValue()) {
                 LOGGER.info("Saving families...");
-                stageManager.showWaitAlertAndRun("Saving families", () -> IOUtils.serialize(fullFamiliesPath().toFile(), families));
+                stageManager.showWaitAlertAndRun("Saving families", () -> IOUtils.serializeFamiliesAsJson(fullFamiliesPath().toFile(), families));
             }
 
             if (familyRelationsModified.getValue()) {
                 LOGGER.info("Saving family relations...");
-                stageManager.showWaitAlertAndRun("Saving family relations", () -> IOUtils.serialize(fullFamilyRelationsPath().toFile(), familyRelations));
+                stageManager.showWaitAlertAndRun("Saving family relations", () -> IOUtils.serializeFamilyRelationsAsJson(fullFamilyRelationsPath().toFile(), familyRelations));
             }
         }
 

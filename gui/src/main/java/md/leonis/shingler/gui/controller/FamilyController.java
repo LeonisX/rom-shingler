@@ -1283,9 +1283,12 @@ public class FamilyController {
                                 //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-mmt=off", '"' + name + ".7z\"")
 
                                 // 7z a -mx9 -mmt2 <archive_name> [<file_names>...]
-                                System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-mmt2", '"' + name + ".7z\"")
+                                //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-mmt2", '"' + name + ".7z\"")
 
                                 // 7z a -mx9 -mmt4 <archive_name> [<file_names>...]
+                                System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-mmt4", '"' + name + ".7z\"")
+
+
                                 // 7z a -mx9 <archive_name> [<file_names>...]
                         );
                         if (members.size() > 50) {

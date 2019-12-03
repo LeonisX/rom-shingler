@@ -69,7 +69,7 @@ public class ListFilesa {
 
         if (familyFile.exists()) { //TODO not need
             LOGGER.info("Reading families from file {}...", familyFile);
-            families = IOUtils.loadFamilies(familyFile);
+            families = IOUtils.loadFamiliesAsJson(familyFile);
         } else {
             LOGGER.info("Generating families from scratch...");
         }
@@ -102,7 +102,7 @@ public class ListFilesa {
 
         if (familyFile.exists()) {
             LOGGER.info("Reading families from file {}...", familyFile);
-            families = IOUtils.loadFamilies(familyFile);
+            families = IOUtils.loadFamiliesAsJson(familyFile);
         } else {
             LOGGER.info("Generating families based on GoodMerged source...");
             Map<String, List<Name>> namesList = new HashMap<>();
@@ -369,7 +369,7 @@ public class ListFilesa {
 
         List<Family> families1 = new ArrayList<>(fams1.values());
 
-        Map<String, Family> families = IOUtils.loadFamilies(new File("list-family" + index));
+        Map<String, Family> families = IOUtils.loadFamiliesAsJson(new File("list-family" + index));
         List<Family> familiesX = new ArrayList<>(families.values());
 
         double maxDeviation = 0;
