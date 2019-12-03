@@ -1,6 +1,6 @@
 # TODO list
 
-TODO name - remove file, use name
+TODO compress in parallel
 
 TODO при стандартной упаковке паковать как есть. при продвинутой для плохих жаккартов искать семьи поудачнее.
 
