@@ -1,10 +1,5 @@
 # TODO list
 
-TODO MERGED collections - generate families!!!!
-
-TODO convert to t7z, also run with t7z, also verify goodmerged families
-
-
 TODO compress in parallel: lzma1 1/2
 
 TODO при стандартной упаковке паковать как есть. при продвинутой для плохих жаккартов искать семьи поудачнее.

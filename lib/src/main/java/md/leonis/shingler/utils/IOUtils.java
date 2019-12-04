@@ -174,7 +174,8 @@ public class IOUtils {
             families.values().forEach(f -> {
                 List<Integer> members = f.getMembers().stream().map(Object::hashCode).collect(Collectors.toList());
                 List<ResultDto> relations = f.getRelations().stream().map(r -> new ResultDto(r.getName1().hashCode(), r.getName2().hashCode(), r.getJakkard())).collect(Collectors.toList());
-                familyDtos.add(new FamilyDto(f.getName(), members, f.getMother().hashCode(), relations, f.isSkip(), f.getType()));
+                int hashCode = (f.getMother() == null) ? f.getMembers().get(0).hashCode(): f.getMother().hashCode();
+                familyDtos.add(new FamilyDto(f.getName(), members, hashCode, relations, f.isSkip(), f.getType()));
             });
 
             FamiliesDto familiesDto = new FamiliesDto(

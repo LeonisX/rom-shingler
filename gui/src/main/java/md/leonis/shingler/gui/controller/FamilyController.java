@@ -1167,9 +1167,7 @@ public class FamilyController {
         File familyFile = fullFamiliesPath().toFile();
 
         if (familyFile.exists()) {
-            //System.out.println(String.format("%nReading families from file %s...", familyFile));
-            System.out.println(String.format("%nReading families from JSON file %s...", familyFile));
-            //families = IOUtils.loadFamilies(familyFile);
+            LOGGER.info("Reading families from JSON file {}...", familyFile);
             families = IOUtils.loadFamiliesAsJson(familyFile);
         } else {
             families = new HashMap<>();
@@ -1179,13 +1177,6 @@ public class FamilyController {
 
         showFamilies();
     }
-
-    /*public void saveFamiliesButtonClick() {
-        LOGGER.info("Saving families...");
-        IOUtils.createDirectories(workFamiliesPath());
-        stageManager.showWaitAlertAndRun("Saving families", () -> IOUtils.serialize(fullFamiliesPath().toFile(), families));
-        familiesModified.setValue(false);
-    }*/
 
     public void saveFamiliesButtonClick() {
         LOGGER.info("Saving families as JSON...");
@@ -1272,26 +1263,27 @@ public class FamilyController {
 
                 try {
                     if (isWindows) {
+                        String archiveName = name.endsWith(".7z") ? name : name + ".7z";
                         args = new ArrayList<>(Arrays.asList(
                                 // 7z a -mx9 -m0=LZMA -md1536m -mfb273 -ms8g -mmt=off <archive_name> [<file_names>...]
-                                //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", "-mmt=off", '"' + name + ".7z\"")
+                                System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", "-mmt=off", '"' + archiveName + '"')
 
                                 // 7z a -mx9 -m0=LZMA -md1536m -mfb273 -ms8g <archive_name> [<file_names>...]
-                                //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", '"' + name + ".7z\"")
+                                //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", '"' + archiveName + '"')
 
                                 // 7z a -mx9 -mmt=off <archive_name> [<file_names>...]
-                                //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-mmt=off", '"' + name + ".7z\"")
+                                //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-mmt=off", '"' + archiveName + '"')
 
                                 // 7z a -mx9 -mmt2 <archive_name> [<file_names>...]
-                                //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-mmt2", '"' + name + ".7z\"")
+                                //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-mmt2", '"' + archiveName + '"')
 
                                 // 7z a -mx9 -mmt4 <archive_name> [<file_names>...]
-                                System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-mmt4", '"' + name + ".7z\"")
-
+                                //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-mmt4", '"' + archiveName + '"')
 
                                 // 7z a -mx9 <archive_name> [<file_names>...]
+                                //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", '"' + archiveName + '"')
                         );
-                        if (members.size() > 50) {
+                        if (members.size() > 0) {
                             File tmp = File.createTempFile("shg", "7z");
                             Files.write(tmp.toPath(), members.stream().map(n -> romsCollection.getRomsPath().resolve(n.getName()).toString()).collect(Collectors.toList()), Charset.defaultCharset());
                             args.add("@" + tmp.getAbsolutePath());
