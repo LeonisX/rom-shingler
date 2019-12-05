@@ -117,4 +117,6 @@ public class ConfigHolder {
 
     public static int candidates = 48;
     public static int showCandidates = 8;
+
+    public static Path outputDir = Paths.get("D:\\Downloads\\merged-roms");
 }

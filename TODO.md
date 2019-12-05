@@ -1,7 +1,5 @@
 # TODO list
 
-TODO output directory for archives
-
 TODO generate page, unique roms, force63
 
 TODO rename tribes
