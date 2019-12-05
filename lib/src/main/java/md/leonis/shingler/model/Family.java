@@ -10,6 +10,7 @@ public class Family implements Serializable, Cloneable {
     private static final long serialVersionUID = -3737249230697805286L;
 
     private String name;
+    private String tribe;
     private List<Name> members;
     private Name mother;
     private List<Result> relations;
@@ -27,6 +28,7 @@ public class Family implements Serializable, Cloneable {
     public Family(String name, List<Name> members, FamilyType type) {
         this.members = members;
         this.name = name;
+        this.tribe = name;
         relations = new ArrayList<>();
         relationsCount = new HashMap<>();
         individualRelations = new HashSet<>();
@@ -35,7 +37,8 @@ public class Family implements Serializable, Cloneable {
 
     public Family(List<Name> members) {
         this.members = members;
-        name = members.get(0).getCleanName();
+        this.name = members.get(0).getCleanName();
+        this.tribe = name;
         relations = new ArrayList<>();
         relationsCount = new HashMap<>();
         individualRelations = new HashSet<>();
@@ -44,6 +47,7 @@ public class Family implements Serializable, Cloneable {
 
     public Family(Family family) {
         setName(family.getName());
+        setTribe(family.getTribe());
         setMembers(new ArrayList<>(family.getMembers()));
         setMother(family.getMother());
         setRelations(new ArrayList<>(family.getRelations()));
@@ -54,8 +58,9 @@ public class Family implements Serializable, Cloneable {
         this.members.sort((d1, d2) -> Double.compare(d2.getJakkardStatus(), d1.getJakkardStatus()));
     }
 
-    public Family(String name, List<Name> members, Name mother, List<Result> relations, Map<String, Integer> relationsCount, Set<String> individualRelations, boolean skip, FamilyType type) {
+    public Family(String name, String tribe, List<Name> members, Name mother, List<Result> relations, Map<String, Integer> relationsCount, Set<String> individualRelations, boolean skip, FamilyType type) {
         this.name = name;
+        this.tribe = tribe;
         this.members = members;
         this.mother = mother;
         this.relations = relations;
@@ -72,6 +77,14 @@ public class Family implements Serializable, Cloneable {
 
     public FamilyType getType() {
         return type;
+    }
+
+    public String getTribe() {
+        return tribe;
+    }
+
+    public void setTribe(String tribe) {
+        this.tribe = tribe;
     }
 
     public void setType(FamilyType type) {

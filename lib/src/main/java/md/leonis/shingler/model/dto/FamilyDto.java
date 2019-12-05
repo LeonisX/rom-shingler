@@ -13,6 +13,7 @@ import java.util.List;
 public class FamilyDto {
 
     private String name;
+    private String tribe;
     private List<Integer> members;
     private Integer mother;
     private List<ResultDto> relations;

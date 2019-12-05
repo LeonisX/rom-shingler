@@ -53,16 +53,20 @@ public class ListFilesa {
         //otherStatistics(map);
     }
 
+    public static Set<String> getOrphanNames() {
+        Set<String> familyNames = families.values().stream().flatMap(f -> f.getMembers().stream().map(Name::getName)).collect(Collectors.toSet());
+        Set<String> orphanedNames = romsCollection.getGidsMap().values().stream().map(GID::getTitle).collect(Collectors.toSet());
+        orphanedNames.removeAll(familyNames);
+        return orphanedNames;
+    }
+
     public static void generateFamilies() {
 
         LOGGER.info("Reading list of games...");
         List<Path> files = IOUtils.listFiles(romsCollection.getRomsPath());
 
-        Set<String> familyNames = families.values().stream().flatMap(f -> f.getMembers().stream().map(Name::getName)).collect(Collectors.toSet());
-        Set<String> orphanedNames = romsCollection.getGidsMap().values().stream().map(GID::getTitle).collect(Collectors.toSet());
-        orphanedNames.removeAll(familyNames);
+        Set<String> orphanedNames = getOrphanNames();
 
-        //List<Name> names = files.stream().map(f -> new Name(f.toFile(), false)).collect(Collectors.toList());
         List<Name> names = files.stream().filter(f -> orphanedNames.contains(f.getFileName().toString())).map(f -> new Name(f.getFileName().toString(), false)).collect(Collectors.toList());
 
         File familyFile = fullFamiliesPath().toFile();
@@ -72,22 +76,31 @@ public class ListFilesa {
             families = IOUtils.loadFamiliesAsJson(familyFile);
         } else {
             LOGGER.info("Generating families from scratch...");
+            Map<String, List<Name>> namesList = names.stream().filter(n -> nonHack(n.getName())).collect(Collectors.groupingBy(Name::getCleanName));
+
+            namesList.entrySet().stream().filter(e -> e.getValue().size() != 1)
+                    .forEach(e -> families.put(e.getKey(), new Family(e.getValue())));
+
+            LOGGER.info("Saving families...");
+            IOUtils.createDirectories(workFamiliesPath());
+            IOUtils.serializeFamiliesAsJson(familyFile, families);
         }
 
-        LOGGER.info("Generating families...");
-        Map<String, List<Name>> namesList = names.stream().filter(n -> nonHack(n.getName())).collect(Collectors.groupingBy(Name::getCleanName));
+        generateTribes();
+    }
 
-        /*families = namesList.entrySet().stream().filter(e -> e.getValue().size() != 1)
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> new Family(e.getValue())));*/
+    public static void generateTribes() {
 
-        namesList.entrySet().stream().filter(e -> e.getValue().size() != 1)
-                .forEach(e -> families.put(e.getKey(), new Family(e.getValue())));
+        tribes = new HashMap<>();
 
-        LOGGER.info("Saving families...");
-        IOUtils.createDirectories(workFamiliesPath());
-        IOUtils.serializeFamiliesAsJson(familyFile, families);
-
-        //saveUniqueListToFile(filteredMap);
+        families.values().forEach(f -> {
+            List<Family> familyList = tribes.get(f.getTribe());
+            if (familyList == null) {
+                tribes.put(f.getTribe(), new ArrayList<>(Collections.singletonList(f)));
+            } else {
+                familyList.add(f);
+            }
+        });
     }
 
     public static void archiveToFamilies() {
@@ -115,6 +128,8 @@ public class ListFilesa {
             IOUtils.createDirectories(workFamiliesPath());
             IOUtils.serializeFamiliesAsJson(familyFile, families);
         }
+
+        generateTribes();
     }
 
     private static void processFamilies() {

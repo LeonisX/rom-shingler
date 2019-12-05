@@ -53,6 +53,7 @@ public class ConfigHolder {
 
     public static RomsCollection romsCollection;
     public static Map<String, Family> families;
+    public static Map<String, List<Family>> tribes;
     public static BooleanProperty familiesModified = new SimpleBooleanProperty(false);
     public static Map<String, GID> byHash;
     public static Map<String, GID> byTitle;
@@ -91,6 +92,10 @@ public class ConfigHolder {
         return workFamiliesPath().resolve(collection + "-relations-" + denominator);
     }
 
+    public static Path fullTribeRelationsPath() {
+        return workFamiliesPath().resolve(collection + "-tribe-relations-" + denominator);
+    }
+
     //TODO bad solution
     public static List<String> selectedCollections;
 
@@ -110,6 +115,6 @@ public class ConfigHolder {
         }
     }
 
-    public static int candidates = 12;
+    public static int candidates = 48;
     public static int showCandidates = 8;
 }

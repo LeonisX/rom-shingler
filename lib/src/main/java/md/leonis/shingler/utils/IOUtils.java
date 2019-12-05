@@ -175,7 +175,7 @@ public class IOUtils {
                 List<Integer> members = f.getMembers().stream().map(Object::hashCode).collect(Collectors.toList());
                 List<ResultDto> relations = f.getRelations().stream().map(r -> new ResultDto(r.getName1().hashCode(), r.getName2().hashCode(), r.getJakkard())).collect(Collectors.toList());
                 int hashCode = (f.getMother() == null) ? f.getMembers().get(0).hashCode(): f.getMother().hashCode();
-                familyDtos.add(new FamilyDto(f.getName(), members, hashCode, relations, f.isSkip(), f.getType()));
+                familyDtos.add(new FamilyDto(f.getName(), f.getTribe(), members, hashCode, relations, f.isSkip(), f.getType()));
             });
 
             FamiliesDto familiesDto = new FamiliesDto(
@@ -227,7 +227,7 @@ public class IOUtils {
             return familiesDto.getFamilies().stream().map(f -> {
                 List<Name> members = f.getMembers().stream().map(names::get).collect(Collectors.toList());
                 List<Result> relations = f.getRelations().stream().map(r -> new Result(names.get(r.getName1()), names.get(r.getName2()), r.getJakkard())).collect(Collectors.toList());
-                return new Family(f.getName(), members, names.get(f.getMother()), relations, new HashMap<>(), new HashSet<>(), f.isSkip(), f.getType());
+                return new Family(f.getName(), f.getTribe(), members, names.get(f.getMother()), relations, new HashMap<>(), new HashSet<>(), f.isSkip(), f.getType());
 
             }).collect(Collectors.toMap(Family::getName, Function.identity()));
 

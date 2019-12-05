@@ -2,7 +2,7 @@ package md.leonis.shingler.gui.dto;
 
 public enum NodeStatus {
 
-    FAMILY, MEMBER, ORPHAN, FAMILY_LIST;
+    FAMILY, MEMBER, ORPHAN, FAMILY_LIST, TRIBE;
 
     public static boolean isFamily(NodeStatus status) {
         return status == FAMILY || status == FAMILY_LIST;

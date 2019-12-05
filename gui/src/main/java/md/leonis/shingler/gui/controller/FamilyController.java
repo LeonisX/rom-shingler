@@ -135,16 +135,19 @@ public class FamilyController {
     public Button collapseAllButton3;
     public Button compressButton;
     public Button ultraCompressButton;
-    /*public Button saveFamiliesButtonS;
-    public Button saveFamiliesButtonJ;*/
-
+    public ContextMenu tribeRelationsContextMenu;
+    public MenuItem mergeRelativesIntoMenuItem2;
+    public MenuItem openFamilyRelationsDirItem2;
+    public MenuItem runFamilyRelationsItem2;
 
     private TreeItem<NameView> familyRootItem = new TreeItem<>(NameView.EMPTY);
+    private TreeItem<NameView> tribeRelationsRootItem = new TreeItem<>(NameView.EMPTY);
     private TreeItem<NameView> familyRelationsRootItem = new TreeItem<>(NameView.EMPTY);
     private TreeItem<NameView> orphanRootItem = new TreeItem<>(NameView.EMPTY);
 
     public TreeView<NameView> familyTreeView;
     public TreeView<NameView> orphanTreeView;
+    public TreeView<NameView> tribeRelationsTreeView;
     public ComboBox<Integer> precisionCheckBox;
     public TextField jakkardTextField;
     public Button expandAllButton;
@@ -193,6 +196,7 @@ public class FamilyController {
 
         searchMap.put(familyTreeView, "");
         searchMap.put(orphanTreeView, "");
+        searchMap.put(tribeRelationsTreeView, "");
         searchMap.put(familyRelationsTreeView, "");
 
         searchMap.entrySet().forEach(e -> {
@@ -216,6 +220,11 @@ public class FamilyController {
         orphanTreeView.setShowRoot(false);
         orphanTreeView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         orphanTreeView.setCellFactory(treeViewCellFactory());
+
+        tribeRelationsTreeView.setRoot(tribeRelationsRootItem);
+        tribeRelationsTreeView.setShowRoot(false);
+        tribeRelationsTreeView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        tribeRelationsTreeView.setCellFactory(treeViewCellFactory());
 
         familyRelationsTreeView.setRoot(familyRelationsRootItem);
         familyRelationsTreeView.setShowRoot(false);
@@ -307,7 +316,8 @@ public class FamilyController {
     };
 
     private Map<NameView, List<NameView>> familiesView = new LinkedHashMap<>();
-    private Map<NameView, List<NameView>> familyRelationsView = new LinkedHashMap<>();
+    private Map<NameView, Collection<NameView>> tribesRelationsView = new LinkedHashMap<>();
+    private Map<NameView, Collection<NameView>> tribeFamiliesView = new LinkedHashMap<>();
 
     // TODO expand all previously expanded after operations (group, kick)
     private void showFamilies() {
@@ -349,11 +359,7 @@ public class FamilyController {
 
             List<NameView> orphanList = new ArrayList<>();
 
-            Set<String> familyNames = families.values().stream().flatMap(f -> f.getMembers().stream().map(Name::getName)).collect(Collectors.toSet());
-            Set<String> orphanedNames = romsCollection.getGidsMap().values().stream().map(GID::getTitle).collect(Collectors.toSet());
-            orphanedNames.removeAll(familyNames);
-
-            orphanedNames.stream().filter(this::filter).forEach(name -> orphanList.add(new NameView(name, 1)));
+            ListFilesa.getOrphanNames().stream().filter(this::filter).forEach(name -> orphanList.add(new NameView(name, 1)));
 
             orphanRootItem.getChildren().forEach(c -> {
                 if (!c.getChildren().isEmpty()) {
@@ -376,20 +382,37 @@ public class FamilyController {
                 }
             });
 
-        } else { // Family relations tab
+        } else { // Tribe/Family relations tab
 
             if (familyRelations != null) {
-                familyRelationsView = new LinkedHashMap<>();
 
-                familyRelations.forEach((key1, value1) -> familyRelationsView.put(new NameView(key1, (value1.isEmpty() ? 0 : value1.entrySet().iterator().next().getValue()), 1),
-                        value1.entrySet().stream().map(en -> new NameView(en.getKey(), en.getValue(), 2)).collect(Collectors.toList())));
+                tribesRelationsView = new LinkedHashMap<>();
 
-                familyRelationsRootItem.getChildren().clear();
+                tribes.forEach((key, values) -> {
+                    NameView tribe = new NameView(key, (values.isEmpty() ? 0 : values.get(0).getJakkardStatus(0)), 1);
 
-                familyRelationsView.forEach((key, value) -> {
-                    TreeItem<NameView> node = new TreeItem<>(key);
-                    value.forEach(c -> node.getChildren().add(new TreeItem<>(c)));
-                    familyRelationsRootItem.getChildren().add(node);
+                    Map<String, NameView> map = new HashMap<>();
+                    values.forEach(f -> familyRelations.get(f).forEach((key1, value) -> {
+                                String familyTribe = key1.getName();
+                                NameView current = map.get(familyTribe);
+                                if (current == null) {
+                                    map.put(familyTribe, new NameView(key1, value, 2));
+                                } else {
+                                    map.replace(familyTribe, new NameView(key1, Math.max(value, current.getJakkardStatus()), 2));
+                                }
+                            })
+                    );
+
+                    tribe.setJakkardStatus(map.values().stream().mapToDouble(NameView::getJakkardStatus).max().orElse(0));
+                    tribesRelationsView.put(tribe, map.values());
+                });
+
+                tribeRelationsRootItem.getChildren().clear();
+
+                tribesRelationsView.forEach((key, value) -> {
+                    TreeItem<NameView> tribeNode = new TreeItem<>(key);
+                    value.forEach(nv -> tribeNode.getChildren().add(new TreeItem<>(nv)));
+                    tribeRelationsRootItem.getChildren().add(tribeNode);
                 });
             }
         }
@@ -410,7 +433,13 @@ public class FamilyController {
 
         } else { // Family relations tab
             if (familyRelations != null) {
-                familyRelationsRootItem.getChildren().sort(orderByTitleButton2.isSelected() ? byTitle : byJakkard);
+                familyRelationsRootItem.getChildren().forEach(c -> c.getChildren().sort(orderByTitleButton2.isSelected() ? byTitle : byJakkard));
+                familyRelationsRootItem.getChildren().forEach(c -> c.getChildren().forEach(c2 -> c2.getChildren().sort(orderByTitleButton2.isSelected() ? byTitle : byJakkard)));
+            }
+            if (familyRelations != null) {
+                tribeRelationsRootItem.getChildren().sort(orderByTitleButton2.isSelected() ? byTitle : byJakkard);
+                tribeRelationsRootItem.getChildren().forEach(c -> c.getChildren().sort(orderByTitleButton2.isSelected() ? byTitle : byJakkard));
+                tribeRelationsRootItem.getChildren().forEach(c -> c.getChildren().forEach(c2 -> c2.getChildren().sort(orderByTitleButton2.isSelected() ? byTitle : byJakkard)));
             }
         }
     }
@@ -452,35 +481,25 @@ public class FamilyController {
     }
 
     public void expandAllButtonClick() {
-        familyRootItem.getChildren().forEach(item -> {
-            if (item != null && !item.isLeaf()) {
-                item.setExpanded(true);
-            }
-        });
+        toggleAllItems(familyRootItem.getChildren(), true);
+    }
+
+    public void expandAllButtonClick3() {
+        toggleAllItems(orphanRootItem.getChildren(), true);
     }
 
     public void collapseAllButtonClick() {
-        familyRootItem.getChildren().forEach(item -> {
-            if (item != null && !item.isLeaf()) {
-                item.setExpanded(false);
-            }
-        });
-    }
-
-    //TODO unify
-    public void expandAllButtonClick3() {
-        orphanRootItem.getChildren().forEach(item -> {
-            if (item != null && !item.isLeaf()) {
-                //TODO unify
-                item.setExpanded(true);
-            }
-        });
+        toggleAllItems(familyRootItem.getChildren(), false);
     }
 
     public void collapseAllButtonClick3() {
-        orphanRootItem.getChildren().forEach(item -> {
+        toggleAllItems(orphanRootItem.getChildren(), false);
+    }
+
+    private void toggleAllItems(List<TreeItem<NameView>> items, boolean status) {
+        items.forEach(item -> {
             if (item != null && !item.isLeaf()) {
-                item.setExpanded(false);
+                item.setExpanded(status);
             }
         });
     }
@@ -719,31 +738,39 @@ public class FamilyController {
 
     public void runListButtonClick() {
 
+        NameView nameView = lastNameView.getValue();
+
+        if (nameView != null) {
+            if (NodeStatus.isFamily(nameView.getStatus())) {
+                showAndRun(nameView, families.get(nameView.getFamilyName()).getMembers());
+            }
+
+            if (nameView.getStatus() == NodeStatus.TRIBE) {
+                showAndRun(nameView, tribes.get(nameView.getName()).stream().flatMap(f -> f.getMembers().stream()).collect(Collectors.toList()));
+            }
+        }
+    }
+
+    private void showAndRun(NameView nameView, List<Name> members) {
+
         try {
-            NameView nameView = lastNameView.getValue();
+            if (!members.isEmpty()) {
+                Name bestCandidate = members.stream().max(Comparator.comparing(Name::getIndex)).orElse(members.get(0));
 
-            if (nameView != null) {
-                if (NodeStatus.isFamily(nameView.getStatus())) {
-                    Family family = families.get(nameView.getFamilyName());
-                    if (!family.getMembers().isEmpty()) {
-                        Name bestCandidate = family.getMembers().stream().max(Comparator.comparing(Name::getIndex)).orElse(family.getMembers().get(0));
+                ListViewDialog<String> dialog = stageManager.getListViewDialog("Choice Dialog", "Look, a Choice Dialog", "Select a specific game:",
+                        bestCandidate.getName(), members.stream().map(Name::getName).collect(Collectors.toList()));
 
-                        ListViewDialog<String> dialog = stageManager.getListViewDialog("Choice Dialog", "Look, a Choice Dialog", "Select a specific game:",
-                                bestCandidate.getName(), family.getMembers().stream().map(Name::getName).collect(Collectors.toList()));
+                Optional<String> result = dialog.showAndWait();
+                if (result.isPresent()) {
+                    bestCandidate = members.stream().filter(n -> n.getName().equals(result.get())).findFirst().orElse(bestCandidate);
 
-                        Optional<String> result = dialog.showAndWait();
-                        if (result.isPresent()) {
-                            bestCandidate = family.getMembers().stream().filter(n -> n.getName().equals(result.get())).findFirst().orElse(bestCandidate);
+                    nameView = new NameView(bestCandidate, bestCandidate.getName(), -1, nameView.getLevel());
 
-                            nameView = new NameView(bestCandidate, bestCandidate.getName(), -1, nameView.getLevel());
-
-                            if (romsCollection.getType() == CollectionType.PLAIN) {
-                                Desktop.getDesktop().open(romsCollection.getRomsPath().resolve(nameView.getName()).toFile());
-                            } else {
-                                Path path = IOUtils.extractFromArchive(romsCollection.getRomsPath().resolve(nameView.getFamilyName()), nameView.getName());
-                                Desktop.getDesktop().open(path.toFile());
-                            }
-                        }
+                    if (romsCollection.getType() == CollectionType.PLAIN) {
+                        Desktop.getDesktop().open(romsCollection.getRomsPath().resolve(nameView.getName()).toFile());
+                    } else {
+                        Path path = IOUtils.extractFromArchive(romsCollection.getRomsPath().resolve(nameView.getFamilyName()), nameView.getName());
+                        Desktop.getDesktop().open(path.toFile());
                     }
                 }
             }
@@ -763,9 +790,7 @@ public class FamilyController {
 
             for (int i = 0; i < selectedItems.size(); i++) {
 
-                if (needToStop[0]) {
-                    LOGGER.info("Execution was interrupted!");
-                    needToStop[0] = false;
+                if (needToBreak()) {
                     break;
                 }
 
@@ -787,6 +812,16 @@ public class FamilyController {
         }, this::updateTrees);
     }
 
+    private boolean needToBreak() {
+        if (needToStop[0]) {
+            LOGGER.info("Execution was interrupted!");
+            needToStop[0] = false;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     public void findFamilyCandidatesButtonClick2() {
 
         runInBackground(() -> {
@@ -798,9 +833,7 @@ public class FamilyController {
 
             for (int i = 0; i < selectedItems.size(); i++) {
 
-                if (needToStop[0]) {
-                    LOGGER.info("Execution was interrupted!");
-                    needToStop[0] = false;
+                if (needToBreak()) {
                     break;
                 }
 
@@ -834,9 +867,7 @@ public class FamilyController {
 
             for (TreeItem<NameView> item : items) {
 
-                if (needToStop[0]) {
-                    LOGGER.info("Execution was interrupted!");
-                    needToStop[0] = false;
+                if (needToBreak()) {
                     break;
                 }
 
@@ -867,9 +898,7 @@ public class FamilyController {
 
             for (int i = 0; i < size; i++) {
 
-                if (needToStop[0]) {
-                    LOGGER.info("Execution was interrupted!");
-                    needToStop[0] = false;
+                if (needToBreak()) {
                     interrupted = true;
                     break;
                 }
@@ -899,9 +928,7 @@ public class FamilyController {
                 List<Family> modifiedFamilies = modified.stream().sorted(Comparator.comparing(Family::getName)).collect(Collectors.toList());
                 for (Family family : modifiedFamilies) {
 
-                    if (needToStop[0]) {
-                        LOGGER.info("Execution was interrupted!");
-                        needToStop[0] = false;
+                    if (needToBreak()) {
                         break;
                     }
 
@@ -971,9 +998,7 @@ public class FamilyController {
             int i = 0;
             for (Map.Entry<String, Family> family : families.entrySet()) {
 
-                if (needToStop[0]) {
-                    LOGGER.info("Execution was interrupted!");
-                    needToStop[0] = false;
+                if (needToBreak()) {
                     break;
                 }
 
@@ -984,46 +1009,75 @@ public class FamilyController {
             }
 
             familyRelationsModified.setValue(true);
+            familyRelationsModified.setValue(true);
         }, this::showFamilies);
     }
 
-    public void mergeRelativesIntoButtonClick() {
+    public void mergeTribeIntoButtonClick() {
 
-        if (familyRelationsTreeView.getSelectionModel().getSelectedItems().size() == 1) {
+        if (tribeRelationsTreeView.getSelectionModel().getSelectedItems().size() == 1) {
 
             runInBackground(() -> {
-                TreeItem<NameView> mainFamilyTreeItem = familyRelationsTreeView.getSelectionModel().getSelectedItem();
-                TreeItem<NameView> newFamilyMembersTreeItem = mainFamilyTreeItem.getParent();
+                TreeItem<NameView> acceptorTreeItem = tribeRelationsTreeView.getSelectionModel().getSelectedItem();
+                TreeItem<NameView> donorTreeItem = acceptorTreeItem.getParent();
 
                 // move all members
-                Family mainFamily = families.get(mainFamilyTreeItem.getValue().getFamilyName());
-                Family newFamilyMembers = families.get(newFamilyMembersTreeItem.getValue().getFamilyName());
-                mainFamily.getMembers().addAll(newFamilyMembers.getMembers());
+                String acceptorTribe = families.get(acceptorTreeItem.getValue().getFamilyName()).getTribe();
+                String donorTribe = donorTreeItem.getValue().getName();
 
-                // delete empty family
-                families.remove(newFamilyMembersTreeItem.getValue().getFamilyName());
-                familyRelations.remove(newFamilyMembers);
+                // move
+                List<Family> donors = tribes.get(donorTribe);
+                donors.forEach(f -> f.setTribe(acceptorTribe));
 
-                // calculate relations (main family), select mother
-                mainFamily.getRelations().clear();
-                mainFamily.getMembers().forEach(m -> m.setJakkardStatus(0));
-                ListFilesa.calculateRelations(mainFamily, true);
+                tribes.get(acceptorTribe).addAll(donors);
 
-                // recalculate relations for main family
-                ListFilesa.calculateRelations(mainFamily.getMother().getName(), mainFamily.getName(), true);
-
-                // delete old from all relations
-                int i = 0;
-                for (Map.Entry<Family, Map<Family, Double>> m : familyRelations.entrySet()) {
-                    LOGGER.info("Update relations for {}|{}", m.getKey().getName(), (i + 2.0) * 100 / familyRelations.size());
-                    m.getValue().remove(newFamilyMembers);
-                    i++;
+                // delete empty tribe
+                if (!acceptorTribe.equals(donorTribe)) {
+                    tribes.remove(donorTribe);
                 }
+
+                // clean self relations
+                tribes.get(acceptorTribe).forEach(f -> {
+                    LOGGER.info("Update family relations for {}", f.getName());
+                    tribes.get(acceptorTribe).forEach(c -> familyRelations.get(f).remove(c));
+                });
+
+                familyRelations.forEach((key, value) -> donors.forEach(value::remove));
 
                 familiesModified.setValue(true);
                 familyRelationsModified.setValue(true);
             }, this::showFamilies);
         }
+    }
+
+    //TODO do we need this?
+    public void mergeRelativesIntoButtonClick() {
+        /*if (tribeRelationsTreeView.getSelectionModel().getSelectedItems().size() == 1) {
+
+            runInBackground(() -> {
+                TreeItem<NameView> mainTribeTreeItem = tribeRelationsTreeView.getSelectionModel().getSelectedItem();
+                TreeItem<NameView> newTribeMembersTreeItem = mainTribeTreeItem.getParent();
+
+                // move all members
+                Tribe mainTribe = tribes.get(mainTribeTreeItem.getValue().getFamilyName());
+                Tribe newTribeMembers = tribes.get(newTribeMembersTreeItem.getValue().getFamilyName());
+                mainTribe.getFamilies().addAll(newTribeMembers.getFamilies());
+
+                // delete empty tribe
+                tribes.remove(newTribeMembers.getName());
+                tribeRelations.remove(newTribeMembers);
+
+                // delete old from all relations
+                int i = 0;
+                for (Map.Entry<Tribe, Map<Tribe, Double>> m : tribeRelations.entrySet()) {
+                    LOGGER.info("Update tribe relations for {}|{}", m.getKey().getName(), (i + 2.0) * 100 / tribeRelations.size());
+                    m.getValue().remove(newTribeMembers);
+                    i++;
+                }
+
+                familyRelationsModified.setValue(true);
+            }, this::showFamilies);
+        }*/
     }
 
     public void orderButtonClick() {
@@ -1145,6 +1199,24 @@ public class FamilyController {
         }
     }
 
+    public void tribeRelationsContextMenuRequest(ContextMenuEvent event) {
+
+        if (lastNameView != null && findRoot(lastNameView) == tribeRelationsRootItem) {
+
+            String hideId = lastNameView.getParent().equals(tribeRelationsRootItem) ? "m" : "f";
+
+            tribeRelationsContextMenu.getItems().forEach(item -> {
+                if (item.getUserData() != null && item.getUserData().equals(hideId)) {
+                    item.setVisible(false);
+                } else {
+                    item.setVisible(true);
+                }
+            });
+
+            tribeRelationsContextMenu.show(tribeRelationsTreeView, event.getScreenX(), event.getScreenY());
+        }
+    }
+
     private TreeItem<NameView> findRoot(TreeItem<NameView> item) {
         if (item == null || item.getParent() == null) {
             return item;
@@ -1172,6 +1244,8 @@ public class FamilyController {
         } else {
             families = new HashMap<>();
         }
+
+        ListFilesa.generateTribes();
 
         orphanChildren.clear();
 
@@ -1248,9 +1322,7 @@ public class FamilyController {
                 Family family = entry.getValue();
                 List<Name> members = family.getMembers();
 
-                if (needToStop[0]) {
-                    LOGGER.info("Execution was interrupted!");
-                    needToStop[0] = false;
+                if (needToBreak()) {
                     break;
                 }
 
@@ -1283,7 +1355,7 @@ public class FamilyController {
                                 // 7z a -mx9 <archive_name> [<file_names>...]
                                 //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", '"' + archiveName + '"')
                         );
-                        if (members.size() > 0) {
+                        if (members.size() > 50) {
                             File tmp = File.createTempFile("shg", "7z");
                             Files.write(tmp.toPath(), members.stream().map(n -> romsCollection.getRomsPath().resolve(n.getName()).toString()).collect(Collectors.toList()), Charset.defaultCharset());
                             args.add("@" + tmp.getAbsolutePath());
@@ -1293,7 +1365,7 @@ public class FamilyController {
 
                         processBuilder.command(args);
                     } else {
-                        //TODO test
+                        //TODO finish, test on Linux
                         processBuilder.command("7z", "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", "-mmt=off", "archive.7z", "", "", "", "");
                     }
 
@@ -1303,15 +1375,11 @@ public class FamilyController {
 
                     int code = proc.waitFor();
 
-                    switch (code) {
-                        case 0:
-                            break;
-                        default:
-                            LOGGER.warn("Exit code: {}", code);
-                            LOGGER.warn("Out message: {}", errBR.lines().collect(Collectors.joining("\n")));
-                            LOGGER.warn("Error message: {}", outBR.lines().collect(Collectors.joining("\n")));
-                            System.out.println(args);
-                            break;
+                    if (code > 0) {
+                        LOGGER.warn("Exit code: {}", code);
+                        LOGGER.warn("Out message: {}", errBR.lines().collect(Collectors.joining("\n")));
+                        LOGGER.warn("Error message: {}", outBR.lines().collect(Collectors.joining("\n")));
+                        System.out.println(args);
                     }
 
                 } catch (Exception ex) {
@@ -1324,5 +1392,55 @@ public class FamilyController {
 
     //TODO find best family if jakkard < ???
     public void ultraCompressButtonClick() {
+    }
+
+    public void tribeRelationsTreeViewKeyReleased() {
+        showTribeFamilyRelations();
+    }
+
+    public void tribeRelationsTreeViewMouseClicked() {
+        showTribeFamilyRelations();
+    }
+
+    private void showTribeFamilyRelations() {
+
+        tribeFamiliesView = new LinkedHashMap<>();
+
+        tribeRelationsTreeView.getSelectionModel().getSelectedItems().stream().filter(Objects::nonNull).map(TreeItem::getValue)
+                .filter(t -> t.getStatus() == NodeStatus.TRIBE)
+                .forEach(t -> {
+                    List<Family> values = tribes.get(t.getName());
+                    NameView tribe = new NameView(t.getName(), (values.isEmpty() ? 0 : values.get(0).getJakkardStatus(0)), 1);
+
+                    List<NameView> fr = new ArrayList<>();
+                    values.forEach(f -> {
+                        NameView family = new NameView(f, -1, 2);
+                        List<NameView> children = familyRelations.get(f).entrySet().stream().map(e ->
+                                new NameView(e.getKey(), e.getValue(), 3)).collect(Collectors.toList());
+
+                        family.setItems(children);
+                        family.setJakkardStatus(children.stream().mapToDouble(NameView::getJakkardStatus).max().orElse(0));
+                        fr.add(family);
+                    });
+
+                    tribe.setJakkardStatus(fr.stream().mapToDouble(NameView::getJakkardStatus).max().orElse(0));
+                    tribeFamiliesView.put(tribe, fr);
+                });
+
+        familyRelationsRootItem.getChildren().clear();
+
+        tribeFamiliesView.forEach((key, value) -> {
+            TreeItem<NameView> tribeNode = new TreeItem<>(key);
+            value.forEach(nv -> {
+                TreeItem<NameView> family = new TreeItem<>(nv);
+                nv.getItems().forEach(c -> family.getChildren().add(new TreeItem<>(c)));
+                tribeNode.getChildren().add(family);
+            });
+            tribeNode.setExpanded(true);
+
+            familyRelationsRootItem.getChildren().add(tribeNode);
+            familyRelationsRootItem.getChildren().forEach(c -> c.getChildren().sort(orderByTitleButton2.isSelected() ? byTitle : byJakkard));
+            familyRelationsRootItem.getChildren().forEach(c -> c.getChildren().forEach(c2 -> c2.getChildren().sort(orderByTitleButton2.isSelected() ? byTitle : byJakkard)));
+        });
     }
 }

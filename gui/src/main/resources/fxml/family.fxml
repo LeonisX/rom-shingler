@@ -193,18 +193,32 @@
                         </HBox>
                     </top>
                     <center>
-                        <TreeView fx:id="familyRelationsTreeView" onContextMenuRequested="#familyRelationsContextMenuRequest" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
-                            <contextMenu>
-                                <ContextMenu fx:id="familyRelationsContextMenu">
-                                    <items>
-                                        <MenuItem fx:id="mergeRelativesIntoMenuItem" mnemonicParsing="false" onAction="#mergeRelativesIntoButtonClick" text="Merge into" userData="m" />
-                                        <SeparatorMenuItem mnemonicParsing="false" userData="m" />
-                                        <MenuItem fx:id="openFamilyRelationsDirItem" mnemonicParsing="false" onAction="#openDirButtonClick" text="Open dir" />
-                                        <MenuItem fx:id="runFamilyRelationsItem" mnemonicParsing="false" onAction="#runListButtonClick" text="Run" />
-                                    </items>
-                                </ContextMenu>
-                            </contextMenu>
-                        </TreeView>
+                        <SplitPane dividerPositions="0.5" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+                            <TreeView fx:id="tribeRelationsTreeView" onContextMenuRequested="#tribeRelationsContextMenuRequest" onKeyReleased="#tribeRelationsTreeViewKeyReleased" onMouseClicked="#tribeRelationsTreeViewMouseClicked" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+                                <contextMenu>
+                                    <ContextMenu fx:id="tribeRelationsContextMenu">
+                                        <items>
+                                            <MenuItem fx:id="mergeRelativesIntoMenuItem2" mnemonicParsing="false" onAction="#mergeTribeIntoButtonClick" text="Merge into" userData="m" />
+                                            <SeparatorMenuItem mnemonicParsing="false" userData="m" />
+                                            <MenuItem fx:id="openFamilyRelationsDirItem2" mnemonicParsing="false" onAction="#openDirButtonClick" text="Open dir" />
+                                            <MenuItem fx:id="runFamilyRelationsItem2" mnemonicParsing="false" onAction="#runListButtonClick" text="Run" />
+                                        </items>
+                                    </ContextMenu>
+                                </contextMenu>
+                            </TreeView>
+                            <TreeView fx:id="familyRelationsTreeView" onContextMenuRequested="#familyRelationsContextMenuRequest" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+                                <contextMenu>
+                                    <ContextMenu fx:id="familyRelationsContextMenu">
+                                        <items>
+                                            <MenuItem fx:id="mergeRelativesIntoMenuItem" mnemonicParsing="false" onAction="#mergeRelativesIntoButtonClick" text="Merge into" userData="m" />
+                                            <SeparatorMenuItem mnemonicParsing="false" userData="m" />
+                                            <MenuItem fx:id="openFamilyRelationsDirItem" mnemonicParsing="false" onAction="#openDirButtonClick" text="Open dir" />
+                                            <MenuItem fx:id="runFamilyRelationsItem" mnemonicParsing="false" onAction="#runListButtonClick" text="Run" />
+                                        </items>
+                                    </ContextMenu>
+                                </contextMenu>
+                            </TreeView>
+                        </SplitPane>
                     </center>
                 </BorderPane>
             </Tab>

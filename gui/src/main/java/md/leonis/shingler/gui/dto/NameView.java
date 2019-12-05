@@ -70,6 +70,16 @@ class NameView {
         this.level = level;
     }
 
+    public NameView(String tribe, double jakkardStatus, int level) {
+        this.name = tribe;
+        this.familyName = tribe;
+        this.jakkardStatus = jakkardStatus;
+        this.status = NodeStatus.TRIBE;
+        this.items = new ArrayList<>();
+        this.type = FamilyType.FAMILY; //TODO investigate
+        this.level = level;
+    }
+
     public Name toName() {
         return new Name(name, false, jakkardStatus);
     }
