@@ -2,6 +2,12 @@
 
 TODO sort by children count
 
+TODO output directory for archives
+
+TODO generate page, unique roms, force63
+
+TODO rename tribes
+
 TODO compress in parallel: lzma1 1/2
 
 TODO при стандартной упаковке паковать как есть. при продвинутой для плохих жаккартов искать семьи поудачнее.

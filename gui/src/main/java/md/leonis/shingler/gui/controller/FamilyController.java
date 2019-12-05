@@ -205,8 +205,25 @@ public class FamilyController {
             e.getKey().setOnKeyPressed(getKeyEventEventHandler(e.getKey()));
         });
 
-        saveFamiliesButton.visibleProperty().bind(familiesModified);
-        saveRelationsButton.visibleProperty().bind(familyRelationsModified);
+        familiesModified.addListener(
+                (observable, oldvalue, newvalue) -> {
+                    if (newvalue) {
+                        saveFamiliesButton.setStyle("-fx-background-color: #ff8888; -fx-border-color: #888888;");
+                    } else {
+                        saveFamiliesButton.setStyle("");
+                    }
+                }
+        );
+
+        familyRelationsModified.addListener(
+                (observable, oldvalue, newvalue) -> {
+                    if (newvalue) {
+                        saveRelationsButton.setStyle("-fx-background-color: #ff8888; -fx-border-color: #888888;");
+                    } else {
+                        saveRelationsButton.setStyle("");
+                    }
+                }
+        );
 
         familiesContextMenu.setUserData(familyTreeView);
         orphanFamiliesContextMenu.setUserData(orphanTreeView);

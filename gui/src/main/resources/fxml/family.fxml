@@ -26,8 +26,8 @@
             <HBox alignment="CENTER" prefWidth="4000.0" spacing="5.0">
                 <HBox alignment="CENTER" prefHeight="46.0" prefWidth="318.0" spacing="5.0">
                     <Button fx:id="toCollectionsButton" mnemonicParsing="false" onAction="#toCollectionsButtonClick" prefHeight="25.0" prefWidth="107.0" text="&lt;&lt; to collections" />
-               <Button fx:id="saveFamiliesButton" mnemonicParsing="false" onAction="#saveFamiliesButtonClick" style="-fx-background-color: #ff8888; -fx-border-color: #888888;" text="Save families" />
-               <Button fx:id="saveRelationsButton" mnemonicParsing="false" onAction="#saveRelationsButtonClick" style="-fx-background-color: #ff8888; -fx-border-color: #888888;" text="Save relations" />
+               <Button fx:id="saveFamiliesButton" mnemonicParsing="false" onAction="#saveFamiliesButtonClick" text="Save families" />
+               <Button fx:id="saveRelationsButton" mnemonicParsing="false" onAction="#saveRelationsButtonClick" text="Save relations" />
                 <!--
                     <Button fx:id="saveFamiliesButtonS" mnemonicParsing="false" onAction="#saveFamiliesButtonClick" text="Save Ser" />
                     <Button fx:id="saveFamiliesButtonJ" mnemonicParsing="false" onAction="#saveFamiliesJsonButtonClick" text="Save Json" />
