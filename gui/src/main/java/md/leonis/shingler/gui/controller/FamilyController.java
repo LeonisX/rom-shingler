@@ -65,6 +65,7 @@ public class FamilyController {
 
     public Button generateFamiliesButton;
 
+    public Label totalTribesLabel;
     public Label totalFamiliesLabel;
     public Label totalGamesLabel;
     public Label groupedGamesLabel;
@@ -338,6 +339,7 @@ public class FamilyController {
         int total = romsCollection.getGidsMap().size();
         int inFamily = families.values().stream().map(Family::size).mapToInt(Integer::intValue).sum();
 
+        totalTribesLabel.setText("" + tribes.size());
         totalFamiliesLabel.setText("" + families.size());
         totalGamesLabel.setText("" + romsCollection.getGidsMap().size());
         groupedGamesLabel.setText("" + inFamily);

@@ -156,8 +156,10 @@
                    </HBox>
                    <VBox prefHeight="46.0" prefWidth="792.0">
                        <HBox prefHeight="47.0" prefWidth="1022.0">
-                           <VBox prefHeight="47.0" prefWidth="499.0">
+                           <VBox prefHeight="47.0" prefWidth="542.0">
                                <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="5.0">
+                                   <Label text="Total tribes:" />
+                                   <Label fx:id="totalTribesLabel" />
                                    <Label text="Total families:" />
                                    <Label fx:id="totalFamiliesLabel" />
                                    <Label text="Total games:" />
@@ -181,12 +183,12 @@
            </HBox>
            <Separator prefWidth="200.0" />
            <HBox prefHeight="44.0" prefWidth="1490.0">
-               <HBox alignment="CENTER_LEFT" prefHeight="44.0" prefWidth="1001.0" spacing="5.0">
+               <HBox alignment="CENTER_LEFT" prefHeight="44.0" prefWidth="809.0" spacing="5.0">
                    <Button fx:id="expandAllButton" mnemonicParsing="false" onAction="#expandAllButtonClick" text="Expand all" />
                    <Button fx:id="collapseAllButton" mnemonicParsing="false" onAction="#collapseAllButtonClick" text="Collapse all" />
                    <Separator orientation="VERTICAL" prefHeight="200.0" />
                    <Label text="Jakkard:" />
-                   <TextField fx:id="jakkardTextField" onKeyReleased="#jakkardTextFieldKeyReleased" prefHeight="25.0" prefWidth="64.0" />
+                   <TextField fx:id="jakkardTextField" onKeyReleased="#jakkardTextFieldKeyReleased" prefHeight="25.0" prefWidth="50.0" />
                    <Separator orientation="VERTICAL" prefHeight="200.0" />
                    <Label text="Order roms by:" />
                    <ComboBox fx:id="orderRomsComboBox" onAction="#orderClick" prefWidth="55.0" />

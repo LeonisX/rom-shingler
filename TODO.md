@@ -1,12 +1,10 @@
 # TODO list
 
-TODO generate page, unique roms, force63
-
 TODO rename tribes
 
-TODO red/black for tribes
+TODO generate page, unique roms, force63
 
-TODO show tribes count
+TODO red/black for tribes
 
 TODO change output directory for archives
 
