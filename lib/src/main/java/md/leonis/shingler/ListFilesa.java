@@ -71,10 +71,10 @@ public class ListFilesa {
 
         File familyFile = fullFamiliesPath().toFile();
 
-        if (familyFile.exists()) { //TODO not need
+        /*if (familyFile.exists()) { //TODO not need
             LOGGER.info("Reading families from file {}...", familyFile);
             families = IOUtils.loadFamiliesAsJson(familyFile);
-        } else {
+        } else {*/
             LOGGER.info("Generating families from scratch...");
             Map<String, List<Name>> namesList = names.stream().filter(n -> nonHack(n.getName())).collect(Collectors.groupingBy(Name::getCleanName));
 
@@ -84,7 +84,7 @@ public class ListFilesa {
             LOGGER.info("Saving families...");
             IOUtils.createDirectories(workFamiliesPath());
             IOUtils.serializeFamiliesAsJson(familyFile, families);
-        }
+        //}
 
         generateTribes();
     }
@@ -113,10 +113,10 @@ public class ListFilesa {
 
         File familyFile = fullFamiliesPath().toFile();
 
-        if (familyFile.exists()) {
+        /*if (familyFile.exists()) {
             LOGGER.info("Reading families from file {}...", familyFile);
             families = IOUtils.loadFamiliesAsJson(familyFile);
-        } else {
+        } else {*/
             LOGGER.info("Generating families based on GoodMerged source...");
             Map<String, List<Name>> namesList = new HashMap<>();
             map.forEach((key, value) -> namesList.put(key.getName(), value.stream().map(v -> new Name(v, false)).collect(Collectors.toList())));
@@ -127,7 +127,7 @@ public class ListFilesa {
             LOGGER.info("Saving families...");
             IOUtils.createDirectories(workFamiliesPath());
             IOUtils.serializeFamiliesAsJson(familyFile, families);
-        }
+        //}
 
         generateTribes();
     }

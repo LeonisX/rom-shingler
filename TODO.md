@@ -1,5 +1,7 @@
 # TODO list
 
+TODO sort by children count
+
 TODO compress in parallel: lzma1 1/2
 
 TODO при стандартной упаковке паковать как есть. при продвинутой для плохих жаккартов искать семьи поудачнее.
@@ -11,8 +13,6 @@ Export families to other precisions
 Find in families
 
 TODO manage families - in bg + window (please wait)
-
-TODO sort by children count
 
 TODO collections list - update on key pressing
 

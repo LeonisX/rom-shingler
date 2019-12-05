@@ -1317,10 +1317,9 @@ public class FamilyController {
 
         runInBackground(() -> {
             int i = 0;
-            for (Map.Entry<String, Family> entry : families.entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).collect(Collectors.toList())) {
+            for (Map.Entry<String, List<Family>> entry : tribes.entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).collect(Collectors.toList())) {
                 String name = entry.getKey();
-                Family family = entry.getValue();
-                List<Name> members = family.getMembers();
+                List<Name> members = entry.getValue().stream().flatMap(e -> e.getMembers().stream()).collect(Collectors.toList());
 
                 if (needToBreak()) {
                     break;
