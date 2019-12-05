@@ -1,12 +1,16 @@
 # TODO list
 
-TODO sort by children count
-
 TODO output directory for archives
 
 TODO generate page, unique roms, force63
 
 TODO rename tribes
+
+TODO red/black for tribes
+
+TODO show tribes count
+
+TODO change output directory for archives
 
 TODO compress in parallel: lzma1 1/2
 

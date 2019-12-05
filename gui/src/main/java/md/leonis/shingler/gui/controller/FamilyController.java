@@ -62,7 +62,6 @@ public class FamilyController {
     public VBox vBox;
 
     public HBox controlsHBox;
-    public Label waitLabel;
 
     public Button generateFamiliesButton;
 
@@ -77,20 +76,9 @@ public class FamilyController {
     public Button calculateRelationsButton;
     public Button selectButton;
     public TreeView<NameView> familyRelationsTreeView;
-    public Button expandAllButton2;
-    public Button collapseAllButton2;
-    public TextField jakkardTextField2;
     public Button findRelativesButton;
     public TabPane tabPane;
-    public ToggleButton orderByTitleButton;
-    public ToggleGroup orderTG;
-    public ToggleButton orderByJakkardButton;
-    public ToggleButton orderByTitleButton2;
-    public ToggleGroup orderTG2;
-    public ToggleButton orderByJakkardButton2;
     public Button findAgainRelativesButton;
-    public Button openDirButton2;
-    public Button runButton2;
 
     public ContextMenu familiesContextMenu;
     public MenuItem renameFamilyMenuItem;
@@ -131,14 +119,15 @@ public class FamilyController {
     public MenuItem findFamilyCandidatesMenuItem;
     public MenuItem addToThisFamilyMenuItem2;
     public TextField candidatesTextField;
-    public Button expandAllButton3;
-    public Button collapseAllButton3;
     public Button compressButton;
     public Button ultraCompressButton;
     public ContextMenu tribeRelationsContextMenu;
     public MenuItem mergeRelativesIntoMenuItem2;
     public MenuItem openFamilyRelationsDirItem2;
     public MenuItem runFamilyRelationsItem2;
+    public ComboBox<String> orderRomsComboBox;
+    public ComboBox<String> orderFamiliesComboBox;
+    public ComboBox<String> orderTribesComboBox;
 
     private TreeItem<NameView> familyRootItem = new TreeItem<>(NameView.EMPTY);
     private TreeItem<NameView> tribeRelationsRootItem = new TreeItem<>(NameView.EMPTY);
@@ -148,6 +137,7 @@ public class FamilyController {
     public TreeView<NameView> familyTreeView;
     public TreeView<NameView> orphanTreeView;
     public TreeView<NameView> tribeRelationsTreeView;
+
     public ComboBox<Integer> precisionCheckBox;
     public TextField jakkardTextField;
     public Button expandAllButton;
@@ -173,22 +163,17 @@ public class FamilyController {
     private void initialize() {
 
         jakkardTextField.setText("" + jakkard);
-        jakkardTextField2.setText("" + jakkard);
         TextFormatter formatter = new TextFormatter((UnaryOperator<TextFormatter.Change>) change -> PATTERN.matcher(change.getControlNewText()).matches() ? change : null);
         jakkardTextField.setTextFormatter(formatter);
-        TextFormatter formatter2 = new TextFormatter((UnaryOperator<TextFormatter.Change>) change -> PATTERN.matcher(change.getControlNewText()).matches() ? change : null);
-        jakkardTextField2.setTextFormatter(formatter2);
 
         precisionCheckBox.setItems(FXCollections.observableArrayList(DENOMINATORS));
         precisionCheckBox.setCellFactory(precisionCheckBoxCellFactory);
         precisionCheckBox.getSelectionModel().select(getDenominatorId());
 
         controlsHBox.managedProperty().bind(controlsHBox.visibleProperty());
-        waitLabel.managedProperty().bind(waitLabel.visibleProperty());
 
         tabPane.getSelectionModel().selectedItemProperty().addListener((ov, oldTab, newTab) -> {
             jakkardTextField.setText("" + jakkard);
-            jakkardTextField2.setText("" + jakkard);
             showFamilies();
         });
 
@@ -247,6 +232,18 @@ public class FamilyController {
         familyRelationsTreeView.setShowRoot(false);
         familyRelationsTreeView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         familyRelationsTreeView.setCellFactory(treeViewCellFactory());
+
+        Arrays.asList("Title", "Jakkard", "Size").forEach(c -> {
+            orderRomsComboBox.getItems().add(c);
+            orderFamiliesComboBox.getItems().add(c);
+            orderTribesComboBox.getItems().add(c);
+        });
+
+        orderRomsComboBox.getItems().remove(2); // size
+
+        orderRomsComboBox.getSelectionModel().selectFirst();
+        orderFamiliesComboBox.getSelectionModel().selectFirst();
+        orderTribesComboBox.getSelectionModel().selectFirst();
 
         timeline.setCycleCount(Animation.INDEFINITE);
         timeline.play();
@@ -444,25 +441,43 @@ public class FamilyController {
 
     private void updateTrees() {
 
+        Comparator<TreeItem<NameView>> romsComparator = selectComparator(orderRomsComboBox);
+        Comparator<TreeItem<NameView>> familiesComparator = selectComparator(orderFamiliesComboBox);
+        Comparator<TreeItem<NameView>> tribesComparator = selectComparator(orderTribesComboBox);
+
         if (tabPane.getSelectionModel().getSelectedIndex() == 0) { // First tab
-            familyRootItem.getChildren().forEach(c -> c.getChildren().sort(orderByTitleButton.isSelected() ? byTitle : byJakkard));
-            orphanRootItem.getChildren().sort(orderByTitleButton.isSelected() ? byTitle : byJakkard);
+            familyRootItem.getChildren().sort(familiesComparator);
+            familyRootItem.getChildren().forEach(c -> c.getChildren().sort(romsComparator));
+
+            orphanRootItem.getChildren().sort(romsComparator);
 
         } else { // Family relations tab
             if (familyRelations != null) {
-                familyRelationsRootItem.getChildren().forEach(c -> c.getChildren().sort(orderByTitleButton2.isSelected() ? byTitle : byJakkard));
-                familyRelationsRootItem.getChildren().forEach(c -> c.getChildren().forEach(c2 -> c2.getChildren().sort(orderByTitleButton2.isSelected() ? byTitle : byJakkard)));
-            }
-            if (familyRelations != null) {
-                tribeRelationsRootItem.getChildren().sort(orderByTitleButton2.isSelected() ? byTitle : byJakkard);
-                tribeRelationsRootItem.getChildren().forEach(c -> c.getChildren().sort(orderByTitleButton2.isSelected() ? byTitle : byJakkard));
-                tribeRelationsRootItem.getChildren().forEach(c -> c.getChildren().forEach(c2 -> c2.getChildren().sort(orderByTitleButton2.isSelected() ? byTitle : byJakkard)));
+                tribeRelationsRootItem.getChildren().sort(tribesComparator);
+                tribeRelationsRootItem.getChildren().forEach(c -> c.getChildren().sort(familiesComparator));
+                tribeRelationsRootItem.getChildren().forEach(c -> c.getChildren().forEach(c2 -> c2.getChildren().sort(romsComparator)));
+
+                familyRelationsRootItem.getChildren().forEach(c -> c.getChildren().sort(familiesComparator));
+                familyRelationsRootItem.getChildren().forEach(c -> c.getChildren().forEach(c2 -> c2.getChildren().sort(romsComparator)));
             }
         }
     }
 
     private static Comparator<TreeItem<NameView>> byTitle = Comparator.comparing((TreeItem<NameView> n) -> n.getValue().getName());
     private static Comparator<TreeItem<NameView>> byJakkard = Comparator.comparing((TreeItem<NameView> n) -> n.getValue().getJakkardStatus()).reversed();
+    private static Comparator<TreeItem<NameView>> bySize = Comparator.comparing((TreeItem<NameView> n) -> n.getValue().getItems().size()).reversed();
+
+    private Comparator<TreeItem<NameView>> selectComparator(ComboBox<String> combo) {
+        switch(combo.getSelectionModel().getSelectedIndex()) {
+            case 0:
+                return byTitle;
+            case 1:
+                return byJakkard;
+            default:
+                return bySize;
+        }
+    }
+
 
     private boolean filter(String name) {
 
@@ -497,20 +512,20 @@ public class FamilyController {
         }
     }
 
-    public void expandAllButtonClick() {
-        toggleAllItems(familyRootItem.getChildren(), true);
+    private TreeItem<NameView> getRoot(TreeItem<NameView> node) {
+        if (node.getParent() == null) {
+            return node;
+        } else {
+            return node.getParent();
+        }
     }
 
-    public void expandAllButtonClick3() {
-        toggleAllItems(orphanRootItem.getChildren(), true);
+    public void expandAllButtonClick() {
+        toggleAllItems(getRoot(lastNameView).getChildren(), true);
     }
 
     public void collapseAllButtonClick() {
-        toggleAllItems(familyRootItem.getChildren(), false);
-    }
-
-    public void collapseAllButtonClick3() {
-        toggleAllItems(orphanRootItem.getChildren(), false);
+        toggleAllItems(getRoot(lastNameView).getChildren(), false);
     }
 
     private void toggleAllItems(List<TreeItem<NameView>> items, boolean status) {
@@ -967,22 +982,6 @@ public class FamilyController {
         showFamilies();
     }
 
-    public void expandAllButtonClick2() {
-        familyRelationsRootItem.getChildren().forEach(item -> {
-            if (item != null && !item.isLeaf()) {
-                item.setExpanded(true);
-            }
-        });
-    }
-
-    public void collapseAllButtonClick2() {
-        familyRelationsRootItem.getChildren().forEach(item -> {
-            if (item != null && !item.isLeaf()) {
-                item.setExpanded(false);
-            }
-        });
-    }
-
     public void findRelativesButtonClick() {
 
         LOGGER.info("Find related families...");
@@ -1097,7 +1096,7 @@ public class FamilyController {
         }*/
     }
 
-    public void orderButtonClick() {
+    public void orderClick() {
         updateTrees();
     }
 
@@ -1352,6 +1351,8 @@ public class FamilyController {
                 try {
                     if (isWindows) {
                         String archiveName = name.endsWith(".7z") ? name : name + ".7z";
+                        archiveName = outputDir.resolve(archiveName).toAbsolutePath().toString();
+
                         args = new ArrayList<>(Arrays.asList(
                                 // 7z a -mx9 -m0=LZMA -md1536m -mfb273 -ms8g -mmt=off <archive_name> [<file_names>...]
                                 System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", "-mmt=off", '"' + archiveName + '"')
@@ -1454,9 +1455,26 @@ public class FamilyController {
             });
             tribeNode.setExpanded(true);
 
+            Comparator<TreeItem<NameView>> romsComparator = selectComparator(orderRomsComboBox);
+            Comparator<TreeItem<NameView>> familiesComparator = selectComparator(orderFamiliesComboBox);
+
             familyRelationsRootItem.getChildren().add(tribeNode);
-            familyRelationsRootItem.getChildren().forEach(c -> c.getChildren().sort(orderByTitleButton2.isSelected() ? byTitle : byJakkard));
-            familyRelationsRootItem.getChildren().forEach(c -> c.getChildren().forEach(c2 -> c2.getChildren().sort(orderByTitleButton2.isSelected() ? byTitle : byJakkard)));
+            familyRelationsRootItem.getChildren().forEach(c -> c.getChildren().sort(familiesComparator));
+            familyRelationsRootItem.getChildren().forEach(c -> c.getChildren().forEach(c2 -> c2.getChildren().sort(romsComparator)));
         });
+    }
+
+    public void fixTribesButtonClick() {
+        families.values().forEach(f -> {
+            if (f.getTribe() == null) {
+                f.setTribe(f.getName());
+            }
+            familiesModified.setValue(true);
+        });
+        ListFilesa.generateTribes();
+        tribeFamiliesView.clear();
+        tribesRelationsView.clear();
+        tribeRelationsRootItem.getChildren().clear();
+        showFamilies();
     }
 }

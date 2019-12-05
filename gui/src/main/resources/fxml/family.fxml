@@ -13,63 +13,12 @@
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TextField?>
-<?import javafx.scene.control.ToggleButton?>
-<?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.control.TreeView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
 <BorderPane maxHeight="4000" maxWidth="4000" minHeight="499" minWidth="499" prefHeight="1500" prefWidth="1500" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="md.leonis.shingler.gui.controller.FamilyController">
-    <top>
-        <HBox alignment="CENTER" prefHeight="46.0" prefWidth="1220.0" spacing="5.0" BorderPane.alignment="CENTER">
-            <HBox alignment="CENTER" prefWidth="4000.0" spacing="5.0">
-                <HBox alignment="CENTER" prefHeight="46.0" prefWidth="318.0" spacing="5.0">
-                    <Button fx:id="toCollectionsButton" mnemonicParsing="false" onAction="#toCollectionsButtonClick" prefHeight="25.0" prefWidth="107.0" text="&lt;&lt; to collections" />
-               <Button fx:id="saveFamiliesButton" mnemonicParsing="false" onAction="#saveFamiliesButtonClick" text="Save families" />
-               <Button fx:id="saveRelationsButton" mnemonicParsing="false" onAction="#saveRelationsButtonClick" text="Save relations" />
-                <!--
-                    <Button fx:id="saveFamiliesButtonS" mnemonicParsing="false" onAction="#saveFamiliesButtonClick" text="Save Ser" />
-                    <Button fx:id="saveFamiliesButtonJ" mnemonicParsing="false" onAction="#saveFamiliesJsonButtonClick" text="Save Json" />
-                -->
-                </HBox>
-                <Label fx:id="waitLabel" prefHeight="17.0" prefWidth="75.0" text="Please wait" />
-                <VBox prefHeight="46.0" prefWidth="792.0">
-                    <HBox prefHeight="47.0" prefWidth="1022.0">
-                        <VBox prefHeight="47.0" prefWidth="499.0">
-                            <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="5.0">
-                                <Label text="Total families:" />
-                                <Label fx:id="totalFamiliesLabel" />
-                                <Label text="Total games:" />
-                                <Label fx:id="totalGamesLabel" />
-                                <Label text="Grouped games:" />
-                                <Label fx:id="groupedGamesLabel" />
-                                <Label text="Orphaned games:" />
-                                <Label fx:id="orphanedGamesLabel" />
-                            </HBox>
-                            <HBox fx:id="controlsHBox" alignment="CENTER" prefHeight="46.0" prefWidth="732.0" spacing="5.0">
-                                <Label text="Precision:" />
-                                <ComboBox fx:id="precisionCheckBox" onAction="#precisionCheckBoxAction" prefHeight="25.0" prefWidth="74.0" />
-                                <Button fx:id="generateFamiliesButton" mnemonicParsing="false" onAction="#generateFamiliesButtonClick" text="Generate families" />
-                                <Button fx:id="calculateRelationsButton" mnemonicParsing="false" onAction="#calculateRelationsButtonClick" text="Calculate relations" />
-                                <Button fx:id="reCalculateRelationsButton" mnemonicParsing="false" onAction="#reCalculateRelationsButtonClick" text="ReCalculate relations" />
-                            </HBox>
-                        </VBox>
-                        <VBox alignment="CENTER" prefHeight="47.0" prefWidth="345.0" spacing="5.0">
-                            <HBox alignment="CENTER" prefHeight="17.0" prefWidth="287.0" spacing="5.0">
-                                <CheckBox fx:id="redCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="RED" />
-                                <CheckBox fx:id="blackCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="BLACK" />
-                                <CheckBox fx:id="allGoodCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="Good" />
-                                <CheckBox fx:id="pdCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="PD" />
-                                <CheckBox fx:id="hackCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="Hack" />
-                                <CheckBox fx:id="badCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="Bad" />
-                            </HBox>
-                        </VBox>
-                    </HBox>
-                </VBox>
-            </HBox>
-        </HBox>
-    </top>
     <bottom>
         <VBox fx:id="vBox" />
     </bottom>
@@ -78,37 +27,17 @@
             <Tab text="Roms manager">
                 <BorderPane prefHeight="200.0" prefWidth="200.0">
                     <top>
-                        <HBox alignment="CENTER_LEFT" prefHeight="40.0" prefWidth="1220.0" spacing="5.0" BorderPane.alignment="CENTER">
-                            <Button fx:id="expandAllButton" mnemonicParsing="false" onAction="#expandAllButtonClick" text="Expand all" />
-                            <Button fx:id="collapseAllButton" mnemonicParsing="false" onAction="#collapseAllButtonClick" text="Collapse all" />
-                            <Separator orientation="VERTICAL" prefHeight="200.0" />
-                            <Label text="Jakkard:" />
-                            <TextField fx:id="jakkardTextField" onKeyReleased="#jakkardTextFieldKeyReleased" prefHeight="25.0" prefWidth="64.0" />
-                            <Separator orientation="VERTICAL" prefHeight="200.0" />
-                            <Label text="Order by:" />
-                            <ToggleButton fx:id="orderByTitleButton" mnemonicParsing="false" onAction="#orderButtonClick" selected="true" text="Title">
-                                <toggleGroup>
-                                    <ToggleGroup fx:id="orderTG" />
-                                </toggleGroup>
-                            </ToggleButton>
-                            <ToggleButton fx:id="orderByJakkardButton" mnemonicParsing="false" onAction="#orderButtonClick" text="Jakkard" toggleGroup="$orderTG" />
-                            <Separator orientation="VERTICAL" prefHeight="200.0" />
+                        <HBox alignment="CENTER" prefHeight="40.0" prefWidth="1220.0" spacing="5.0" BorderPane.alignment="CENTER">
                             <Button fx:id="selectButton" mnemonicParsing="false" onAction="#selectButtonClick" text="Select" />
                             <Separator orientation="VERTICAL" prefHeight="200.0" />
                             <HBox alignment="CENTER" spacing="5.0">
                                 <CheckBox fx:id="redFamilyCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="RED" />
                                 <CheckBox fx:id="blackFamilyCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="BLACK" />
                             </HBox>
-                     <Separator orientation="VERTICAL" prefHeight="200.0" />
-                     <Label text="Filter orphanes:" />
-                     <TextField fx:id="filterOrphanesTextField" onAction="#filterOrphanesTextFieldAction" />
-                     <Separator orientation="VERTICAL" prefHeight="200.0" />
-                     <Label text="# candidates:" />
-                     <TextField fx:id="candidatesTextField" onAction="#candidatesTextFieldAction" prefHeight="25.0" prefWidth="37.0" />
-
-                            <Separator orientation="VERTICAL" prefHeight="200.0" />
-                            <Button fx:id="expandAllButton3" mnemonicParsing="false" onAction="#expandAllButtonClick3" text="Expand all" />
-                            <Button fx:id="collapseAllButton3" mnemonicParsing="false" onAction="#collapseAllButtonClick3" text="Collapse all" />
+                            <HBox alignment="CENTER_RIGHT" prefHeight="40.0" prefWidth="789.0" spacing="5.0">
+                                <Label text="Filter orphanes:" />
+                                <TextField fx:id="filterOrphanesTextField" onAction="#filterOrphanesTextFieldAction" />
+                            </HBox>
                         </HBox>
                     </top>
                     <center>
@@ -168,28 +97,13 @@
                 <BorderPane prefHeight="200.0" prefWidth="200.0">
                     <top>
                         <HBox alignment="CENTER_LEFT" prefHeight="40.0" prefWidth="200.0" spacing="5.0" BorderPane.alignment="CENTER">
-                            <Button fx:id="expandAllButton2" mnemonicParsing="false" onAction="#expandAllButtonClick2" text="Expand all" />
-                            <Button fx:id="collapseAllButton2" mnemonicParsing="false" onAction="#collapseAllButtonClick2" text="Collapse all" />
                             <Separator orientation="VERTICAL" prefHeight="200.0" />
-                            <Label text="Jakkard:" />
-                            <TextField fx:id="jakkardTextField2" onKeyReleased="#jakkardTextFieldKeyReleased" prefHeight="25.0" prefWidth="64.0" />
-                            <Separator orientation="VERTICAL" prefHeight="200.0" />
+                     <Button mnemonicParsing="false" onAction="#fixTribesButtonClick" text="Fix tribes for all families" />
                             <Button fx:id="findRelativesButton" mnemonicParsing="false" onAction="#findRelativesButtonClick" text="Find relatives" />
                             <Button fx:id="findAgainRelativesButton" mnemonicParsing="false" onAction="#findAgainRelativesButtonClick" text="Find relatives again" />
                             <Separator orientation="VERTICAL" prefHeight="200.0" />
                             <Button fx:id="compressButton" mnemonicParsing="false" onAction="#compressButtonClick" text="Compress" />
                             <Button fx:id="ultraCompressButton" mnemonicParsing="false" onAction="#ultraCompressButtonClick" text="Ultra Compression" />
-                            <Separator orientation="VERTICAL" prefHeight="200.0" />
-                            <Label text="Order by:" />
-                            <ToggleButton fx:id="orderByTitleButton2" mnemonicParsing="false" onAction="#orderButtonClick" selected="true" text="Title">
-                                <toggleGroup>
-                                    <ToggleGroup fx:id="orderTG2" />
-                                </toggleGroup>
-                            </ToggleButton>
-                            <ToggleButton fx:id="orderByJakkardButton2" mnemonicParsing="false" onAction="#orderButtonClick" text="Jakkard" toggleGroup="$orderTG2" />
-                            <Separator orientation="VERTICAL" prefHeight="200.0" />
-                            <Button fx:id="openDirButton2" mnemonicParsing="false" onAction="#openDirButtonClick" text="Open dir" />
-                            <Button fx:id="runButton2" mnemonicParsing="false" onAction="#runListButtonClick" text="Run " />
                         </HBox>
                     </top>
                     <center>
@@ -227,4 +141,74 @@
    <padding>
       <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
    </padding>
+   <top>
+       <VBox BorderPane.alignment="CENTER">
+           <HBox alignment="CENTER" prefHeight="55.0" prefWidth="1490.0" spacing="5.0">
+               <HBox alignment="CENTER" prefHeight="58.0" prefWidth="1490.0" spacing="5.0">
+                   <HBox alignment="CENTER" prefHeight="46.0" prefWidth="318.0" spacing="5.0">
+                       <Button fx:id="toCollectionsButton" mnemonicParsing="false" onAction="#toCollectionsButtonClick" prefHeight="25.0" prefWidth="107.0" text="&lt;&lt; to collections" />
+                       <Button fx:id="saveFamiliesButton" mnemonicParsing="false" onAction="#saveFamiliesButtonClick" text="Save families" />
+                       <Button fx:id="saveRelationsButton" mnemonicParsing="false" onAction="#saveRelationsButtonClick" text="Save relations" />
+                       <!--
+                          <Button fx:id="saveFamiliesButtonS" mnemonicParsing="false" onAction="#saveFamiliesButtonClick" text="Save Ser" />
+                          <Button fx:id="saveFamiliesButtonJ" mnemonicParsing="false" onAction="#saveFamiliesJsonButtonClick" text="Save Json" />
+                      -->
+                   </HBox>
+                   <VBox prefHeight="46.0" prefWidth="792.0">
+                       <HBox prefHeight="47.0" prefWidth="1022.0">
+                           <VBox prefHeight="47.0" prefWidth="499.0">
+                               <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="5.0">
+                                   <Label text="Total families:" />
+                                   <Label fx:id="totalFamiliesLabel" />
+                                   <Label text="Total games:" />
+                                   <Label fx:id="totalGamesLabel" />
+                                   <Label text="Grouped games:" />
+                                   <Label fx:id="groupedGamesLabel" />
+                                   <Label text="Orphaned games:" />
+                                   <Label fx:id="orphanedGamesLabel" />
+                               </HBox>
+                               <HBox fx:id="controlsHBox" alignment="CENTER" prefHeight="46.0" prefWidth="732.0" spacing="5.0">
+                                   <Label text="Precision:" />
+                                   <ComboBox fx:id="precisionCheckBox" onAction="#precisionCheckBoxAction" prefHeight="25.0" prefWidth="74.0" />
+                                   <Button fx:id="generateFamiliesButton" mnemonicParsing="false" onAction="#generateFamiliesButtonClick" text="Generate families" />
+                                   <Button fx:id="calculateRelationsButton" mnemonicParsing="false" onAction="#calculateRelationsButtonClick" text="Calculate relations" />
+                                   <Button fx:id="reCalculateRelationsButton" mnemonicParsing="false" onAction="#reCalculateRelationsButtonClick" text="ReCalculate relations" />
+                               </HBox>
+                           </VBox>
+                       </HBox>
+                   </VBox>
+               </HBox>
+           </HBox>
+           <Separator prefWidth="200.0" />
+           <HBox prefHeight="44.0" prefWidth="1490.0">
+               <HBox alignment="CENTER_LEFT" prefHeight="44.0" prefWidth="1001.0" spacing="5.0">
+                   <Button fx:id="expandAllButton" mnemonicParsing="false" onAction="#expandAllButtonClick" text="Expand all" />
+                   <Button fx:id="collapseAllButton" mnemonicParsing="false" onAction="#collapseAllButtonClick" text="Collapse all" />
+                   <Separator orientation="VERTICAL" prefHeight="200.0" />
+                   <Label text="Jakkard:" />
+                   <TextField fx:id="jakkardTextField" onKeyReleased="#jakkardTextFieldKeyReleased" prefHeight="25.0" prefWidth="64.0" />
+                   <Separator orientation="VERTICAL" prefHeight="200.0" />
+                   <Label text="Order roms by:" />
+                   <ComboBox fx:id="orderRomsComboBox" onAction="#orderClick" prefWidth="55.0" />
+                   <Label text="families by:" />
+                   <ComboBox fx:id="orderFamiliesComboBox" onAction="#orderClick" prefWidth="55.0" />
+                   <Label text="tribes by:" />
+                   <ComboBox fx:id="orderTribesComboBox" onAction="#orderClick" prefWidth="55.0" />
+                   <Separator orientation="VERTICAL" prefHeight="200.0" />
+                   <Label text="# candidates:" />
+                   <TextField fx:id="candidatesTextField" onAction="#candidatesTextFieldAction" prefHeight="25.0" prefWidth="37.0" />
+               </HBox>
+               <VBox alignment="CENTER" prefHeight="47.0" prefWidth="345.0" spacing="5.0">
+                   <HBox alignment="CENTER" prefHeight="17.0" prefWidth="287.0" spacing="5.0">
+                       <CheckBox fx:id="redCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="RED" />
+                       <CheckBox fx:id="blackCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="BLACK" />
+                       <CheckBox fx:id="allGoodCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="Good" />
+                       <CheckBox fx:id="pdCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="PD" />
+                       <CheckBox fx:id="hackCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="Hack" />
+                       <CheckBox fx:id="badCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="Bad" />
+                   </HBox>
+               </VBox>
+           </HBox>
+       </VBox>
+   </top>
 </BorderPane>
