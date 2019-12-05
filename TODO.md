@@ -1,7 +1,5 @@
 # TODO list
 
-TODO rename tribes
-
 TODO generate page, unique roms, force63
 
 TODO red/black for tribes

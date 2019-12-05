@@ -129,6 +129,7 @@ public class FamilyController {
     public ComboBox<String> orderRomsComboBox;
     public ComboBox<String> orderFamiliesComboBox;
     public ComboBox<String> orderTribesComboBox;
+    public MenuItem renameTribeMenuItem;
 
     private TreeItem<NameView> familyRootItem = new TreeItem<>(NameView.EMPTY);
     private TreeItem<NameView> tribeRelationsRootItem = new TreeItem<>(NameView.EMPTY);
@@ -1132,6 +1133,37 @@ public class FamilyController {
                         familyRelationsModified.setValue(true);
                     }
 
+                    familiesModified.setValue(true);
+
+                    showFamilies();
+                }
+            });
+        }
+    }
+
+    public void renameTribeMenuItemButtonClick() {
+
+        ObservableList<TreeItem<NameView>> selectedItems = tribeRelationsTreeView.getSelectionModel().getSelectedItems();
+
+        if (selectedItems.size() == 1 && selectedItems.get(0).getValue().getLevel() == 1) {
+
+            String oldTribeName = selectedItems.get(0).getValue().getName();
+
+            stageManager.getTextInputDialog("title", "headerText", "contextText", oldTribeName)
+                    .showAndWait().ifPresent(newTribeName -> {
+
+                if (!oldTribeName.equals(newTribeName)) {
+
+                    families.values().forEach(f -> {
+                        if (f.getTribe().equals(oldTribeName)) {
+                            f.setTribe(newTribeName);
+                        }
+                    });
+
+                    List<Family> familyList = tribes.remove(oldTribeName);
+                    tribes.put(newTribeName, familyList);
+
+                    familyRelationsModified.setValue(true);
                     familiesModified.setValue(true);
 
                     showFamilies();
