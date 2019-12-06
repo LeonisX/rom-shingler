@@ -37,6 +37,7 @@ public class Family implements Serializable, Cloneable {
 
     public Family(List<Name> members) {
         this.members = members;
+        //TODO may be get with best rating right here
         this.name = members.get(0).getCleanName();
         this.tribe = this.name;
         relations = new ArrayList<>();

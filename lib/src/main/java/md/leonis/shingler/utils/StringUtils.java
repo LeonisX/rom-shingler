@@ -17,6 +17,8 @@ public class StringUtils {
 
         fileName = stripExtension(name);
         String ext = getFileExtension(name);
+        int maxLength = MAX_LENGTH - ext.length();
+
         for (String substr : toDelete) {
             fileName = deleteSubstr(substr, fileName, 0);
         }
@@ -25,38 +27,38 @@ public class StringUtils {
             fileName = fileName.substring(0, fileName.indexOf(" The"));
         }
 
-        name = fileName.replace("  ", " ").replace(" - ", "-").replace(" ", "_") + ext;
+        name = fileName.replace("  ", " ").replace(" - ", "-").trim().replace(" ", "_");
 
         // If file name length <= 64 - return
-        if (name.length() <= MAX_LENGTH) {
-            return name;
+        if (name.length() <= maxLength) {
+            return name + ext;
         }
 
         // Delete all spaces, except two first, next symbol to upper case
         name = deleteSpaces(name);
 
-        if (name.length() <= MAX_LENGTH) {
-            return name;
+        if (name.length() <= maxLength) {
+            return name + ext;
         }
 
         // Replace " -" by " "
         name = name.replace(" -", " ");
-        name = name.replace("_-", "_");
+        name = name.replace("- ", "-");
 
-        if (name.length() <= MAX_LENGTH) {
-            return name;
+        if (name.length() <= maxLength) {
+            return name + ext;
         }
 
         // Delete all ")", replace all "("
         name = deleteSubstr(")", name, 0);
 
-        if (name.length() <= MAX_LENGTH) {
-            return name;
+        if (name.length() <= maxLength) {
+            return name + ext;
         }
         name = name.replace("(", "-");
 
         // Get first 36 characters + "~" + tail.
-        return name.substring(0, 36) + "~" + name.substring(name.length() - 27);
+        return name.substring(0, 36) + "~" + name.substring(name.length() - 27) + ext;
     }
 
     public static String removeSpecialChars(String fileName) {

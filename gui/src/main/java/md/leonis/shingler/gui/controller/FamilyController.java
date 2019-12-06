@@ -131,6 +131,7 @@ public class FamilyController {
     public ComboBox<String> orderTribesComboBox;
     public MenuItem renameTribeMenuItem;
     public Button tiviButton;
+    public Button regenIndexesButton;
 
     private TreeItem<NameView> familyRootItem = new TreeItem<>(NameView.EMPTY);
     private TreeItem<NameView> tribeRelationsRootItem = new TreeItem<>(NameView.EMPTY);
@@ -407,22 +408,24 @@ public class FamilyController {
                 tribesRelationsView = new LinkedHashMap<>();
 
                 tribes.forEach((key, values) -> {
-                    NameView tribe = new NameView(key, (values.isEmpty() ? 0 : values.get(0).getJakkardStatus(0)), 1);
+                    if (values.get(0).getType() == FamilyType.FAMILY) {
+                        NameView tribe = new NameView(key, (values.isEmpty() ? 0 : values.get(0).getJakkardStatus(0)), 1);
 
-                    Map<String, NameView> map = new HashMap<>();
-                    values.forEach(f -> familyRelations.get(f).forEach((key1, value) -> {
-                                String familyTribe = key1.getName();
-                                NameView current = map.get(familyTribe);
-                                if (current == null) {
-                                    map.put(familyTribe, new NameView(key1, value, 2));
-                                } else {
-                                    map.replace(familyTribe, new NameView(key1, Math.max(value, current.getJakkardStatus()), 2));
-                                }
-                            })
-                    );
+                        Map<String, NameView> map = new HashMap<>();
+                        values.forEach(f -> familyRelations.get(f).forEach((key1, value) -> {
+                                    String familyTribe = key1.getName();
+                                    NameView current = map.get(familyTribe);
+                                    if (current == null) {
+                                        map.put(familyTribe, new NameView(key1, value, 2));
+                                    } else {
+                                        map.replace(familyTribe, new NameView(key1, Math.max(value, current.getJakkardStatus()), 2));
+                                    }
+                                })
+                        );
 
-                    tribe.setJakkardStatus(map.values().stream().mapToDouble(NameView::getJakkardStatus).max().orElse(0));
-                    tribesRelationsView.put(tribe, map.values());
+                        tribe.setJakkardStatus(map.values().stream().mapToDouble(NameView::getJakkardStatus).max().orElse(0));
+                        tribesRelationsView.put(tribe, map.values());
+                    }
                 });
 
                 tribeRelationsRootItem.getChildren().clear();
@@ -1538,9 +1541,9 @@ public class FamilyController {
         getAllUniqueRoms();
     }
 
-    private static int MAX_SIZE = 20000;
+    private static int MAX_SIZE = 60000; // 65525, but separate archives are bigger
 
-    //TODO separate archives, max 65525 Mb
+    //TODO update queries
     // html+dump+force63+split
     private void generatePageAndRomsForTvRoms() {
 
@@ -1556,13 +1559,16 @@ public class FamilyController {
 
         String foot = "  </table>\n</body>\n</html>";
 
+        Path renamedPath = outputDir.resolve("renamed");
+
         try {
-            Files.createDirectories(outputDir.resolve("renamed"));
+            Files.createDirectories(renamedPath);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
         List<String> lines = new ArrayList<>();
+        List<String> updateLines = new ArrayList<>();
 
         tribes.keySet().stream().sorted().forEach(t -> {
             String sourceArchiveName = t + ".7z";
@@ -1579,20 +1585,23 @@ public class FamilyController {
             if (fileSize < MAX_SIZE) {
                 try {
                     Path sourceArchive = outputDir.resolve(sourceArchiveName);
-                    Path renamedArchive = outputDir.resolve("renamed").resolve(renamedArchiveName);
+                    Path renamedArchive = renamedPath.resolve(renamedArchiveName);
                     Files.copy(sourceArchive, renamedArchive, StandardCopyOption.REPLACE_EXISTING);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
 
                 lines.add(String.format("    <tr><td><a href=\"http://tv-roms.narod.ru/games/%s/%s\">%s</a></td><td>%s Kb</td></tr>\n", platform, renamedArchiveName, sourceArchiveName, fileSize));
+                for (Family f : tribes.get(t)) {
+                    updateLines.add(String.format("UPDATE `base_%s` SET game='http://tv-roms.narod.ru/games/%s/%s' WHERE name='%s';\n", platform, platform, renamedArchiveName, f.getName()));
+                }
             } else {
                 //split
                 //TODO split  by letters or families, don't tear them
                 LOGGER.info("Splitting {}", t);
                 List<String> members = tribes.get(t).stream().flatMap(f -> f.getMembers().stream()).map(Name::getName).sorted().collect(Collectors.toList());
 
-                final int archivesCount = new Double(Math.floor(fileSize * 1.0 / MAX_SIZE)).intValue();
+                final int archivesCount = new Double(Math.ceil(fileSize * 1.0 / MAX_SIZE)).intValue();
                 final int membersCount = members.size() / archivesCount;
                 final AtomicInteger counter = new AtomicInteger();
 
@@ -1608,7 +1617,7 @@ public class FamilyController {
                     compress(renamedArchiveName, chunk, i++);
 
                     Path sourceArchive = outputDir.resolve(renamedArchiveName);
-                    Path renamedArchive = outputDir.resolve("renamed").resolve(renamedArchiveName);
+                    Path renamedArchive = renamedPath.resolve(renamedArchiveName);
                     try {
                         fileSize = (int) Files.size(sourceArchive) / 1024;
                         Files.copy(sourceArchive, renamedArchive, StandardCopyOption.REPLACE_EXISTING);
@@ -1618,6 +1627,10 @@ public class FamilyController {
                     }
 
                     lines.add(String.format("    <tr><td><a href=\"http://tv-roms.narod.ru/games/%s/%s\">%s</a></td><td>%s Kb</td></tr>\n", platform, renamedArchiveName, sourceArchiveName, fileSize));
+                    //TODO detect correct part
+                    for (Family f : tribes.get(t)) {
+                        updateLines.add(String.format("UPDATE `base_%s` SET game='http://tv-roms.narod.ru/games/%s/%s' WHERE name='%s';\n", platform, platform, renamedArchiveName, f.getName().replace("'", "\\'")));
+                    }
                 }
             }
         });
@@ -1629,10 +1642,71 @@ public class FamilyController {
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
+
+        try (PrintWriter out = new PrintWriter(platform + "_update.htm")) {
+            out.println(String.join("", updateLines));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    //TODO get all unique roms (list+dump+force63)
+    //(list+dump+force63)
+    //TODO group by size
+    //TODO update queries
     // use code from run list
     private void getAllUniqueRoms() {
+
+        Path uniquePath = outputDir.resolve("unique").resolve(platform);
+
+        try {
+            Files.createDirectories(uniquePath);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        List<String> lines = new ArrayList<>();
+        List<String> updateLines = new ArrayList<>();
+
+        // TODO process groups somehow too
+        families.values().stream().filter(f -> f.getType() == FamilyType.GROUP).forEach(f -> System.out.println("Skipping group: " + f.getName()));
+
+        List<Name> namesList =
+                families.values().stream().filter(f -> f.getType() == FamilyType.FAMILY)
+                        .flatMap(f -> f.getMembers().stream()).filter(n -> ListFilesa.nonHack(n.getName()))
+                        .collect(Collectors.groupingBy(Name::getCleanName))
+                        .values().stream().map(l -> l.stream().sorted(Comparator.comparing(Name::getIndex).reversed()).findFirst().orElse(null)).collect(Collectors.toList());
+
+        namesList.stream().sorted(Comparator.comparing(Name::getName)).forEach(n -> {
+            String sourceRomName = n.getName();
+            String renamedRomName = StringUtils.removeSpecialChars(sourceRomName.replace("_", " ")); // remove special symbols
+            renamedRomName = StringUtils.force63(renamedRomName);
+
+            try {
+                Path sourceRom = romsCollection.getRomsPath().resolve(sourceRomName);
+                Path renamedRom = uniquePath.resolve(renamedRomName);
+                Files.copy(sourceRom, renamedRom, StandardCopyOption.REPLACE_EXISTING);
+                lines.add(String.format("%s/%s\n", platform, renamedRomName));
+                updateLines.add(String.format("UPDATE `base_%s` SET rom='%s/%s' WHERE name='%s';\n", platform, platform, renamedRomName, sourceRomName.replace("'", "\\'")));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        try (PrintWriter out = new PrintWriter(platform + "_unique.htm")) {
+            out.println(String.join("", lines));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        try (PrintWriter out = new PrintWriter(platform + "_unique_update.htm")) {
+            out.println(String.join("", updateLines));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void regenIndexesButtonClick() {
+        families.values().forEach(f -> f.getMembers().forEach(n -> n.setIndex(ListFilesa.calculateIndex(n.getName()))));
+        familiesModified.set(true);
     }
 }

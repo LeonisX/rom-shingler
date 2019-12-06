@@ -420,7 +420,7 @@ public class ListFilesa {
         return Math.abs(d2 - d1) / d1 * 100;
     }
 
-    private static boolean nonHack(String s) {
+    public static boolean nonHack(String s) {
         return !s.contains("(Hack)") && !s.contains("(Hack ") && !s.contains(" Hack)");
     }
 
@@ -551,5 +551,76 @@ public class ListFilesa {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static int calculateIndex(String name) {
+
+        int index = 100;
+
+        if (name.contains("(U)")) {
+            index += 100;
+        }
+        if (name.contains("(W)")) {
+            index += 99;
+        }
+        if (name.contains("(E)")) {
+            index += 80;
+        }
+        if (name.contains("(F)")) {
+            index += 70;
+        }
+        if (name.contains("(G)")) {
+            index += 70;
+        }
+        if (name.contains("(J)")) {
+            index += 60;
+        }
+        if (name.contains("[!]")) {
+            index += 10;
+        }
+        if (name.contains("+")) {
+            index += 2;
+        }
+
+        if (name.contains("[b")) {
+            index -= 50;
+        }
+        if (name.contains("(PD)")) {
+            index -= 45;
+        }
+        if (name.contains("(Hack") || name.contains("Hack)")) {
+            index -= 45;
+        }
+        if (name.contains("[o")) {
+            index -= 30;
+        }
+        if (name.contains("[h")) {
+            index -= 20;
+        }
+        if (name.contains("(Prototype)")) {
+            index -= 15;
+        }
+        if (name.contains("(Sample)")) {
+            index -= 15;
+        }
+        if (name.contains("(Menu)")) {
+            index -= 15;
+        }
+        if (name.contains("[t")) {
+            index -= 10;
+        }
+        if (name.contains("[p")) {
+            index -= 10;
+        }
+        if (name.contains("[f")) {
+            index -= 10;
+        }
+        if (name.contains("[T")) {
+            index -= 10;
+        }
+        if (name.contains("[a")) {
+            index -= 5;
+        }
+        return index;
     }
 }

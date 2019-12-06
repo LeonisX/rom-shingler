@@ -2,6 +2,7 @@ package md.leonis.shingler.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
+import md.leonis.shingler.ListFilesa;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -29,58 +30,7 @@ public class Name implements Serializable {
     public Name(String name, boolean done) {
         this.name = name;
         this.done = done;
-
-        if (name.contains("(U)")) {
-            index += 100;
-        }
-        if (name.contains("(W)")) {
-            index += 99;
-        }
-        if (name.contains("(E)")) {
-            index += 80;
-        }
-        if (name.contains("(F)")) {
-            index += 70;
-        }
-        if (name.contains("(G)")) {
-            index += 70;
-        }
-        if (name.contains("(J)")) {
-            index += 60;
-        }
-        if (name.contains("[b")) {
-            index -= 50;
-        }
-        if (name.contains("[a")) {
-            index -= 5;
-        }
-        if (name.contains("[h")) {
-            index -= 20;
-        }
-        if (name.contains("[t")) {
-            index -= 10;
-        }
-        if (name.contains("[p")) {
-            index -= 10;
-        }
-        if (name.contains("[f")) {
-            index -= 10;
-        }
-        if (name.contains("[T")) {
-            index -= 10;
-        }
-        if (name.contains("[!]")) {
-            index += 10;
-        }
-        if (name.contains("(PD)")) {
-            index -= 45;
-        }
-        if (name.contains("(Hack") || name.contains("Hack)")) {
-            index -= 45;
-        }
-        if (name.contains("+")) {
-            index -= 2;
-        }
+        this.index = ListFilesa.calculateIndex(name);
     }
 
     @Override
