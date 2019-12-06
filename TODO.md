@@ -1,6 +1,8 @@
 # TODO list
 
-TODO tribes - after find relatives again see nested families in relations :(
+TODO TiviStuff, groups - output to separate folder. pd, multi - platform specific
+
+
 
 TODO red/black for tribes
 

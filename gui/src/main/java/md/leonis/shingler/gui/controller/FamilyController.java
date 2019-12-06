@@ -1411,7 +1411,7 @@ public class FamilyController {
         try {
             if (isWindows) {
                 String archiveName = name.endsWith(".7z") ? name : name + ".7z";
-                archiveName = outputDir.resolve(archiveName).toAbsolutePath().toString();
+                archiveName = outputDir.resolve(platform).resolve(archiveName).toAbsolutePath().toString();
 
                 args = new ArrayList<>(Arrays.asList(
                         // 7z a -mx9 -m0=LZMA -md1536m -mfb273 -ms8g -mmt=off <archive_name> [<file_names>...]
@@ -1561,7 +1561,7 @@ public class FamilyController {
 
         String foot = "  </table>\n</body>\n</html>";
 
-        Path renamedPath = outputDir.resolve("renamed");
+        Path renamedPath = outputDir.resolve(platform).resolve("renamed");
 
         try {
             Files.createDirectories(renamedPath);
@@ -1579,14 +1579,14 @@ public class FamilyController {
 
             int fileSize;
             try {
-                fileSize = (int) Files.size(outputDir.resolve(sourceArchiveName)) / 1024;
+                fileSize = (int) Files.size(outputDir.resolve(platform).resolve(sourceArchiveName)) / 1024;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
 
             if (fileSize < MAX_SIZE) {
                 try {
-                    Path sourceArchive = outputDir.resolve(sourceArchiveName);
+                    Path sourceArchive = outputDir.resolve(platform).resolve(sourceArchiveName);
                     Path renamedArchive = renamedPath.resolve(renamedArchiveName);
                     Files.copy(sourceArchive, renamedArchive, StandardCopyOption.REPLACE_EXISTING);
                 } catch (IOException e) {
@@ -1618,7 +1618,7 @@ public class FamilyController {
 
                     compress(renamedArchiveName, chunk, i++);
 
-                    Path sourceArchive = outputDir.resolve(renamedArchiveName);
+                    Path sourceArchive = outputDir.resolve(platform).resolve(renamedArchiveName);
                     Path renamedArchive = renamedPath.resolve(renamedArchiveName);
                     try {
                         fileSize = (int) Files.size(sourceArchive) / 1024;
@@ -1658,7 +1658,7 @@ public class FamilyController {
     // use code from run list
     private void getAllUniqueRoms() {
 
-        Path uniquePath = outputDir.resolve("unique").resolve(platform);
+        Path uniquePath = outputDir.resolve(platform).resolve("unique").resolve(platform);
 
         try {
             Files.createDirectories(uniquePath);
