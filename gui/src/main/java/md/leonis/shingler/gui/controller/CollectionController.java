@@ -116,7 +116,7 @@ public class CollectionController {
             if (dblClick) {
                 showPlatformCollections(platforms.get(selectedItem).getCpu());
             } else {
-                showPlatformStatus(platforms.get(selectedItem).getCpu());
+                showPlatformStatus(selectedItem);
             }
         } else {
             selectCollection(selectedItem);
@@ -131,13 +131,13 @@ public class CollectionController {
 
         if (!platforms.isEmpty()) {
             collectionsView.getSelectionModel().selectFirst();
-            showPlatformStatus(platforms.keySet().iterator().next());
+            showPlatformStatus(platforms.get(collectionsView.getSelectionModel().getSelectedItem()).getTitle());
         }
     }
 
     private void showPlatformStatus(String selectedItem) {
 
-        platform = selectedItem;
+        platform = platforms.get(selectedItem).getCpu();
         List<Path> collections = IOUtils.listFiles(workCollectionsPath()).stream().filter(f -> !f.getFileName().toString().endsWith(".bak")).collect(Collectors.toList());
         textArea.setText("Collections: " + collections.size());
     }

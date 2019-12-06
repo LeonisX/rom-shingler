@@ -1035,14 +1035,16 @@ public class FamilyController {
                     break;
                 }
 
-                LOGGER.info("Calculating relations for {}|{}", family.getValue().getName(), (i + 1) * 100.0 / families.entrySet().size());
+                LOGGER.info("Calculating relations for {}|{}", family.getValue().getName(), (i++ + 1) * 100.0 / families.entrySet().size());
 
-                familyRelations.put(family.getValue(), ListFilesa.calculateRelations(family.getValue().getMother().getName(), family.getKey(), false));
-                i++;
+                Map<Family, Double> relations =
+                        ListFilesa.calculateRelations(family.getValue().getMother().getName(), family.getKey(), false).entrySet().stream()
+                                .filter(e -> !e.getKey().getTribe().equals(family.getValue().getTribe()))
+                                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                familyRelations.put(family.getValue(), relations);
             }
 
-            familyRelationsModified.setValue(true);
-            familyRelationsModified.setValue(true);
+            familyRelationsModified.set(true);
         }, this::showFamilies);
     }
 
@@ -1571,7 +1573,7 @@ public class FamilyController {
         List<String> updateLines = new ArrayList<>();
 
         tribes.keySet().stream().sorted().forEach(t -> {
-            String sourceArchiveName = t + ".7z";
+            String sourceArchiveName = t + (t.endsWith(".7z") ? "" : ".7z");
             String renamedArchiveName = StringUtils.removeSpecialChars(sourceArchiveName.replace("_", " ")); // remove special symbols
             renamedArchiveName = StringUtils.force63(renamedArchiveName);
 
@@ -1678,7 +1680,9 @@ public class FamilyController {
 
         namesList.stream().sorted(Comparator.comparing(Name::getName)).forEach(n -> {
             String sourceRomName = n.getName();
-            String renamedRomName = StringUtils.removeSpecialChars(sourceRomName.replace("_", " ")); // remove special symbols
+            // TODO use platform specific rules
+            String renamedRomName = sourceRomName.replace(" (SG-1000)", "").replace(" (SC-3000)", "").replace(" (SF-7000)", "").replace(" (MV)", "");
+            renamedRomName = StringUtils.removeSpecialChars(renamedRomName.replace("_", " ")); // remove special symbols
             renamedRomName = StringUtils.force63(renamedRomName);
 
             try {

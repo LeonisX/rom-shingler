@@ -1,11 +1,7 @@
 # TODO list
 
-TODO generate page, unique roms, force63
+TODO tribes - after find relatives again see nested families in relations :(
 
-TODO split big archives (Multicarts Collection (part 2).7z) ~35 Mb, may be bigger, need to experiment
-
-TODO create sql queries to add games, roms
- 
 TODO red/black for tribes
 
 TODO change output directory for archives

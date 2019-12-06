@@ -26,8 +26,10 @@ public class SplashController {
     private void initialize() {
 
         //TODO service, read from disk
-        platforms.put("NES", new Platform("NES", "nes", "(.*\\(Hack\\).*|.*\\(Hack .*|.* Hack\\).*)", "(.*\\[[bhot][0-9a-f]].*|.*\\[T[+\\-].*].*|.*\\[hM\\d{2}].*|.*\\[hFFE].*)", ".*\\(PD\\).*"));
-        platformsByCpu.put("nes", platforms.values().iterator().next());
+        platforms.put("Nintendo NES", new Platform("Nintendo NES", "nes", "(.*\\(Hack\\).*|.*\\(Hack .*|.* Hack\\).*)", "(.*\\[[bhot][0-9a-f]].*|.*\\[T[+\\-].*].*|.*\\[hM\\d{2}].*|.*\\[hFFE].*)", ".*\\(PD\\).*"));
+        platforms.put("Sega SG-1000", new Platform("Sega SG-1000", "sg1000", "(.*\\(Hack\\).*|.*\\(Hack .*|.* Hack\\).*)", "(.*\\[[bhot][0-9a-f]].*|.*\\[T[+\\-].*].*|.*\\[hM\\d{2}].*|.*\\[hFFE].*)", ".*\\(PD\\).*"));
+        platforms.put("Sega Master System", new Platform("Sega Master System", "sms", "(.*\\(Hack\\).*|.*\\(Hack .*|.* Hack\\).*)", "(.*\\[[bhot][0-9a-f]].*|.*\\[T[+\\-].*].*|.*\\[hM\\d{2}].*|.*\\[hFFE].*)", ".*\\(PD\\).*"));
+        platforms.values().forEach(p -> platformsByCpu.put(p.getCpu(), p));
 
         IOUtils.createDirectories(collectionsDir);
         platforms.values().forEach(p -> IOUtils.createDirectories(collectionsDir.resolve(p.getCpu())));
