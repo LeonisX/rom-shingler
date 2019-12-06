@@ -1,5 +1,6 @@
 package md.leonis.shingler;
 
+import md.leonis.shingler.utils.StringUtils;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 
@@ -89,7 +90,7 @@ public class ListFiles {
     private static String normalize(String s) {
         List<String> chunks = new ArrayList<>();
 
-        toChunks(s).forEach(c -> {
+        StringUtils.toChunks(s).forEach(c -> {
             if (
                     !c.matches("^\\[.+\\]$") &&
                             !c.matches("^\\(.+\\)$")
@@ -147,53 +148,7 @@ public class ListFiles {
         return String.join(" ", chunks);
     }
 
-    static List<String> toChunks(String string) {
-        List<String> chunks = new ArrayList<>();
 
-        int openSB = 0;
-        int openBR = 0;
-
-        StringBuilder chunk = new StringBuilder();
-
-        char[] chars = string.toCharArray();
-        for (char c : chars) {
-            switch (c) {
-                case '[':
-                    if (openSB == 0 && openBR == 0 && chunk.length() > 0) {
-                        chunks.add(chunk.toString().trim());
-                        chunk = new StringBuilder();
-                    }
-                    openSB++;
-                    break;
-                case ']':
-                    if (openSB == 0 && openBR == 0 && chunk.length() > 0) {
-                        chunks.add(chunk.append(']').toString().trim());
-                        chunk = new StringBuilder();
-                    }
-                    openSB--;
-                    break;
-                case '(':
-                    if (openSB == 0 && openBR == 0 && chunk.length() > 0) {
-                        chunks.add(chunk.toString().trim());
-                        chunk = new StringBuilder();
-                    }
-                    openBR++;
-                    break;
-                case ')':
-                    if (openSB == 0 && openBR == 0 && chunk.length() > 0) {
-                        chunks.add(chunk.append(')').toString().trim());
-                        chunk = new StringBuilder();
-                    }
-                    openBR--;
-                    break;
-            }
-            chunk.append(c);
-        }
-        if (chunk.length() > 0) {
-            chunks.add(chunk.toString());
-        }
-        return chunks;
-    }
 
     private static String getCleanName(String s) {
         int braceIndex = s.indexOf("(");

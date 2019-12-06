@@ -28,21 +28,21 @@ import md.leonis.shingler.gui.view.FxmlView;
 import md.leonis.shingler.gui.view.StageManager;
 import md.leonis.shingler.model.*;
 import md.leonis.shingler.utils.IOUtils;
+import md.leonis.shingler.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
 
 import java.awt.*;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -130,6 +130,7 @@ public class FamilyController {
     public ComboBox<String> orderFamiliesComboBox;
     public ComboBox<String> orderTribesComboBox;
     public MenuItem renameTribeMenuItem;
+    public Button tiviButton;
 
     private TreeItem<NameView> familyRootItem = new TreeItem<>(NameView.EMPTY);
     private TreeItem<NameView> tribeRelationsRootItem = new TreeItem<>(NameView.EMPTY);
@@ -471,7 +472,7 @@ public class FamilyController {
     private static Comparator<TreeItem<NameView>> bySize = Comparator.comparing((TreeItem<NameView> n) -> n.getValue().getItems().size()).reversed();
 
     private Comparator<TreeItem<NameView>> selectComparator(ComboBox<String> combo) {
-        switch(combo.getSelectionModel().getSelectedIndex()) {
+        switch (combo.getSelectionModel().getSelectedIndex()) {
             case 0:
                 return byTitle;
             case 1:
@@ -671,10 +672,10 @@ public class FamilyController {
             registerRunningTask("calculateRelations");
             ListFilesa.calculateRelations(family, true);
             unRegisterRunningTask("calculateRelations");
+            tribes.put(s, new ArrayList<>(Collections.singletonList(family)));
             familiesModified.setValue(true);
         }, this::showFamilies));
     }
-
 
     public void newGroupButtonClick() {
 
@@ -691,6 +692,7 @@ public class FamilyController {
         result.ifPresent(s -> {
             Family family = new Family(s, selectedNames, FamilyType.GROUP);
             families.put(s, family);
+            tribes.put(s, new ArrayList<>(Collections.singletonList(family)));
             familiesModified.setValue(true);
 
             showFamilies();
@@ -729,6 +731,7 @@ public class FamilyController {
                 families.put(familyName, family);
                 registerRunningTask("calculateRelations");
                 ListFilesa.calculateRelations(family);
+                tribes.put(familyName, new ArrayList<>(Collections.singletonList(family)));
                 unRegisterRunningTask("calculateRelations");
             }
             familiesModified.setValue(true);
@@ -760,6 +763,14 @@ public class FamilyController {
                     .filter(f -> !f.getValue().getMembers().isEmpty())
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
+            Set<Family> emptyFamilies = modifiedFamilies.stream().filter(f -> f.getMembers().isEmpty()).collect(Collectors.toSet());
+            emptyFamilies.forEach(f -> {
+                List<Family> familyList = tribes.get(f.getTribe());
+                familyList.remove(f);
+                if (familyList.isEmpty()) {
+                    tribes.remove(f.getTribe());
+                }
+            });
         }, this::showFamilies);
     }
 
@@ -1194,6 +1205,7 @@ public class FamilyController {
                             familyRelations.entrySet().removeIf(e -> toDelete.contains(e.getKey().getName()));
                             familyRelations.forEach((key, value) -> value.entrySet().removeIf(e -> toDelete.contains(e.getKey().getName())));
                         }
+                        tribes.values().forEach(t -> t.remove(families.get(familyName)));
                     });
 
                     familiesModified.setValue(true);
@@ -1310,10 +1322,12 @@ public class FamilyController {
     }
 
     public void saveRelationsButtonClick() {
-        LOGGER.info("Saving family relations...");
-        IOUtils.createDirectories(workFamiliesPath());
-        stageManager.showWaitAlertAndRun("Saving family relations", () -> IOUtils.serializeFamilyRelationsAsJson(fullFamilyRelationsPath().toFile(), familyRelations));
-        familyRelationsModified.setValue(false);
+        if (familyRelations != null) {
+            LOGGER.info("Saving family relations...");
+            IOUtils.createDirectories(workFamiliesPath());
+            stageManager.showWaitAlertAndRun("Saving family relations", () -> IOUtils.serializeFamilyRelationsAsJson(fullFamilyRelationsPath().toFile(), familyRelations));
+            familyRelationsModified.setValue(false);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -1375,70 +1389,74 @@ public class FamilyController {
                     break;
                 }
 
-                LOGGER.info("Compressing: {} [{}]|{}", name, members.size(), (i++ + 1) * 100.0 / families.size());
-
-                boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
-                ProcessBuilder processBuilder = new ProcessBuilder();
-
-                List<String> args = null;
-
-                try {
-                    if (isWindows) {
-                        String archiveName = name.endsWith(".7z") ? name : name + ".7z";
-                        archiveName = outputDir.resolve(archiveName).toAbsolutePath().toString();
-
-                        args = new ArrayList<>(Arrays.asList(
-                                // 7z a -mx9 -m0=LZMA -md1536m -mfb273 -ms8g -mmt=off <archive_name> [<file_names>...]
-                                System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", "-mmt=off", '"' + archiveName + '"')
-
-                                // 7z a -mx9 -m0=LZMA -md1536m -mfb273 -ms8g <archive_name> [<file_names>...]
-                                //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", '"' + archiveName + '"')
-
-                                // 7z a -mx9 -mmt=off <archive_name> [<file_names>...]
-                                //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-mmt=off", '"' + archiveName + '"')
-
-                                // 7z a -mx9 -mmt2 <archive_name> [<file_names>...]
-                                //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-mmt2", '"' + archiveName + '"')
-
-                                // 7z a -mx9 -mmt4 <archive_name> [<file_names>...]
-                                //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-mmt4", '"' + archiveName + '"')
-
-                                // 7z a -mx9 <archive_name> [<file_names>...]
-                                //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", '"' + archiveName + '"')
-                        );
-                        if (members.size() > 50) {
-                            File tmp = File.createTempFile("shg", "7z");
-                            Files.write(tmp.toPath(), members.stream().map(n -> romsCollection.getRomsPath().resolve(n.getName()).toString()).collect(Collectors.toList()), Charset.defaultCharset());
-                            args.add("@" + tmp.getAbsolutePath());
-                        } else {
-                            args.addAll(members.stream().map(n -> '"' + romsCollection.getRomsPath().resolve(n.getName()).toString() + '"').collect(Collectors.toList()));
-                        }
-
-                        processBuilder.command(args);
-                    } else {
-                        //TODO finish, test on Linux
-                        processBuilder.command("7z", "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", "-mmt=off", "archive.7z", "", "", "", "");
-                    }
-
-                    Process proc = processBuilder.start();
-                    BufferedReader errBR = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
-                    BufferedReader outBR = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-
-                    int code = proc.waitFor();
-
-                    if (code > 0) {
-                        LOGGER.warn("Exit code: {}", code);
-                        LOGGER.warn("Out message: {}", errBR.lines().collect(Collectors.joining("\n")));
-                        LOGGER.warn("Error message: {}", outBR.lines().collect(Collectors.joining("\n")));
-                        System.out.println(args);
-                    }
-
-                } catch (Exception ex) {
-                    LOGGER.error("Compression error", ex);
-                }
-
+                compress(name, members.stream().map(Name::getName).collect(Collectors.toList()), i++);
             }
         });
+    }
+
+    private void compress(String name, List<String> members, int i) {
+
+        LOGGER.info("Compressing: {} [{}]|{}", name, members.size(), (i + 1) * 100.0 / families.size());
+
+        boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
+        ProcessBuilder processBuilder = new ProcessBuilder();
+
+        List<String> args = null;
+
+        try {
+            if (isWindows) {
+                String archiveName = name.endsWith(".7z") ? name : name + ".7z";
+                archiveName = outputDir.resolve(archiveName).toAbsolutePath().toString();
+
+                args = new ArrayList<>(Arrays.asList(
+                        // 7z a -mx9 -m0=LZMA -md1536m -mfb273 -ms8g -mmt=off <archive_name> [<file_names>...]
+                        System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", "-mmt=off", '"' + archiveName + '"')
+
+                        // 7z a -mx9 -m0=LZMA -md1536m -mfb273 -ms8g <archive_name> [<file_names>...]
+                        //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", '"' + archiveName + '"')
+
+                        // 7z a -mx9 -mmt=off <archive_name> [<file_names>...]
+                        //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-mmt=off", '"' + archiveName + '"')
+
+                        // 7z a -mx9 -mmt2 <archive_name> [<file_names>...]
+                        //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-mmt2", '"' + archiveName + '"')
+
+                        // 7z a -mx9 -mmt4 <archive_name> [<file_names>...]
+                        //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-mmt4", '"' + archiveName + '"')
+
+                        // 7z a -mx9 <archive_name> [<file_names>...]
+                        //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", '"' + archiveName + '"')
+                );
+                if (members.size() > 50) {
+                    File tmp = File.createTempFile("shg", "7z");
+                    Files.write(tmp.toPath(), members.stream().map(n -> romsCollection.getRomsPath().resolve(n).toString()).collect(Collectors.toList()), Charset.defaultCharset());
+                    args.add("@" + tmp.getAbsolutePath());
+                } else {
+                    args.addAll(members.stream().map(n -> '"' + romsCollection.getRomsPath().resolve(n).toString() + '"').collect(Collectors.toList()));
+                }
+
+                processBuilder.command(args);
+            } else {
+                //TODO finish, test on Linux
+                processBuilder.command("7z", "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", "-mmt=off", "archive.7z", "", "", "", "");
+            }
+
+            Process proc = processBuilder.start();
+            BufferedReader errBR = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
+            BufferedReader outBR = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+
+            int code = proc.waitFor();
+
+            if (code > 0) {
+                LOGGER.warn("Exit code: {}", code);
+                LOGGER.warn("Out message: {}", errBR.lines().collect(Collectors.joining("\n")));
+                LOGGER.warn("Error message: {}", outBR.lines().collect(Collectors.joining("\n")));
+                System.out.println(args);
+            }
+
+        } catch (Exception ex) {
+            LOGGER.error("Compression error", ex);
+        }
     }
 
     //TODO find best family if jakkard < ???
@@ -1510,5 +1528,111 @@ public class FamilyController {
         tribesRelationsView.clear();
         tribeRelationsRootItem.getChildren().clear();
         showFamilies();
+    }
+
+
+    public void generateTiviStuffClick() {
+
+        generatePageAndRomsForTvRoms();
+
+        getAllUniqueRoms();
+    }
+
+    private static int MAX_SIZE = 20000;
+
+    //TODO separate archives, max 65525 Mb
+    // html+dump+force63+split
+    private void generatePageAndRomsForTvRoms() {
+
+        String head = "<html>\n" +
+                "<head>\n" +
+                "  <title>Игры Nintendo/Dendy GoodNES 3.23b</title>\n" +
+                "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n" +
+                "  <META content=Sinoel name=author>\n" +
+                "</head>\n" +
+                "<body bgcolor=\"#FFFFFF\" text=\"#000000\">\n" +
+                "  <a href=\"..\"><<на главную страницу</a><br>\n" +
+                "  <table width=\"95%\" cellspacing=\"0\" cellpadding=\"3\" border=\"1\" bgcolor=\"#FFFFFF\" bordercolor=\"#000000\">\n";
+
+        String foot = "  </table>\n</body>\n</html>";
+
+        try {
+            Files.createDirectories(outputDir.resolve("renamed"));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        List<String> lines = new ArrayList<>();
+
+        tribes.keySet().stream().sorted().forEach(t -> {
+            String sourceArchiveName = t + ".7z";
+            String renamedArchiveName = StringUtils.removeSpecialChars(sourceArchiveName.replace("_", " ")); // remove special symbols
+            renamedArchiveName = StringUtils.force63(renamedArchiveName);
+
+            int fileSize;
+            try {
+                fileSize = (int) Files.size(outputDir.resolve(sourceArchiveName)) / 1024;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            if (fileSize < MAX_SIZE) {
+                try {
+                    Path sourceArchive = outputDir.resolve(sourceArchiveName);
+                    Path renamedArchive = outputDir.resolve("renamed").resolve(renamedArchiveName);
+                    Files.copy(sourceArchive, renamedArchive, StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+                lines.add(String.format("    <tr><td><a href=\"http://tv-roms.narod.ru/games/%s/%s\">%s</a></td><td>%s Kb</td></tr>\n", platform, renamedArchiveName, sourceArchiveName, fileSize));
+            } else {
+                //split
+                //TODO split  by letters or families, don't tear them
+                LOGGER.info("Splitting {}", t);
+                List<String> members = tribes.get(t).stream().flatMap(f -> f.getMembers().stream()).map(Name::getName).sorted().collect(Collectors.toList());
+
+                final int archivesCount = new Double(Math.floor(fileSize * 1.0 / MAX_SIZE)).intValue();
+                final int membersCount = members.size() / archivesCount;
+                final AtomicInteger counter = new AtomicInteger();
+
+                final Collection<List<String>> result = members.stream().collect(Collectors.groupingBy(it -> counter.getAndIncrement() / membersCount)).values();
+
+                int i = 1;
+                for(List<String> chunk: result) {
+
+                    sourceArchiveName = String.format("%s (part %s).7z", t, i);
+                    renamedArchiveName = StringUtils.removeSpecialChars(String.format("%s part %s.7z", t, i).replace("_", " ")); // remove special symbols
+                    renamedArchiveName = StringUtils.force63(renamedArchiveName);
+
+                    compress(renamedArchiveName, chunk, i++);
+
+                    Path sourceArchive = outputDir.resolve(renamedArchiveName);
+                    Path renamedArchive = outputDir.resolve("renamed").resolve(renamedArchiveName);
+                    try {
+                        fileSize = (int) Files.size(sourceArchive) / 1024;
+                        Files.copy(sourceArchive, renamedArchive, StandardCopyOption.REPLACE_EXISTING);
+                        Files.delete(sourceArchive);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    lines.add(String.format("    <tr><td><a href=\"http://tv-roms.narod.ru/games/%s/%s\">%s</a></td><td>%s Kb</td></tr>\n", platform, renamedArchiveName, sourceArchiveName, fileSize));
+                }
+            }
+        });
+
+        String html = head + String.join("", lines) + foot;
+
+        try (PrintWriter out = new PrintWriter(platform + ".htm")) {
+            out.println(html);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    //TODO get all unique roms (list+dump+force63)
+    // use code from run list
+    private void getAllUniqueRoms() {
     }
 }

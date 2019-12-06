@@ -104,11 +104,13 @@
                             <Separator orientation="VERTICAL" prefHeight="200.0" />
                             <Button fx:id="compressButton" mnemonicParsing="false" onAction="#compressButtonClick" text="Compress" />
                             <Button fx:id="ultraCompressButton" mnemonicParsing="false" onAction="#ultraCompressButtonClick" text="Ultra Compression" />
+                            <Separator orientation="VERTICAL" prefHeight="200.0" />
+                            <Button fx:id="tiviButton" mnemonicParsing="false" onAction="#generateTiviStuffClick" text="Generate TiVi stuff" />
                         </HBox>
                     </top>
                     <center>
                         <SplitPane dividerPositions="0.5" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
-                            <TreeView fx:id="tribeRelationsTreeView" onContextMenuRequested="#tribeRelationsContextMenuRequest" onKeyReleased="#tribeRelationsTreeViewKeyReleased" onMouseClicked="#tribeRelationsTreeViewMouseClicked" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+                            <TreeView fx:id="tribeRelationsTreeView" onContextMenuRequested="#tribeRelationsContextMenuRequest" onKeyReleased="#tribeRelationsTreeViewKeyReleased" onMouseClicked="#tribeRelationsTreeViewMouseClicked" onMouseReleased="#tribeRelationsTreeViewMouseClicked" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
                                 <contextMenu>
                                     <ContextMenu fx:id="tribeRelationsContextMenu">
                                         <items>
@@ -153,7 +155,7 @@
                    </HBox>
                    <VBox prefHeight="46.0" prefWidth="792.0">
                        <HBox prefHeight="47.0" prefWidth="1022.0">
-                           <VBox prefHeight="47.0" prefWidth="542.0">
+                           <VBox prefHeight="47.0" prefWidth="608.0">
                                <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="5.0">
                                    <Label text="Total tribes:" />
                                    <Label fx:id="totalTribesLabel" />
@@ -180,7 +182,7 @@
            </HBox>
            <Separator prefWidth="200.0" />
            <HBox prefHeight="44.0" prefWidth="1490.0">
-               <HBox alignment="CENTER_LEFT" prefHeight="44.0" prefWidth="809.0" spacing="5.0">
+               <HBox alignment="CENTER_LEFT" prefHeight="44.0" prefWidth="863.0" spacing="5.0">
                    <Button fx:id="expandAllButton" mnemonicParsing="false" onAction="#expandAllButtonClick" text="Expand all" />
                    <Button fx:id="collapseAllButton" mnemonicParsing="false" onAction="#collapseAllButtonClick" text="Collapse all" />
                    <Separator orientation="VERTICAL" prefHeight="200.0" />
@@ -188,16 +190,16 @@
                    <TextField fx:id="jakkardTextField" onKeyReleased="#jakkardTextFieldKeyReleased" prefHeight="25.0" prefWidth="50.0" />
                    <Separator orientation="VERTICAL" prefHeight="200.0" />
                    <Label text="Order roms by:" />
-                   <ComboBox fx:id="orderRomsComboBox" onAction="#orderClick" prefWidth="55.0" />
+                   <ComboBox fx:id="orderRomsComboBox" onAction="#orderClick" prefWidth="75.0" />
                    <Label text="families by:" />
-                   <ComboBox fx:id="orderFamiliesComboBox" onAction="#orderClick" prefWidth="55.0" />
+                   <ComboBox fx:id="orderFamiliesComboBox" onAction="#orderClick" prefWidth="75.0" />
                    <Label text="tribes by:" />
-                   <ComboBox fx:id="orderTribesComboBox" onAction="#orderClick" prefWidth="55.0" />
+                   <ComboBox fx:id="orderTribesComboBox" onAction="#orderClick" prefWidth="75.0" />
                    <Separator orientation="VERTICAL" prefHeight="200.0" />
                    <Label text="# candidates:" />
                    <TextField fx:id="candidatesTextField" onAction="#candidatesTextFieldAction" prefHeight="25.0" prefWidth="37.0" />
                </HBox>
-               <VBox alignment="CENTER" prefHeight="47.0" prefWidth="345.0" spacing="5.0">
+               <VBox alignment="CENTER" prefHeight="44.0" prefWidth="331.0" spacing="5.0">
                    <HBox alignment="CENTER" prefHeight="17.0" prefWidth="287.0" spacing="5.0">
                        <CheckBox fx:id="redCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="RED" />
                        <CheckBox fx:id="blackCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="BLACK" />
