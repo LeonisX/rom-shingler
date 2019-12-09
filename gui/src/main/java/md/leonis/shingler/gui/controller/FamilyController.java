@@ -1739,19 +1739,17 @@ public class FamilyController {
         familyMap.entrySet().stream().sorted(Comparator.comparing(e -> e.getKey().getName())).forEach(e -> {
             String familyName = e.getValue().getName().replace("&", "&amp;").replace("'", "&rsquo;").replace(".7z", "");
             String sourceRomName = e.getKey().getName();
-            // TODO use platform specific rules
-            String renamedRomName = sourceRomName.replace(" (SG-1000)", "").replace(" (SC-3000)", "").replace(" (SF-7000)", "").replace(" (MV)", "");
-            renamedRomName = StringUtils.removeSpecialChars(renamedRomName.replace("_", " ")); // remove special symbols
-            renamedRomName = StringUtils.force63(renamedRomName);
+            String zipRomName = StringUtils.replaceExt(e.getValue().getName().replace(".7z", ""), "zip");
+            zipRomName = StringUtils.removeSpecialChars(zipRomName.replace("_", " ")); // remove special symbols
+            zipRomName = StringUtils.force63(zipRomName);
 
-            try {
-                //TODO zip
                 Path sourceRom = romsCollection.getRomsPath().resolve(sourceRomName);
-                Path renamedRom = uniquePath.resolve(renamedRomName);
-                Files.copy(sourceRom, renamedRom, StandardCopyOption.REPLACE_EXISTING);
-                lines.add(String.format("%s/%s", platform, renamedRomName));
+                Path renamedRom = uniquePath.resolve(zipRomName);
 
-                String romPath = String.format("http://cominf0.narod.ru/emularity/%s/%s", platform, renamedRomName);
+                compressZip(renamedRom.toAbsolutePath().toString(), Collections.singletonList(sourceRom.toAbsolutePath().toString()), 0);
+                lines.add(String.format("%s/%s", platform, zipRomName));
+
+                String romPath = String.format("http://cominf0.narod.ru/emularity/%s/%s", platform, zipRomName);
 
                 if (!names.contains(familyName)) {
                     unmappedLines.add(romPath);
@@ -1759,9 +1757,6 @@ public class FamilyController {
                     names.remove(familyName);
                     updateLines.add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platform, romPath, familyName));
                 }
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
         });
 
         try (PrintWriter out = new PrintWriter(platform + "_roms.txt")) {
@@ -1786,6 +1781,58 @@ public class FamilyController {
             out.println(names.stream().sorted().collect(Collectors.joining("\n")));
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
+        }
+    }
+    private void compressZip(String name, List<String> members, int i) {
+
+        LOGGER.info("Compressing: {} [{}]|{}", name, members.size(), (i + 1) * 100.0 / families.size());
+
+        boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
+        ProcessBuilder processBuilder = new ProcessBuilder();
+
+        List<String> args = null;
+
+        try {
+            if (isWindows) {
+                String archiveName = name.endsWith(".zip") ? name : name + ".zip";
+                archiveName = outputDir.resolve(platform).resolve(archiveName).toAbsolutePath().toString();
+
+                args = new ArrayList<>(Arrays.asList(
+                        // 7z a -tzip -mx9 -mm=LZMA -md1536m -mfb273 -mmt=off <archive_name> [<file_names>...]
+                        System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-tzip", "-mx9", "-mm=LZMA", "-md1536m", "-mfb273", "-mmt=off", '"' + archiveName + '"')
+
+                        // 7z a -tzip -mx9 -mfb258 -mmt=off <archive_name> [<file_names>...]
+                        // 7z a -tzip -mx9 -mm=Deflate64 -mfb257 -mmt=off
+                );
+                if (members.size() > 50) {
+                    File tmp = File.createTempFile("shg", "7z");
+                    Files.write(tmp.toPath(), members.stream().map(n -> romsCollection.getRomsPath().resolve(n).toString()).collect(Collectors.toList()), Charset.defaultCharset());
+                    args.add("@" + tmp.getAbsolutePath());
+                } else {
+                    args.addAll(members.stream().map(n -> '"' + romsCollection.getRomsPath().resolve(n).toString() + '"').collect(Collectors.toList()));
+                }
+
+                processBuilder.command(args);
+            } else {
+                //TODO finish, test on Linux
+                processBuilder.command("7z", "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", "-mmt=off", "archive.7z", "", "", "", "");
+            }
+
+            Process proc = processBuilder.start();
+            BufferedReader errBR = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
+            BufferedReader outBR = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+
+            int code = proc.waitFor();
+
+            if (code > 0) {
+                LOGGER.warn("Exit code: {}", code);
+                LOGGER.warn("Out message: {}", errBR.lines().collect(Collectors.joining("\n")));
+                LOGGER.warn("Error message: {}", outBR.lines().collect(Collectors.joining("\n")));
+                System.out.println(args);
+            }
+
+        } catch (Exception ex) {
+            LOGGER.error("Compression error", ex);
         }
     }
 

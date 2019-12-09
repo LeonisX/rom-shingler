@@ -159,4 +159,8 @@ public class StringUtils {
         }
         return fileName.substring(lastIndexOf);
     }
+
+    public static String replaceExt(String fileName, String ext) {
+        return stripExtension(fileName) + "." + ext;
+    }
 }
