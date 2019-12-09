@@ -37,8 +37,10 @@ import org.springframework.stereotype.Controller;
 import java.awt.*;
 import java.io.*;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.*;
@@ -1561,7 +1563,15 @@ public class FamilyController {
 
         String foot = "  </table>\n</body>\n</html>";
 
-        Path renamedPath = outputDir.resolve(platform).resolve("renamed");
+        Set<String> names;
+
+        try {
+            names = new HashSet<>(Files.readAllLines(Paths.get("lists").resolve(platform + ".txt"), StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            throw  new RuntimeException(e);
+        }
+
+        Path renamedPath = outputDir.resolve(platform).resolve("games");
 
         try {
             Files.createDirectories(renamedPath);
@@ -1570,6 +1580,8 @@ public class FamilyController {
         }
 
         List<String> lines = new ArrayList<>();
+        List<String> linesTxt = new ArrayList<>();
+        List<String> unmappedLines = new ArrayList<>();
         List<String> updateLines = new ArrayList<>();
 
         tribes.keySet().stream().sorted().forEach(t -> {
@@ -1593,9 +1605,19 @@ public class FamilyController {
                     throw new RuntimeException(e);
                 }
 
-                lines.add(String.format("    <tr><td><a href=\"http://tv-roms.narod.ru/games/%s/%s\">%s</a></td><td>%s Kb</td></tr>\n", platform, renamedArchiveName, sourceArchiveName, fileSize));
+                String romPath = String.format("http://tv-roms.narod.ru/games/%s/%s", platform, renamedArchiveName);
+
+                lines.add(String.format("    <tr><td><a href=\"%s\">%s</a></td><td>%s Kb</td></tr>", romPath, sourceArchiveName, fileSize));
+                linesTxt.add(romPath);
+
                 for (Family f : tribes.get(t)) {
-                    updateLines.add(String.format("UPDATE `base_%s` SET game='http://tv-roms.narod.ru/games/%s/%s' WHERE name='%s';\n", platform, platform, renamedArchiveName, f.getName()));
+                    String familyName = f.getName().replace("&", "&amp;").replace("'", "&rsquo;").replace(".7z", "");
+                    if (!names.contains(familyName)) {
+                        unmappedLines.add(romPath);
+                    } else {
+                        names.remove(familyName);
+                        updateLines.add(String.format("UPDATE `base_%s` SET game='%s' WHERE name='%s';", platform, romPath, familyName));
+                    }
                 }
             } else {
                 //split
@@ -1628,37 +1650,69 @@ public class FamilyController {
                         throw new RuntimeException(e);
                     }
 
-                    lines.add(String.format("    <tr><td><a href=\"http://tv-roms.narod.ru/games/%s/%s\">%s</a></td><td>%s Kb</td></tr>\n", platform, renamedArchiveName, sourceArchiveName, fileSize));
+                    String romPath = String.format("http://tv-roms.narod.ru/games/%s/%s", platform, renamedArchiveName);
+
+                    lines.add(String.format("    <tr><td><a href=\"%s\">%s</a></td><td>%s Kb</td></tr>", romPath, sourceArchiveName, fileSize));
+                    linesTxt.add(romPath);
                     //TODO detect correct part
                     for (Family f : tribes.get(t)) {
-                        updateLines.add(String.format("UPDATE `base_%s` SET game='http://tv-roms.narod.ru/games/%s/%s' WHERE name='%s';\n", platform, platform, renamedArchiveName, f.getName().replace("'", "\\'")));
+                        String familyName = f.getName().replace("&", "&amp;").replace("'", "&rsquo;").replace(".7z", "");
+                        if (!names.contains(familyName)) {
+                            unmappedLines.add(romPath);
+                        } else {
+                            names.remove(familyName);
+                            updateLines.add(String.format("UPDATE `base_%s` SET game='%s' WHERE name='%s';", platform, romPath, familyName));
+                        }
                     }
                 }
             }
         });
 
-        String html = head + String.join("", lines) + foot;
+        String html = head + String.join("\n", lines) + foot;
 
-        try (PrintWriter out = new PrintWriter(platform + ".htm")) {
+        try (PrintWriter out = new PrintWriter(platform + "_games.htm")) {
             out.println(html);
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
 
-        try (PrintWriter out = new PrintWriter(platform + "_update.htm")) {
-            out.println(String.join("", updateLines));
+        try (PrintWriter out = new PrintWriter(platform + "_games.txt")) {
+            out.println(String.join("\n", linesTxt));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        try (PrintWriter out = new PrintWriter(platform + "_games_update.sql")) {
+            out.println(String.join("\n", updateLines));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        try (PrintWriter out = new PrintWriter(platform + "_games_unmapped.txt")) {
+            out.println(String.join("\n", unmappedLines));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        try (PrintWriter out = new PrintWriter(platform + "_games_unmapped_names.txt")) {
+            out.println(names.stream().sorted().collect(Collectors.joining("\n")));
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
 
     //(list+dump+force63)
-    //TODO group by size
-    //TODO update queries
-    // use code from run list
     private void getAllUniqueRoms() {
 
-        Path uniquePath = outputDir.resolve(platform).resolve("unique").resolve(platform);
+        Set<String> names;
+
+        try {
+            names = new HashSet<>(Files.readAllLines(Paths.get("lists").resolve(platform + ".txt"), StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            throw  new RuntimeException(e);
+        }
+
+        Path uniquePath = outputDir.resolve(platform).resolve("roms");
 
         try {
             Files.createDirectories(uniquePath);
@@ -1667,43 +1721,69 @@ public class FamilyController {
         }
 
         List<String> lines = new ArrayList<>();
+        List<String> unmappedLines = new ArrayList<>();
         List<String> updateLines = new ArrayList<>();
 
-        // TODO process groups somehow too
+        // TODO process groups somehow too - get every
         families.values().stream().filter(f -> f.getType() == FamilyType.GROUP).forEach(f -> System.out.println("Skipping group: " + f.getName()));
 
-        List<Name> namesList =
-                families.values().stream().filter(f -> f.getType() == FamilyType.FAMILY)
-                        .flatMap(f -> f.getMembers().stream()).filter(n -> ListFilesa.nonHack(n.getName()))
-                        .collect(Collectors.groupingBy(Name::getCleanName))
-                        .values().stream().map(l -> l.stream().sorted(Comparator.comparing(Name::getIndex).reversed()).findFirst().orElse(null)).collect(Collectors.toList());
+        Map<Name, Family> familyMap = new HashMap<>();
 
-        namesList.stream().sorted(Comparator.comparing(Name::getName)).forEach(n -> {
-            String sourceRomName = n.getName();
+        for (Family family: families.values().stream().filter(f -> f.getType() == FamilyType.FAMILY).collect(Collectors.toList())) {
+            Name name = family.getMembers().stream().filter(n -> ListFilesa.nonHack(n.getName()))
+                    .collect(Collectors.groupingBy(Name::getCleanName))
+                    .values().stream().map(l -> l.stream().sorted(Comparator.comparing(Name::getIndex).reversed()).findFirst().orElse(null)).findFirst().orElse(null);
+            familyMap.put(name, family);
+        }
+
+        familyMap.entrySet().stream().sorted(Comparator.comparing(e -> e.getKey().getName())).forEach(e -> {
+            String familyName = e.getValue().getName().replace("&", "&amp;").replace("'", "&rsquo;").replace(".7z", "");
+            String sourceRomName = e.getKey().getName();
             // TODO use platform specific rules
             String renamedRomName = sourceRomName.replace(" (SG-1000)", "").replace(" (SC-3000)", "").replace(" (SF-7000)", "").replace(" (MV)", "");
             renamedRomName = StringUtils.removeSpecialChars(renamedRomName.replace("_", " ")); // remove special symbols
             renamedRomName = StringUtils.force63(renamedRomName);
 
             try {
+                //TODO zip
                 Path sourceRom = romsCollection.getRomsPath().resolve(sourceRomName);
                 Path renamedRom = uniquePath.resolve(renamedRomName);
                 Files.copy(sourceRom, renamedRom, StandardCopyOption.REPLACE_EXISTING);
-                lines.add(String.format("%s/%s\n", platform, renamedRomName));
-                updateLines.add(String.format("UPDATE `base_%s` SET rom='%s/%s' WHERE name='%s';\n", platform, platform, renamedRomName, sourceRomName.replace("'", "\\'")));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+                lines.add(String.format("%s/%s", platform, renamedRomName));
+
+                String romPath = String.format("http://cominf0.narod.ru/emularity/%s/%s", platform, renamedRomName);
+
+                if (!names.contains(familyName)) {
+                    unmappedLines.add(romPath);
+                } else {
+                    names.remove(familyName);
+                    updateLines.add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platform, romPath, familyName));
+                }
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
             }
         });
 
-        try (PrintWriter out = new PrintWriter(platform + "_unique.htm")) {
-            out.println(String.join("", lines));
+        try (PrintWriter out = new PrintWriter(platform + "_roms.txt")) {
+            out.println(String.join("\n", lines));
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
 
-        try (PrintWriter out = new PrintWriter(platform + "_unique_update.htm")) {
-            out.println(String.join("", updateLines));
+        try (PrintWriter out = new PrintWriter(platform + "_roms_update.sql")) {
+            out.println(String.join("\n", updateLines));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        try (PrintWriter out = new PrintWriter(platform + "_roms_unmapped.txt")) {
+            out.println(String.join("\n", unmappedLines));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        try (PrintWriter out = new PrintWriter(platform + "_roms_unmapped_names.txt")) {
+            out.println(names.stream().sorted().collect(Collectors.joining("\n")));
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }

@@ -1,5 +1,10 @@
 # TODO list
 
+TODO паковать в ZIP 1 игру
+TODO для групп паковать каждую.
+
+TODO full refactor TIVI stuff, other new code
+
 TODO TiviStuff, groups - output to separate folder. pd, multi - platform specific
 
 
