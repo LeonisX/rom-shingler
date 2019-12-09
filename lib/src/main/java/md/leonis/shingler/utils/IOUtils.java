@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -174,7 +175,7 @@ public class IOUtils {
             families.values().forEach(f -> {
                 List<Integer> members = f.getMembers().stream().map(Object::hashCode).collect(Collectors.toList());
                 List<ResultDto> relations = f.getRelations().stream().map(r -> new ResultDto(r.getName1().hashCode(), r.getName2().hashCode(), r.getJakkard())).collect(Collectors.toList());
-                int hashCode = (f.getMother() == null) ? f.getMembers().get(0).hashCode(): f.getMother().hashCode();
+                int hashCode = (f.getMother() == null) ? f.getMembers().get(0).hashCode() : f.getMother().hashCode();
                 familyDtos.add(new FamilyDto(f.getName(), f.getTribe(), members, hashCode, relations, f.isSkip(), f.getType()));
             });
 
@@ -240,7 +241,8 @@ public class IOUtils {
     public static Map<Family, Map<Family, Double>> loadFamilyRelationsAsJson(File file) {
 
         try {
-            TypeReference<LinkedHashMap<String, LinkedHashMap<String, Double>>> typeRef = new TypeReference<LinkedHashMap<String, LinkedHashMap<String, Double>>>() {};
+            TypeReference<LinkedHashMap<String, LinkedHashMap<String, Double>>> typeRef = new TypeReference<LinkedHashMap<String, LinkedHashMap<String, Double>>>() {
+            };
             LinkedHashMap<String, LinkedHashMap<String, Double>> model = new ObjectMapper().readValue(file, typeRef);
 
             Map<Family, Map<Family, Double>> result = new LinkedHashMap<>();
@@ -322,11 +324,51 @@ public class IOUtils {
         return result;
     }
 
+    public static void copyFile(Path src, Path dest) {
+        try {
+            Files.copy(src, dest);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @Measured
     public static void deleteFile(Path path) {
         try {
             Files.delete(path);
         } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static long fileSize(Path path) {
+        try {
+            return Files.size(path);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static List<String> loadTextFile(Path path) {
+        try {
+            return Files.readAllLines(path, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void saveToFile(Path path, List<String> list) {
+        saveToFile(path.toAbsolutePath().toString(), list);
+    }
+
+    public static void saveToFile(String fileName, List<String> list) {
+        saveToFile(fileName, String.join("\n", list));
+    }
+
+    public static void saveToFile(String fileName, String text) {
+        try (PrintWriter out = new PrintWriter(fileName)) {
+            out.println(text);
+        } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
     }

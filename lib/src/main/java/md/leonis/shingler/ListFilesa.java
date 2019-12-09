@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -273,12 +274,12 @@ public class ListFilesa {
         Main1024a.cache.fullCleanup();
         byTitle = romsCollection.getGidsMap().values().stream().collect(Collectors.toMap(GID::getTitle, Function.identity()));
 
-        int[] k = {0};
+        AtomicInteger k = new AtomicInteger(0);
         long[] s1Set = ShingleUtils.loadFromCache(cache, fullShinglesPath().resolve(bytesToHex(byTitle.get(name).getSha1()) + ".shg"));
 
         return families.values().stream().filter(e -> !e.getName().equals(ignore)).filter(e -> e.getType() == FamilyType.FAMILY).collect(Collectors.toMap(Function.identity(), family -> {
             if (log) {
-                LOGGER.info("Comparing: {} with {}|{}", name, family.getName(), (k[0]++ + 1) * 100.0 / families.size());
+                LOGGER.info("Comparing: {} with {}|{}", name, family.getName(), (k.incrementAndGet()) * 100.0 / families.size());
             }
             //TODO here if no shingle file (or NPE) - we don't see this error at all!!!
             long[] s2Set = ShingleUtils.loadFromCache(cache, fullShinglesPath().resolve(bytesToHex(byTitle.get(family.getMother().getName()).getSha1()) + ".shg"));

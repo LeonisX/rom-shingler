@@ -27,6 +27,7 @@ import md.leonis.shingler.gui.dto.NodeStatus;
 import md.leonis.shingler.gui.view.FxmlView;
 import md.leonis.shingler.gui.view.StageManager;
 import md.leonis.shingler.model.*;
+import md.leonis.shingler.utils.ArchiveUtils;
 import md.leonis.shingler.utils.IOUtils;
 import md.leonis.shingler.utils.StringUtils;
 import org.slf4j.Logger;
@@ -35,13 +36,10 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
 
 import java.awt.*;
-import java.io.*;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -1396,74 +1394,9 @@ public class FamilyController {
                     break;
                 }
 
-                compress(name, members.stream().map(Name::getName).collect(Collectors.toList()), i++);
+                ArchiveUtils.compress7z(name, members.stream().map(Name::getName).collect(Collectors.toList()), i++);
             }
         });
-    }
-
-    private void compress(String name, List<String> members, int i) {
-
-        LOGGER.info("Compressing: {} [{}]|{}", name, members.size(), (i + 1) * 100.0 / families.size());
-
-        boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
-        ProcessBuilder processBuilder = new ProcessBuilder();
-
-        List<String> args = null;
-
-        try {
-            if (isWindows) {
-                String archiveName = name.endsWith(".7z") ? name : name + ".7z";
-                archiveName = outputDir.resolve(platform).resolve(archiveName).toAbsolutePath().toString();
-
-                args = new ArrayList<>(Arrays.asList(
-                        // 7z a -mx9 -m0=LZMA -md1536m -mfb273 -ms8g -mmt=off <archive_name> [<file_names>...]
-                        System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", "-mmt=off", '"' + archiveName + '"')
-
-                        // 7z a -mx9 -m0=LZMA -md1536m -mfb273 -ms8g <archive_name> [<file_names>...]
-                        //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", '"' + archiveName + '"')
-
-                        // 7z a -mx9 -mmt=off <archive_name> [<file_names>...]
-                        //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-mmt=off", '"' + archiveName + '"')
-
-                        // 7z a -mx9 -mmt2 <archive_name> [<file_names>...]
-                        //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-mmt2", '"' + archiveName + '"')
-
-                        // 7z a -mx9 -mmt4 <archive_name> [<file_names>...]
-                        //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", "-mmt4", '"' + archiveName + '"')
-
-                        // 7z a -mx9 <archive_name> [<file_names>...]
-                        //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-mx9", '"' + archiveName + '"')
-                );
-                if (members.size() > 50) {
-                    File tmp = File.createTempFile("shg", "7z");
-                    Files.write(tmp.toPath(), members.stream().map(n -> romsCollection.getRomsPath().resolve(n).toString()).collect(Collectors.toList()), Charset.defaultCharset());
-                    args.add("@" + tmp.getAbsolutePath());
-                } else {
-                    args.addAll(members.stream().map(n -> '"' + romsCollection.getRomsPath().resolve(n).toString() + '"').collect(Collectors.toList()));
-                }
-
-                processBuilder.command(args);
-            } else {
-                //TODO finish, test on Linux
-                processBuilder.command("7z", "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", "-mmt=off", "archive.7z", "", "", "", "");
-            }
-
-            Process proc = processBuilder.start();
-            BufferedReader errBR = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
-            BufferedReader outBR = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-
-            int code = proc.waitFor();
-
-            if (code > 0) {
-                LOGGER.warn("Exit code: {}", code);
-                LOGGER.warn("Out message: {}", errBR.lines().collect(Collectors.joining("\n")));
-                LOGGER.warn("Error message: {}", outBR.lines().collect(Collectors.joining("\n")));
-                System.out.println(args);
-            }
-
-        } catch (Exception ex) {
-            LOGGER.error("Compression error", ex);
-        }
     }
 
     //TODO find best family if jakkard < ???
@@ -1547,7 +1480,6 @@ public class FamilyController {
 
     private static int MAX_SIZE = 60000; // 65525, but separate archives are bigger
 
-    //TODO update queries
     // html+dump+force63+split
     private void generatePageAndRomsForTvRoms() {
 
@@ -1563,21 +1495,11 @@ public class FamilyController {
 
         String foot = "  </table>\n</body>\n</html>";
 
-        Set<String> names;
-
-        try {
-            names = new HashSet<>(Files.readAllLines(Paths.get("lists").resolve(platform + ".txt"), StandardCharsets.UTF_8));
-        } catch (IOException e) {
-            throw  new RuntimeException(e);
-        }
+        Set<String> names = new HashSet<>(IOUtils.loadTextFile(Paths.get("lists").resolve(platform + ".txt")));
 
         Path renamedPath = outputDir.resolve(platform).resolve("games");
 
-        try {
-            Files.createDirectories(renamedPath);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        IOUtils.createDirectories(renamedPath);
 
         List<String> lines = new ArrayList<>();
         List<String> linesTxt = new ArrayList<>();
@@ -1589,21 +1511,12 @@ public class FamilyController {
             String renamedArchiveName = StringUtils.removeSpecialChars(sourceArchiveName.replace("_", " ")); // remove special symbols
             renamedArchiveName = StringUtils.force63(renamedArchiveName);
 
-            int fileSize;
-            try {
-                fileSize = (int) Files.size(outputDir.resolve(platform).resolve(sourceArchiveName)) / 1024;
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            int fileSize = (int) IOUtils.fileSize(outputDir.resolve(platform).resolve(sourceArchiveName)) / 1024;
 
             if (fileSize < MAX_SIZE) {
-                try {
-                    Path sourceArchive = outputDir.resolve(platform).resolve(sourceArchiveName);
-                    Path renamedArchive = renamedPath.resolve(renamedArchiveName);
-                    Files.copy(sourceArchive, renamedArchive, StandardCopyOption.REPLACE_EXISTING);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                Path sourceArchive = outputDir.resolve(platform).resolve(sourceArchiveName);
+                Path renamedArchive = renamedPath.resolve(renamedArchiveName);
+                IOUtils.copyFile(sourceArchive, renamedArchive);
 
                 String romPath = String.format("http://tv-roms.narod.ru/games/%s/%s", platform, renamedArchiveName);
 
@@ -1638,17 +1551,13 @@ public class FamilyController {
                     renamedArchiveName = StringUtils.removeSpecialChars(String.format("%s part %s.7z", t, i).replace("_", " ")); // remove special symbols
                     renamedArchiveName = StringUtils.force63(renamedArchiveName);
 
-                    compress(renamedArchiveName, chunk, i++);
+                    ArchiveUtils.compress7z(renamedArchiveName, chunk, i++);
 
                     Path sourceArchive = outputDir.resolve(platform).resolve(renamedArchiveName);
                     Path renamedArchive = renamedPath.resolve(renamedArchiveName);
-                    try {
-                        fileSize = (int) Files.size(sourceArchive) / 1024;
-                        Files.copy(sourceArchive, renamedArchive, StandardCopyOption.REPLACE_EXISTING);
-                        Files.delete(sourceArchive);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
+                    fileSize = (int) IOUtils.fileSize(sourceArchive) / 1024;
+                    IOUtils.copyFile(sourceArchive, renamedArchive);
+                    IOUtils.deleteFile(sourceArchive);
 
                     String romPath = String.format("http://tv-roms.narod.ru/games/%s/%s", platform, renamedArchiveName);
 
@@ -1668,57 +1577,22 @@ public class FamilyController {
             }
         });
 
-        String html = head + String.join("\n", lines) + foot;
-
-        try (PrintWriter out = new PrintWriter(platform + "_games.htm")) {
-            out.println(html);
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-
-        try (PrintWriter out = new PrintWriter(platform + "_games.txt")) {
-            out.println(String.join("\n", linesTxt));
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-
-        try (PrintWriter out = new PrintWriter(platform + "_games_update.sql")) {
-            out.println(String.join("\n", updateLines));
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-
-        try (PrintWriter out = new PrintWriter(platform + "_games_unmapped.txt")) {
-            out.println(String.join("\n", unmappedLines));
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-
-        try (PrintWriter out = new PrintWriter(platform + "_games_unmapped_names.txt")) {
-            out.println(names.stream().sorted().collect(Collectors.joining("\n")));
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        IOUtils.saveToFile(platform + "_games.htm", head + String.join("\n", lines) + foot);
+        IOUtils.saveToFile(platform + "_games.txt", linesTxt);
+        IOUtils.saveToFile(platform + "_games_update.sql", updateLines);
+        IOUtils.saveToFile(platform + "_games_unmapped.txt", unmappedLines);
+        IOUtils.saveToFile(platform + "_games_unmapped_names.txt", names.stream().sorted().collect(Collectors.toList()));
     }
+
 
     //(list+dump+force63)
     private void getAllUniqueRoms() {
 
-        Set<String> names;
-
-        try {
-            names = new HashSet<>(Files.readAllLines(Paths.get("lists").resolve(platform + ".txt"), StandardCharsets.UTF_8));
-        } catch (IOException e) {
-            throw  new RuntimeException(e);
-        }
+        Set<String> names = new HashSet<>(IOUtils.loadTextFile(Paths.get("lists").resolve(platform + ".txt")));
 
         Path uniquePath = outputDir.resolve(platform).resolve("roms");
 
-        try {
-            Files.createDirectories(uniquePath);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        IOUtils.createDirectories(uniquePath);
 
         List<String> lines = new ArrayList<>();
         List<String> unmappedLines = new ArrayList<>();
@@ -1736,6 +1610,7 @@ public class FamilyController {
             familyMap.put(name, family);
         }
 
+        AtomicInteger i = new AtomicInteger(0);
         familyMap.entrySet().stream().sorted(Comparator.comparing(e -> e.getKey().getName())).forEach(e -> {
             String familyName = e.getValue().getName().replace("&", "&amp;").replace("'", "&rsquo;").replace(".7z", "");
             String sourceRomName = e.getKey().getName();
@@ -1743,97 +1618,26 @@ public class FamilyController {
             zipRomName = StringUtils.removeSpecialChars(zipRomName.replace("_", " ")); // remove special symbols
             zipRomName = StringUtils.force63(zipRomName);
 
-                Path sourceRom = romsCollection.getRomsPath().resolve(sourceRomName);
-                Path renamedRom = uniquePath.resolve(zipRomName);
+            Path sourceRom = romsCollection.getRomsPath().resolve(sourceRomName);
+            Path renamedRom = uniquePath.resolve(zipRomName);
 
-                compressZip(renamedRom.toAbsolutePath().toString(), Collections.singletonList(sourceRom.toAbsolutePath().toString()), 0);
-                lines.add(String.format("%s/%s", platform, zipRomName));
+            ArchiveUtils.compressZip(renamedRom.toAbsolutePath().toString(), Collections.singletonList(sourceRom.toAbsolutePath().toString()), i.getAndIncrement());
+            lines.add(String.format("%s/%s", platform, zipRomName));
 
-                String romPath = String.format("http://cominf0.narod.ru/emularity/%s/%s", platform, zipRomName);
+            String romPath = String.format("http://cominf0.narod.ru/emularity/%s/%s", platform, zipRomName);
 
-                if (!names.contains(familyName)) {
-                    unmappedLines.add(romPath);
-                } else {
-                    names.remove(familyName);
-                    updateLines.add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platform, romPath, familyName));
-                }
+            if (!names.contains(familyName)) {
+                unmappedLines.add(romPath);
+            } else {
+                names.remove(familyName);
+                updateLines.add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platform, romPath, familyName));
+            }
         });
 
-        try (PrintWriter out = new PrintWriter(platform + "_roms.txt")) {
-            out.println(String.join("\n", lines));
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-
-        try (PrintWriter out = new PrintWriter(platform + "_roms_update.sql")) {
-            out.println(String.join("\n", updateLines));
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-
-        try (PrintWriter out = new PrintWriter(platform + "_roms_unmapped.txt")) {
-            out.println(String.join("\n", unmappedLines));
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-
-        try (PrintWriter out = new PrintWriter(platform + "_roms_unmapped_names.txt")) {
-            out.println(names.stream().sorted().collect(Collectors.joining("\n")));
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-    }
-    private void compressZip(String name, List<String> members, int i) {
-
-        LOGGER.info("Compressing: {} [{}]|{}", name, members.size(), (i + 1) * 100.0 / families.size());
-
-        boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
-        ProcessBuilder processBuilder = new ProcessBuilder();
-
-        List<String> args = null;
-
-        try {
-            if (isWindows) {
-                String archiveName = name.endsWith(".zip") ? name : name + ".zip";
-                archiveName = outputDir.resolve(platform).resolve(archiveName).toAbsolutePath().toString();
-
-                args = new ArrayList<>(Arrays.asList(
-                        // 7z a -tzip -mx9 -mm=LZMA -md1536m -mfb273 -mmt=off <archive_name> [<file_names>...]
-                        System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-tzip", "-mx9", "-mm=LZMA", "-md1536m", "-mfb273", "-mmt=off", '"' + archiveName + '"')
-
-                        // 7z a -tzip -mx9 -mfb258 -mmt=off <archive_name> [<file_names>...]
-                        // 7z a -tzip -mx9 -mm=Deflate64 -mfb257 -mmt=off
-                );
-                if (members.size() > 50) {
-                    File tmp = File.createTempFile("shg", "7z");
-                    Files.write(tmp.toPath(), members.stream().map(n -> romsCollection.getRomsPath().resolve(n).toString()).collect(Collectors.toList()), Charset.defaultCharset());
-                    args.add("@" + tmp.getAbsolutePath());
-                } else {
-                    args.addAll(members.stream().map(n -> '"' + romsCollection.getRomsPath().resolve(n).toString() + '"').collect(Collectors.toList()));
-                }
-
-                processBuilder.command(args);
-            } else {
-                //TODO finish, test on Linux
-                processBuilder.command("7z", "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", "-mmt=off", "archive.7z", "", "", "", "");
-            }
-
-            Process proc = processBuilder.start();
-            BufferedReader errBR = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
-            BufferedReader outBR = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-
-            int code = proc.waitFor();
-
-            if (code > 0) {
-                LOGGER.warn("Exit code: {}", code);
-                LOGGER.warn("Out message: {}", errBR.lines().collect(Collectors.joining("\n")));
-                LOGGER.warn("Error message: {}", outBR.lines().collect(Collectors.joining("\n")));
-                System.out.println(args);
-            }
-
-        } catch (Exception ex) {
-            LOGGER.error("Compression error", ex);
-        }
+        IOUtils.saveToFile(platform + "_roms.txt", lines);
+        IOUtils.saveToFile(platform + "_roms_update.sql", updateLines);
+        IOUtils.saveToFile(platform + "_roms_unmapped.txt", unmappedLines);
+        IOUtils.saveToFile(platform + "_roms_unmapped_names.txt", names.stream().sorted().collect(Collectors.toList()));
     }
 
     public void regenIndexesButtonClick() {

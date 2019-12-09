@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -258,7 +259,7 @@ public class Main1024a {
 
     private static void calculateRelations(Map<String, Family> families, int index) {
 
-        int[] k = {0};
+        AtomicInteger k = new AtomicInteger(0);
 
         for (Family family : families.values()) {
 
@@ -271,11 +272,10 @@ public class Main1024a {
 
             int relationsCount = family.getMembers().size() * (family.getMembers().size() - 1) / 2;
             if (family.getRelations().size() == relationsCount) { // x * (x - 1) / 2
-                LOGGER.debug(String.format("%nSkipping: %s... [%s]|%2.3f%%", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size()));
-                k[0]++;
+                LOGGER.debug(String.format("%nSkipping: %s... [%s]|%2.3f%%", family.getName(), family.size(), (k.incrementAndGet()) * 100.0 / families.size()));
             } else {
 
-                LOGGER.info(String.format("%nComparing: %s... [%s]|%2.3f%%", family.getName(), family.size(), (k[0] + 1) * 100.0 / families.size()));
+                LOGGER.info(String.format("%nComparing: %s... [%s]|%2.3f%%", family.getName(), family.size(), (k.incrementAndGet()) * 100.0 / families.size()));
 
                 //family.getRelations().clear();
 
@@ -319,7 +319,6 @@ public class Main1024a {
                     }
                     name1.setDone(true);
                 }
-                k[0]++;
             }
             family.selectMother();
         }
@@ -331,16 +330,16 @@ public class Main1024a {
 
         List<Family> familyList = new ArrayList<>(families.values());
 
-        int[] k = {0};
+        AtomicInteger k = new AtomicInteger(0);
         for (int i = 0; i < familyList.size() - 1; i++) {
             Family family = familyList.get(i);
 
             if (family.isSkip()) {
-                LOGGER.debug(String.format("Skipping: %s...|%2.2f%%", family.getName(), k[0] * 100.0 / families.size()));
+                LOGGER.debug(String.format("Skipping: %s...|%2.2f%%", family.getName(), k.get() * 100.0 / families.size()));
                 continue;
             }
 
-            LOGGER.info(String.format("Comparing: %s...|%2.2f%%", family.getName(), k[0] * 100.0 / families.size()));
+            LOGGER.info(String.format("Comparing: %s...|%2.2f%%", family.getName(), k.get() * 100.0 / families.size()));
 
             Name name1 = family.get(0);
 
@@ -378,7 +377,7 @@ public class Main1024a {
                     mapping.put(family2, family);
                 }
             }
-            k[0]++;
+            k.incrementAndGet();
         }
 
         LOGGER.info(mapping.toString());
