@@ -2,7 +2,7 @@
 
 TODO nes (goodmerged): calc relations, relatives, tivi stuff
 
-TODO не разрывать группы по 1000 буквы - не принципиально
+TODO do not break letters in groups of 1000 - it doesn’t matter
 
 TODO full refactor TIVI stuff, other new code
 
