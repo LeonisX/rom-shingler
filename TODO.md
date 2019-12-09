@@ -1,6 +1,6 @@
 # TODO list
 
-TODO для групп паковать каждую.
+TODO разделять уникальные и игры на группы по 1000
 
 TODO full refactor TIVI stuff, other new code
 

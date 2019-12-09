@@ -1,6 +1,5 @@
 package md.leonis.shingler.utils;
 
-import md.leonis.shingler.ListFilesa;
 import md.leonis.shingler.model.Family;
 import md.leonis.shingler.model.FamilyType;
 import md.leonis.shingler.model.Name;
@@ -53,8 +52,7 @@ public class TiviUtils {
 
             if (fileSize < MAX_SIZE) {
 
-                String destArchiveName = StringUtils.removeSpecialChars(sourceArchiveName.replace("_", " ")); // remove special symbols
-                destArchiveName = StringUtils.force63(destArchiveName);
+                String destArchiveName = StringUtils.normalize(sourceArchiveName);
                 Path destArchive = destPath.resolve(destArchiveName);
 
                 IOUtils.copyFile(sourceArchive, destArchive);
@@ -87,10 +85,8 @@ public class TiviUtils {
                 int i = 1;
                 for(List<String> chunk: result) {
 
-                    //TODO
                     sourceArchiveName = String.format("%s (part %s).7z", t, i);
-                    String destArchiveName = StringUtils.removeSpecialChars(String.format("%s part %s.7z", t, i).replace("_", " ")); // remove special symbols
-                    destArchiveName = StringUtils.force63(destArchiveName);
+                    String destArchiveName = StringUtils.normalize(String.format("%s part %s.7z", t, i).replace("_", " "));
 
                     ArchiveUtils.compress7z(destArchiveName, chunk, i++);
 
@@ -133,14 +129,21 @@ public class TiviUtils {
         return String.format("    <tr><td><a href=\"%s\">%s</a></td><td>%s Kb</td></tr>", romPath, sourceArchiveName, fileSize);
     }
 
-
-
     private static String formatUpdateQuery(String romPath, String familyName) {
         return String.format("UPDATE `base_%s` SET game='%s' WHERE name='%s';", platform, romPath, familyName);
     }
 
     private static String formatFamilyName(Family family) {
         return family.getName().replace("&", "&amp;").replace("'", "&rsquo;").replace(".7z", "");
+    }
+
+    private static final Map<String, String> GROUP_MAP = new HashMap<>();
+
+    static {
+        GROUP_MAP.put("public domain", "pd");
+        GROUP_MAP.put("multicarts collection", "multi");
+        GROUP_MAP.put("vt03 collection", "vt03");
+        GROUP_MAP.put("wxn collection", "multi");
     }
 
     //(list+dump+force63)
@@ -156,30 +159,58 @@ public class TiviUtils {
         List<String> unmappedLines = new ArrayList<>();
         List<String> updateLines = new ArrayList<>();
 
-        // TODO process groups somehow too - get every
-        families.values().stream().filter(f -> f.getType() == FamilyType.GROUP).forEach(f -> System.out.println("Skipping group: " + f.getName()));
+        LOGGER.info("Processing groups...");
+
+        AtomicInteger i = new AtomicInteger(0);
+        families.values().stream().filter(f -> f.getType() == FamilyType.GROUP)
+                .forEach(f -> f.getMembers().forEach(n -> {
+                    String familyName = formatFamilyName(f);
+                    String sourceRomName = n.getName();
+                    String zipRomName = StringUtils.normalize(StringUtils.replaceExt(sourceRomName, "zip"));
+
+                    Path sourceRom = romsCollection.getRomsPath().resolve(sourceRomName);
+                    String dir = GROUP_MAP.get(StringUtils.stripExtension(f.getName()).toLowerCase());
+                    if (dir != null) {
+                        dir = String.format("%s_%s", platform, dir);
+                    } else {
+                        dir = StringUtils.stripExtension(StringUtils.normalize(f.getName().replace("_", " "))).toLowerCase();
+                    }
+                    Path destZipRom = uniquePath.resolve(dir).resolve(zipRomName);
+
+                    ArchiveUtils.compressZip(destZipRom.toAbsolutePath().toString(), Collections.singletonList(sourceRom.toAbsolutePath().toString()), i.getAndIncrement());
+                    lines.add(String.format("%s/%s", platform, zipRomName));
+
+                    String romPath = String.format("http://cominf0.narod.ru/emularity/%s/%s", platform, zipRomName);
+
+                    if (!names.contains(familyName)) {
+                        unmappedLines.add(romPath);
+                    } else {
+                        names.remove(familyName);
+                        updateLines.add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platform, romPath, familyName));
+                    }
+                }));
+
+        LOGGER.info("Processing families...");
 
         Map<Name, Family> familyMap = new HashMap<>();
 
         for (Family family: families.values().stream().filter(f -> f.getType() == FamilyType.FAMILY).collect(Collectors.toList())) {
-            Name name = family.getMembers().stream().filter(n -> ListFilesa.nonHack(n.getName()))
+            Name name = family.getMembers().stream()/*.filter(n -> ListFilesa.nonHack(n.getName()))*/
                     .collect(Collectors.groupingBy(Name::getCleanName))
-                    .values().stream().map(l -> l.stream().sorted(Comparator.comparing(Name::getIndex).reversed()).findFirst().orElse(null)).findFirst().orElse(null);
+                    .values().stream().flatMap(l -> l.stream().sorted(Comparator.comparing(Name::getIndex).reversed())).findFirst().orElse(null);
             familyMap.put(name, family);
         }
 
-        AtomicInteger i = new AtomicInteger(0);
+        AtomicInteger j = new AtomicInteger(0);
         familyMap.entrySet().stream().sorted(Comparator.comparing(e -> e.getKey().getName())).forEach(e -> {
             String familyName = formatFamilyName(e.getValue());
             String sourceRomName = e.getKey().getName();
-            String zipRomName = StringUtils.replaceExt(e.getValue().getName().replace(".7z", ""), "zip");
-            zipRomName = StringUtils.removeSpecialChars(zipRomName.replace("_", " ")); // remove special symbols
-            zipRomName = StringUtils.force63(zipRomName);
+            String zipRomName = StringUtils.normalize(StringUtils.replaceExt(e.getValue().getName().replace(".7z", ""), "zip"));
 
             Path sourceRom = romsCollection.getRomsPath().resolve(sourceRomName);
-            Path renamedRom = uniquePath.resolve(zipRomName);
+            Path destZipRom = uniquePath.resolve(platform).resolve(zipRomName);
 
-            ArchiveUtils.compressZip(renamedRom.toAbsolutePath().toString(), Collections.singletonList(sourceRom.toAbsolutePath().toString()), i.getAndIncrement());
+            ArchiveUtils.compressZip(destZipRom.toAbsolutePath().toString(), Collections.singletonList(sourceRom.toAbsolutePath().toString()), j.getAndIncrement());
             lines.add(String.format("%s/%s", platform, zipRomName));
 
             String romPath = String.format("http://cominf0.narod.ru/emularity/%s/%s", platform, zipRomName);

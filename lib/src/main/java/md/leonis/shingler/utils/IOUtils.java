@@ -13,9 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.*;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -326,7 +324,7 @@ public class IOUtils {
 
     public static void copyFile(Path src, Path dest) {
         try {
-            Files.copy(src, dest);
+            Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -7,7 +7,12 @@ public class StringUtils {
 
     private static final int MAX_LENGTH = 64;
 
-    public static String force63(String fileName) {
+    public static String normalize(String fileName) {
+        String result = StringUtils.removeSpecialChars(fileName.replace("_", " ")); // remove special symbols
+        return StringUtils.force63(result);
+    }
+
+    static String force63(String fileName) {
 
         String name = fileName;
 
@@ -61,7 +66,7 @@ public class StringUtils {
         return name.substring(0, 36) + "~" + name.substring(name.length() - 27) + ext;
     }
 
-    public static String removeSpecialChars(String fileName) {
+    private static String removeSpecialChars(String fileName) {
         for (char c : "'[!]\"<>;/\\`~@#$%^&*()".toCharArray()) {
             fileName = fileName.replace("" + c, "");
         }
@@ -141,7 +146,7 @@ public class StringUtils {
         return chunks;
     }
 
-    private static String stripExtension(String fileName) {
+    public static String stripExtension(String fileName) {
         if (fileName == null) {
             return null;
         }
@@ -152,7 +157,7 @@ public class StringUtils {
         return fileName.substring(0, lastIndexOf);
     }
 
-    private static String getFileExtension(String fileName) {
+    public static String getFileExtension(String fileName) {
         int lastIndexOf = fileName.lastIndexOf(".");
         if (lastIndexOf == -1) {
             return "";
