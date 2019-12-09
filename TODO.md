@@ -1,10 +1,10 @@
 # TODO list
 
-TODO разделять уникальные и игры на группы по 1000
+TODO nes (goodmerged): calc relations, relatives, tivi stuff
+
+TODO не разрывать группы по 1000 буквы - не принципиально
 
 TODO full refactor TIVI stuff, other new code
-
-TODO TiviStuff, groups - output to separate folder. pd, multi - platform specific
 
 TODO red/black for tribes
 
