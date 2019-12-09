@@ -161,6 +161,11 @@ public class StringUtils {
     }
 
     public static String replaceExt(String fileName, String ext) {
-        return stripExtension(fileName) + "." + ext;
+        return addExt(stripExtension(fileName), ext);
     }
+
+    public static String addExt(String fileName, String ext) {
+        return fileName + (fileName.endsWith("." + ext) ? "" : "." + ext);
+    }
+
 }

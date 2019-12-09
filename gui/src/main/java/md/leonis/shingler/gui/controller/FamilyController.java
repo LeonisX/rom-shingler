@@ -29,7 +29,7 @@ import md.leonis.shingler.gui.view.StageManager;
 import md.leonis.shingler.model.*;
 import md.leonis.shingler.utils.ArchiveUtils;
 import md.leonis.shingler.utils.IOUtils;
-import md.leonis.shingler.utils.StringUtils;
+import md.leonis.shingler.utils.TiviUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
@@ -39,10 +39,8 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -1470,174 +1468,9 @@ public class FamilyController {
         showFamilies();
     }
 
-
     public void generateTiviStuffClick() {
-
-        generatePageAndRomsForTvRoms();
-
-        getAllUniqueRoms();
-    }
-
-    private static int MAX_SIZE = 60000; // 65525, but separate archives are bigger
-
-    // html+dump+force63+split
-    private void generatePageAndRomsForTvRoms() {
-
-        String head = "<html>\n" +
-                "<head>\n" +
-                "  <title>Игры Nintendo/Dendy GoodNES 3.23b</title>\n" +
-                "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n" +
-                "  <META content=Sinoel name=author>\n" +
-                "</head>\n" +
-                "<body bgcolor=\"#FFFFFF\" text=\"#000000\">\n" +
-                "  <a href=\"..\"><<на главную страницу</a><br>\n" +
-                "  <table width=\"95%\" cellspacing=\"0\" cellpadding=\"3\" border=\"1\" bgcolor=\"#FFFFFF\" bordercolor=\"#000000\">\n";
-
-        String foot = "  </table>\n</body>\n</html>";
-
-        Set<String> names = new HashSet<>(IOUtils.loadTextFile(Paths.get("lists").resolve(platform + ".txt")));
-
-        Path renamedPath = outputDir.resolve(platform).resolve("games");
-
-        IOUtils.createDirectories(renamedPath);
-
-        List<String> lines = new ArrayList<>();
-        List<String> linesTxt = new ArrayList<>();
-        List<String> unmappedLines = new ArrayList<>();
-        List<String> updateLines = new ArrayList<>();
-
-        tribes.keySet().stream().sorted().forEach(t -> {
-            String sourceArchiveName = t + (t.endsWith(".7z") ? "" : ".7z");
-            String renamedArchiveName = StringUtils.removeSpecialChars(sourceArchiveName.replace("_", " ")); // remove special symbols
-            renamedArchiveName = StringUtils.force63(renamedArchiveName);
-
-            int fileSize = (int) IOUtils.fileSize(outputDir.resolve(platform).resolve(sourceArchiveName)) / 1024;
-
-            if (fileSize < MAX_SIZE) {
-                Path sourceArchive = outputDir.resolve(platform).resolve(sourceArchiveName);
-                Path renamedArchive = renamedPath.resolve(renamedArchiveName);
-                IOUtils.copyFile(sourceArchive, renamedArchive);
-
-                String romPath = String.format("http://tv-roms.narod.ru/games/%s/%s", platform, renamedArchiveName);
-
-                lines.add(String.format("    <tr><td><a href=\"%s\">%s</a></td><td>%s Kb</td></tr>", romPath, sourceArchiveName, fileSize));
-                linesTxt.add(romPath);
-
-                for (Family f : tribes.get(t)) {
-                    String familyName = f.getName().replace("&", "&amp;").replace("'", "&rsquo;").replace(".7z", "");
-                    if (!names.contains(familyName)) {
-                        unmappedLines.add(romPath);
-                    } else {
-                        names.remove(familyName);
-                        updateLines.add(String.format("UPDATE `base_%s` SET game='%s' WHERE name='%s';", platform, romPath, familyName));
-                    }
-                }
-            } else {
-                //split
-                //TODO split  by letters or families, don't tear them
-                LOGGER.info("Splitting {}", t);
-                List<String> members = tribes.get(t).stream().flatMap(f -> f.getMembers().stream()).map(Name::getName).sorted().collect(Collectors.toList());
-
-                final int archivesCount = new Double(Math.ceil(fileSize * 1.0 / MAX_SIZE)).intValue();
-                final int membersCount = members.size() / archivesCount;
-                final AtomicInteger counter = new AtomicInteger();
-
-                final Collection<List<String>> result = members.stream().collect(Collectors.groupingBy(it -> counter.getAndIncrement() / membersCount)).values();
-
-                int i = 1;
-                for(List<String> chunk: result) {
-
-                    sourceArchiveName = String.format("%s (part %s).7z", t, i);
-                    renamedArchiveName = StringUtils.removeSpecialChars(String.format("%s part %s.7z", t, i).replace("_", " ")); // remove special symbols
-                    renamedArchiveName = StringUtils.force63(renamedArchiveName);
-
-                    ArchiveUtils.compress7z(renamedArchiveName, chunk, i++);
-
-                    Path sourceArchive = outputDir.resolve(platform).resolve(renamedArchiveName);
-                    Path renamedArchive = renamedPath.resolve(renamedArchiveName);
-                    fileSize = (int) IOUtils.fileSize(sourceArchive) / 1024;
-                    IOUtils.copyFile(sourceArchive, renamedArchive);
-                    IOUtils.deleteFile(sourceArchive);
-
-                    String romPath = String.format("http://tv-roms.narod.ru/games/%s/%s", platform, renamedArchiveName);
-
-                    lines.add(String.format("    <tr><td><a href=\"%s\">%s</a></td><td>%s Kb</td></tr>", romPath, sourceArchiveName, fileSize));
-                    linesTxt.add(romPath);
-                    //TODO detect correct part
-                    for (Family f : tribes.get(t)) {
-                        String familyName = f.getName().replace("&", "&amp;").replace("'", "&rsquo;").replace(".7z", "");
-                        if (!names.contains(familyName)) {
-                            unmappedLines.add(romPath);
-                        } else {
-                            names.remove(familyName);
-                            updateLines.add(String.format("UPDATE `base_%s` SET game='%s' WHERE name='%s';", platform, romPath, familyName));
-                        }
-                    }
-                }
-            }
-        });
-
-        IOUtils.saveToFile(platform + "_games.htm", head + String.join("\n", lines) + foot);
-        IOUtils.saveToFile(platform + "_games.txt", linesTxt);
-        IOUtils.saveToFile(platform + "_games_update.sql", updateLines);
-        IOUtils.saveToFile(platform + "_games_unmapped.txt", unmappedLines);
-        IOUtils.saveToFile(platform + "_games_unmapped_names.txt", names.stream().sorted().collect(Collectors.toList()));
-    }
-
-
-    //(list+dump+force63)
-    private void getAllUniqueRoms() {
-
-        Set<String> names = new HashSet<>(IOUtils.loadTextFile(Paths.get("lists").resolve(platform + ".txt")));
-
-        Path uniquePath = outputDir.resolve(platform).resolve("roms");
-
-        IOUtils.createDirectories(uniquePath);
-
-        List<String> lines = new ArrayList<>();
-        List<String> unmappedLines = new ArrayList<>();
-        List<String> updateLines = new ArrayList<>();
-
-        // TODO process groups somehow too - get every
-        families.values().stream().filter(f -> f.getType() == FamilyType.GROUP).forEach(f -> System.out.println("Skipping group: " + f.getName()));
-
-        Map<Name, Family> familyMap = new HashMap<>();
-
-        for (Family family: families.values().stream().filter(f -> f.getType() == FamilyType.FAMILY).collect(Collectors.toList())) {
-            Name name = family.getMembers().stream().filter(n -> ListFilesa.nonHack(n.getName()))
-                    .collect(Collectors.groupingBy(Name::getCleanName))
-                    .values().stream().map(l -> l.stream().sorted(Comparator.comparing(Name::getIndex).reversed()).findFirst().orElse(null)).findFirst().orElse(null);
-            familyMap.put(name, family);
-        }
-
-        AtomicInteger i = new AtomicInteger(0);
-        familyMap.entrySet().stream().sorted(Comparator.comparing(e -> e.getKey().getName())).forEach(e -> {
-            String familyName = e.getValue().getName().replace("&", "&amp;").replace("'", "&rsquo;").replace(".7z", "");
-            String sourceRomName = e.getKey().getName();
-            String zipRomName = StringUtils.replaceExt(e.getValue().getName().replace(".7z", ""), "zip");
-            zipRomName = StringUtils.removeSpecialChars(zipRomName.replace("_", " ")); // remove special symbols
-            zipRomName = StringUtils.force63(zipRomName);
-
-            Path sourceRom = romsCollection.getRomsPath().resolve(sourceRomName);
-            Path renamedRom = uniquePath.resolve(zipRomName);
-
-            ArchiveUtils.compressZip(renamedRom.toAbsolutePath().toString(), Collections.singletonList(sourceRom.toAbsolutePath().toString()), i.getAndIncrement());
-            lines.add(String.format("%s/%s", platform, zipRomName));
-
-            String romPath = String.format("http://cominf0.narod.ru/emularity/%s/%s", platform, zipRomName);
-
-            if (!names.contains(familyName)) {
-                unmappedLines.add(romPath);
-            } else {
-                names.remove(familyName);
-                updateLines.add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platform, romPath, familyName));
-            }
-        });
-
-        IOUtils.saveToFile(platform + "_roms.txt", lines);
-        IOUtils.saveToFile(platform + "_roms_update.sql", updateLines);
-        IOUtils.saveToFile(platform + "_roms_unmapped.txt", unmappedLines);
-        IOUtils.saveToFile(platform + "_roms_unmapped_names.txt", names.stream().sorted().collect(Collectors.toList()));
+        TiviUtils.generatePageAndRomsForTvRoms();
+        TiviUtils.getAllUniqueRoms();
     }
 
     public void regenIndexesButtonClick() {
