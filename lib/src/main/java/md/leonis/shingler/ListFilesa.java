@@ -9,10 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -61,6 +58,7 @@ public class ListFilesa {
     public static void generateFamilies() {
 
         LOGGER.info("Reading list of games...");
+        Platform plat = platformsByCpu.get(platform);
         List<Path> files = IOUtils.listFiles(romsCollection.getRomsPath());
 
         Set<String> orphanedNames = getOrphanNames();
@@ -74,7 +72,7 @@ public class ListFilesa {
             families = IOUtils.loadFamiliesAsJson(familyFile);
         } else {*/
             LOGGER.info("Generating families from scratch...");
-            Map<String, List<Name>> namesList = names.stream().filter(n -> nonHack(n.getName())).collect(Collectors.groupingBy(Name::getCleanName));
+            Map<String, List<Name>> namesList = names.stream().filter(n -> plat.nonHack(n.getName())).collect(Collectors.groupingBy(Name::getCleanName));
 
             namesList.entrySet().stream().filter(e -> e.getValue().size() != 1)
                     .forEach(e -> families.put(e.getKey(), new Family(e.getValue())));
@@ -136,20 +134,6 @@ public class ListFilesa {
 
         LOGGER.info("Saving families...");
         IOUtils.serializeFamiliesAsJson(fullFamiliesPath().toFile(), families);
-
-        //saveDropCsv(families, 50);
-
-        //TODO jakkardIndex
-        //Main1024a.drop(families, 50);
-        //TODO merge jakkardIndex 20
-        //TODO index 1 or 16. Better 1
-        //families = mergeFamilies(families, 30, 64);
-
-        //TODO проходиться сиротами и смотреть куда пристроить.
-    }
-
-    public static void cleanRelations() {
-        families.values().forEach(f -> f.setRelations(new ArrayList<>()));
     }
 
     public static void calculateRelations() {
@@ -328,19 +312,6 @@ public class ListFilesa {
         return deleted;
     }
 
-    static void saveDropCsv(Map<String, Family> families, double jakkardIndex) {
-
-        List<String> toDelete = families.values().stream().flatMap(family -> getNonSiblings(family, jakkardIndex).stream()
-                .sorted(Comparator.comparing(Name::getJakkardStatus))
-                .map(n -> String.format("\"%s\";\"%s\";\"%2.4f\"", family.getName(), n.getName(), n.getJakkardStatus() / family.size()))).collect(Collectors.toList());
-
-        try {
-            Files.write(Paths.get("low-jakkard" + getDenominator() + ".csv"), toDelete, Charset.defaultCharset());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     @Measured
     private static void recalculateJakkard(Family family) {
         family.getMembers().forEach(m -> {
@@ -349,77 +320,9 @@ public class ListFilesa {
         });
     }
 
-    private static void saveUniqueListToFile(Map<File, List<String>> filteredMap) throws IOException {
-        List<String> lines = new ArrayList<>();
-
-        filteredMap.entrySet().stream().sorted(Comparator.comparing(e -> e.getKey().getName())).forEach(e -> {
-            lines.add(e.getKey().getName());
-            if (e.getValue().size() >= 1) {
-                e.getValue().forEach(v -> lines.add("    " + v));
-            }
-            lines.add("");
-        });
-
-        Files.write(Paths.get("unique.txt"), lines);
-    }
-
-    /*private static void otherStatistics(Map<File, List<String>> map) {
-        LOGGER.info("Generating families...");
-        Main1024a.SAMPLES.forEach(index -> {
-            if (!new File("low-jakkard" + index + ".csv").exists())
-                archiveToFamilies(map, index, 30);
-        });
-
-        LOGGER.info("Calculating Jakkard deviations for families...");
-        Map<String, Family> families1 = IOUtils.loadFamilies(new File("list-family" + 1));
-
-        for (int i = 1; i < Main1024a.SAMPLES.size(); i++) {
-            measureJakkard(Main1024a.SAMPLES.get(i), families1);
-        }
-    }*/
-
-    private static void measureJakkard(Integer index, Map<String, Family> fams1) {
-
-        List<Family> families1 = new ArrayList<>(fams1.values());
-
-        Map<String, Family> families = IOUtils.loadFamiliesAsJson(new File("list-family" + index));
-        List<Family> familiesX = new ArrayList<>(families.values());
-
-        double maxDeviation = 0;
-        double medDeviation = 0;
-
-        for (int i = 0; i < families1.size(); i++) {
-            Family family1 = families1.get(i);
-            Family familyX = familiesX.get(i);
-
-            double sumDeviation = 0;
-
-            for (int j = 0; j < family1.size(); j++) {
-
-                double j1 = family1.getJakkardStatus(j);
-                double jX = familyX.getJakkardStatus(j);
-                double deviation = deviation(j1, jX);
-                if (Double.valueOf(deviation).isNaN()) {
-                    deviation = 0;
-                }
-                if (deviation > 10 && j1 > 3) {
-                    LOGGER.info(String.format("%s:%s %2.2f->%2.2f(%2.4f%%)|%s", family1.getName(), family1.get(j).getName(), j1, jX, deviation, (i + 1.0) / families1.size()));
-                }
-                maxDeviation = Math.max(maxDeviation, deviation);
-                sumDeviation += deviation;
-            }
-            medDeviation += sumDeviation / family1.size();
-        }
-        LOGGER.info(String.format("%s. Max: %2.4f%%; Med: %2.4f%%", index, maxDeviation, medDeviation / families.size()));
-    }
-
     // a < b = ((b-a)/a) * 100
     static double deviation(double d1, double d2) {
         return Math.abs(d2 - d1) / d1 * 100;
-    }
-
-    public static boolean nonHack(String s) {
-        return !s.contains("(Hack)") && !s.contains("(Hack ") && !s.contains(" Hack)");
     }
 
     private static String normalize(String s) {

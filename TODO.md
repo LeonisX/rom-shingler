@@ -20,7 +20,7 @@ TODO full process for goodmerged (compress, tivi stuff)
 
 Find in families
 
-TODO manage families - in bg + window (please wait)
+TODO when press "manage families" - run in bg + window (please wait)
 
 TODO collections list - update on key pressing
 

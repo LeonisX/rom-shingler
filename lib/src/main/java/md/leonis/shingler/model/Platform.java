@@ -22,6 +22,10 @@ public class Platform {
         return name.matches(hackMatcher);
     }
 
+    public boolean nonHack(String name) {
+        return !name.matches(hackMatcher);
+    }
+
     public boolean isBad(String name) {
         return name.matches(badMatcher);
     }

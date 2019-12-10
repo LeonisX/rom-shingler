@@ -10,17 +10,15 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static md.leonis.shingler.Main1024.serialize;
-import static md.leonis.shingler.model.ConfigHolder.*;
+import static md.leonis.shingler.model.ConfigHolder.fullFamiliesPath;
 import static md.leonis.shingler.model.ConfigHolder.needToStop;
 import static md.leonis.shingler.utils.BinaryUtils.*;
 
@@ -415,19 +413,6 @@ public class Main1024a {
         });
     }
 
-    static void saveDropCsv(Map<String, Family> families, int index, double jakkardIndex) {
-
-        List<String> toDelete = families.values().stream().flatMap(family -> getNonSiblings(family, jakkardIndex).stream()
-                .sorted(Comparator.comparing(Name::getJakkardStatus))
-                .map(n -> String.format("\"%s\";\"%s\";\"%2.4f\"", family.getName(), n.getName(), n.getJakkardStatus() / family.size()))).collect(Collectors.toList());
-
-        try {
-            Files.write(Paths.get("low-jakkard" + index + ".csv"), toDelete, Charset.defaultCharset());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     private static List<Name> getNonSiblings(Family family, double jakkardIndex) {
 
         List<Name> deleted = new ArrayList<>();
@@ -457,92 +442,6 @@ public class Main1024a {
             m.setJakkardStatus(results.stream().mapToDouble(Result::getJakkard).sum());
         });
     }
-
-    /*private static void compareAndCopy(List<Name> names, int index, int jakkardIndex) throws IOException {
-
-        LOGGER.info("\nComparing...");
-        PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("result.csv", true)));
-
-        names.forEach(name1 -> {
-            List<Result> res = new ArrayList<>();
-
-            int i = names.indexOf(name1);
-
-            if (!name1.isDone()) {
-
-                try {
-                    List<Name> toCopy = new ArrayList<>();
-                    toCopy.add(name1);
-
-                    Set<Long> s1Set;
-                    if (index > SHINGLE_MAP_THRESHOLD) {
-                        s1Set = SHINGLE_MAP.get(index).get(name1.getName());
-                    } else {
-                        s1Set = readShdFromFile(new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name1.getName() + ".shg"));
-                    }
-
-                    if (i != names.size() - 1) {
-                        for (int j = i + 1; j < names.size(); j++) {
-
-                            Name name2 = names.get(j);
-
-                            if (name2.isDone()) {
-                                continue;
-                            }
-
-                            Set<Long> s2Set;
-                            if (index > SHINGLE_MAP_THRESHOLD) {
-                                s2Set = SHINGLE_MAP.get(index).get(name2.getName());
-                            } else {
-                                s2Set = readShdFromFile(new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name2.getName() + ".shg"));
-                            }
-
-                            Set<Long> s1intersect = new HashSet<>(s1Set);
-                            Set<Long> s1union = new HashSet<>(s1Set);
-
-                            s1intersect.retainAll(s2Set);
-                            s1union.addAll(s2Set);
-                            double relative = s1intersect.size() * 100.0 / s1Set.size();
-                            double jakkard = s1intersect.size() * 100.0 / s1union.size();
-
-                            Result result = new Result(name1, name2, relative, jakkard);
-
-                            if (jakkard > jakkardIndex) { // 35
-                                name2.setDone(true);
-                                LOGGER.info(result);
-                                toCopy.add(name2);
-                            }
-
-                            res.add(result);
-                            out.println(result.toString());
-                            out.flush();
-                        }
-                    }
-                    name1.setDone(true);
-
-                    String catName = getCleanTitle(toCopy);
-
-                    File cat = Paths.get("D:\\Downloads\\games\\gata", catName).toFile();
-
-                    if (cat.exists()) {
-                        catName = getTitle(toCopy);
-                        cat = Paths.get("D:\\Downloads\\games\\gata", catName).toFile();
-                    }
-
-                    cat.mkdir();
-                    for (Name name : toCopy) {
-                        Files.move(name.getFile().toPath(), Paths.get("D:\\Downloads\\games\\gata", catName, name.getFile().getName()));
-                    }
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            } else {
-                LOGGER.debug("Skipping: " + name1.getName());
-            }
-        });
-
-        out.close();
-    }*/
 
     private static String getTitle(List<Name> names) {
         return names.stream().max(Comparator.comparing(Name::getIndex)).orElse(null).getName();
