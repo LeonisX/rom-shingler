@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -14,6 +16,7 @@ public class Platform {
     private String hackMatcher;
     private String badMatcher;
     private String pdMatcher;
+    private List<String> exts;
 
     public boolean isHack(String name) {
         return name.matches(hackMatcher);
@@ -29,5 +32,13 @@ public class Platform {
 
     public boolean isGood(String name) {
         return !(isBad(name) || isHack(name) || isPD(name));
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 }
