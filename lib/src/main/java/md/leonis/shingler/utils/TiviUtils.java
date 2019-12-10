@@ -31,7 +31,7 @@ public class TiviUtils {
 
     private static final int MAX_SIZE = 60000; // 65525, but separate archives are bigger
     private static final int DIR_SIZE = 1000;
-    private static final double DIR_SEPARATE_SIZE = 980.0;
+    private static final double DIR_SEPARATE_SIZE = 986.0;
 
     // html+dump+force63+split
     public static void generatePageAndRomsForTvRoms() {
