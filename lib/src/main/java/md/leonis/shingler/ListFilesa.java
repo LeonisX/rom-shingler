@@ -501,6 +501,9 @@ public class ListFilesa {
         if (name.contains("(Prototype)")) {
             index -= 15;
         }
+        if (name.contains("(Prototype ")) {
+            index -= 15;
+        }
         if (name.contains("(Sample)")) {
             index -= 15;
         }

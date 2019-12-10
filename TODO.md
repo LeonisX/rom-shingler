@@ -1,6 +1,6 @@
 # TODO list
 
-TODO sg1000 (goodmerged): calc relations, relatives, tivi stuff
+TODO when open platforms - full clean families, relations
 
 TODO full refactor TIVI stuff, other new code
 

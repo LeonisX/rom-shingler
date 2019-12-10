@@ -331,6 +331,7 @@ public class FamilyController {
         }
     };
 
+    //TODO clean when switch platform, also clean all root items, specially including familyRelationsRootItem
     private Map<NameView, List<NameView>> familiesView = new LinkedHashMap<>();
     private Map<NameView, Collection<NameView>> tribesRelationsView = new LinkedHashMap<>();
     private Map<NameView, Collection<NameView>> tribeFamiliesView = new LinkedHashMap<>();
