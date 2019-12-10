@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static md.leonis.shingler.model.ConfigHolder.*;
@@ -36,7 +37,9 @@ public class TiviUtils {
     // html+dump+force63+split
     public static void generatePageAndRomsForTvRoms() {
 
-        Set<String> dbGamesSet = new HashSet<>(IOUtils.loadTextFile(Paths.get("lists").resolve(platform + ".txt")));
+        Map<String, String> normalizedMap = new HashSet<>(IOUtils.loadTextFile(Paths.get("lists").resolve(platform + ".txt")))
+                .stream().collect(Collectors.toMap(StringUtils::normalize, Function.identity()));
+        Set<String> dbGamesSet = normalizedMap.keySet();
 
         List<String> lines = new ArrayList<>();
         List<String> linesTxt = new ArrayList<>();
@@ -69,11 +72,11 @@ public class TiviUtils {
                 linesTxt.add(romPath);
 
                 for (Family f : tribes.get(t)) {
-                    String familyName = formatFamilyName(f);
-                    if (!dbGamesSet.contains(familyName)) {
+                    String familyName = escapeQuotes(f.getName());
+                    if (!dbGamesSet.contains(StringUtils.normalize(familyName))) {
                         unmappedLines.add(romPath);
                     } else {
-                        dbGamesSet.remove(familyName);
+                        dbGamesSet.remove(StringUtils.normalize(familyName));
                         updateLines.add(formatUpdateQuery(platform, romPath, familyName));
                     }
                 }
@@ -108,11 +111,11 @@ public class TiviUtils {
                     linesTxt.add(romPath);
                     //TODO detect correct part
                     for (Family f : tribes.get(t)) {
-                        String familyName = formatFamilyName(f);
-                        if (!dbGamesSet.contains(familyName)) {
+                        String familyName = escapeQuotes(f.getName());
+                        if (!dbGamesSet.contains(StringUtils.normalize(familyName))) {
                             unmappedLines.add(romPath);
                         } else {
-                            dbGamesSet.remove(familyName);
+                            dbGamesSet.remove(StringUtils.normalize(familyName));
                             updateLines.add(formatUpdateQuery(platform, romPath, familyName));
                         }
                     }
@@ -124,7 +127,7 @@ public class TiviUtils {
         IOUtils.saveToFile(platform + "_games.txt", linesTxt);
         IOUtils.saveToFile(platform + "_games_update.sql", updateLines);
         IOUtils.saveToFile(platform + "_games_unmapped.txt", unmappedLines);
-        IOUtils.saveToFile(platform + "_games_unmapped_names.txt", dbGamesSet.stream().sorted().collect(Collectors.toList()));
+        IOUtils.saveToFile(platform + "_games_unmapped_names.txt", dbGamesSet.stream().sorted().map(normalizedMap::get).collect(Collectors.toList()));
     }
 
     private static String formatHead() {
@@ -143,8 +146,8 @@ public class TiviUtils {
         return String.format("UPDATE `base_%s` SET game='%s' WHERE name='%s';", platform, romPath, familyName);
     }
 
-    private static String formatFamilyName(Family family) {
-        return family.getName().replace("&", "&amp;").replace("'", "&rsquo;");
+    private static String escapeQuotes(String family) {
+        return family.replace("&", "&amp;").replace("'", "&rsquo;");
     }
 
     private static final Map<String, String> GROUP_MAP = new HashMap<>();
@@ -159,7 +162,9 @@ public class TiviUtils {
     //(list+dump+force63)
     public static void getAllUniqueRoms() {
 
-        Set<String> names = new HashSet<>(IOUtils.loadTextFile(Paths.get("lists").resolve(platform + ".txt")));
+        Map<String, String> normalizedMap = new HashSet<>(IOUtils.loadTextFile(Paths.get("lists").resolve(platform + ".txt")))
+                .stream().collect(Collectors.toMap(StringUtils::normalize, Function.identity()));
+        Set<String> names = normalizedMap.keySet();
 
         Path uniquePath = outputDir.resolve(platform).resolve("roms");
 
@@ -185,7 +190,7 @@ public class TiviUtils {
 
         AtomicInteger j = new AtomicInteger(0);
         familyMap.entrySet().stream().sorted(Comparator.comparing(e -> e.getValue().getName())).forEach(e -> {
-            String familyName = formatFamilyName(e.getValue());
+            String familyName = escapeQuotes(e.getValue().getName());
             String sourceRomName = e.getKey().getName();
             String zipRomName = StringUtils.normalize(StringUtils.addExt(e.getValue().getName(), "zip"));
 
@@ -201,10 +206,10 @@ public class TiviUtils {
             lines.add(formatTableCell(romPath, sourceRomName, fileSize));
             linesTxt.add(String.format("%s/%s", platformGroup, zipRomName));
 
-            if (!names.contains(familyName)) {
+            if (!names.contains(StringUtils.normalize(familyName))) {
                 unmappedLines.add(romPath);
             } else {
-                names.remove(familyName);
+                names.remove(StringUtils.normalize(familyName));
                 updateLines.add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platformGroup, romPath, familyName));
             }
         });
@@ -221,7 +226,7 @@ public class TiviUtils {
                     linesTxt.add(title);
 
                     f.getMembers().forEach(n -> {
-                        String familyName = formatFamilyName(f);
+                        String familyName = f.getName();
                         String sourceRomName = n.getName();
                         String zipRomName = StringUtils.normalize(StringUtils.replaceExt(sourceRomName, "zip"));
 
@@ -241,11 +246,11 @@ public class TiviUtils {
                         lines.add(formatTableCell(romPath, sourceRomName, fileSize));
                         linesTxt.add(String.format("%s/%s", dir, zipRomName));
 
-                        if (!names.contains(familyName)) {
+                        if (!names.contains(StringUtils.normalize(familyName))) {
                             unmappedLines.add(romPath);
                         } else {
-                            names.remove(familyName);
-                            updateLines.add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platform, romPath, familyName));
+                            names.remove(StringUtils.normalize(familyName));
+                            updateLines.add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platform, romPath, escapeQuotes(familyName)));
                         }
                     });
                 });
@@ -254,7 +259,7 @@ public class TiviUtils {
         IOUtils.saveToFile(platform + "_roms.txt", linesTxt);
         IOUtils.saveToFile(platform + "_roms_update.sql", updateLines);
         IOUtils.saveToFile(platform + "_roms_unmapped.txt", unmappedLines);
-        IOUtils.saveToFile(platform + "_roms_unmapped_names.txt", names.stream().sorted().collect(Collectors.toList()));
+        IOUtils.saveToFile(platform + "_roms_unmapped_names.txt", names.stream().sorted().map(normalizedMap::get).collect(Collectors.toList()));
     }
 
     private static String formatUniqueRomPath(String platform, String destArchiveName) {

@@ -65,8 +65,8 @@ public class StringUtils {
         }
         name = name.replace("(", "-");
 
-        // Get first 36 characters + "~" + tail.
-        return name.substring(0, 36) + "~" + name.substring(name.length() - 27) + ext;
+        // Get first 21 characters + "~" + tail.
+        return name.substring(0, 21) + "~" + name.substring(name.length() - 42) + ext;
     }
 
     private static String removeSpecialChars(String fileName) {
@@ -163,11 +163,13 @@ public class StringUtils {
     }
 
     public static String getFileExtension(String fileName) {
-        int lastIndexOf = fileName.lastIndexOf(".");
-        if (lastIndexOf == -1) {
-            return "";
+        for (String ext : platformsByCpu.get(platform).getExts()) {
+            int lastIndexOf = fileName.lastIndexOf(ext);
+            if (lastIndexOf != -1) {
+                return fileName.substring(lastIndexOf);
+            }
         }
-        return fileName.substring(lastIndexOf);
+        return "";
     }
 
     public static String replaceExt(String fileName, String ext) {
