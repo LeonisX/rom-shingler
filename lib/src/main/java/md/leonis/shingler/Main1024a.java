@@ -419,7 +419,7 @@ public class Main1024a {
 
         List<String> toDelete = families.values().stream().flatMap(family -> getNonSiblings(family, jakkardIndex).stream()
                 .sorted(Comparator.comparing(Name::getJakkardStatus))
-                .map(n -> String.format("\"%s\";\"%s\";\"%2.4f\"", family.getName().replace(".7z", ""), n.getName(), n.getJakkardStatus() / family.size()))).collect(Collectors.toList());
+                .map(n -> String.format("\"%s\";\"%s\";\"%2.4f\"", family.getName(), n.getName(), n.getJakkardStatus() / family.size()))).collect(Collectors.toList());
 
         try {
             Files.write(Paths.get("low-jakkard" + index + ".csv"), toDelete, Charset.defaultCharset());
@@ -433,8 +433,8 @@ public class Main1024a {
         List<Name> deleted = new ArrayList<>();
 
         //TODO remove this
-        if (family.getName().equals("Public Domain.7z") || family.getName().equals("Multicarts Collection.7z")
-                || family.getName().equals("Wxn Collection.7z") || family.getName().equals("VT03 Collection.7z")) {
+        if (family.getName().equals("Public Domain") || family.getName().equals("Multicarts Collection")
+                || family.getName().equals("Wxn Collection") || family.getName().equals("VT03 Collection")) {
             return deleted;
         }
 

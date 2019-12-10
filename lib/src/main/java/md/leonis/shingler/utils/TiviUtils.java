@@ -29,7 +29,7 @@ public class TiviUtils {
 
     private static final String FOOT = "  </table>\n</body>\n</html>";
 
-    private static final int MAX_SIZE = 10000; // 65525, but separate archives are bigger
+    private static final int MAX_SIZE = 60000; // 65525, but separate archives are bigger
     private static final int DIR_SIZE = 1000;
     private static final double DIR_SEPARATE_SIZE = 980.0;
 
@@ -91,9 +91,8 @@ public class TiviUtils {
                 int i = 1;
                 for (List<String> chunk : result) {
 
-                    String clearName = t.endsWith(".7z") ? StringUtils.stripExtension(t) : t;
-                    sourceArchiveName = String.format("%s (part %s).7z", clearName, i);
-                    String destArchiveName = StringUtils.normalize(String.format("%s part %s.7z", clearName, i).replace("_", " "));
+                    sourceArchiveName = String.format("%s (part %s).7z", t, i);
+                    String destArchiveName = StringUtils.normalize(String.format("%s part %s.7z", t, i).replace("_", " "));
 
                     ArchiveUtils.compress7z(destArchiveName, chunk, i++);
 
@@ -145,7 +144,7 @@ public class TiviUtils {
     }
 
     private static String formatFamilyName(Family family) {
-        return family.getName().replace("&", "&amp;").replace("'", "&rsquo;").replace(".7z", "");
+        return family.getName().replace("&", "&amp;").replace("'", "&rsquo;");
     }
 
     private static final Map<String, String> GROUP_MAP = new HashMap<>();
@@ -188,7 +187,7 @@ public class TiviUtils {
         familyMap.entrySet().stream().sorted(Comparator.comparing(e -> e.getValue().getName())).forEach(e -> {
             String familyName = formatFamilyName(e.getValue());
             String sourceRomName = e.getKey().getName();
-            String zipRomName = StringUtils.normalize(StringUtils.replaceExt(e.getValue().getName().replace(".7z", ""), "zip"));
+            String zipRomName = StringUtils.normalize(StringUtils.addExt(e.getValue().getName(), "zip"));
 
             String platformGroup = needToSeparate ? String.format("%s%s", platform, (int) Math.ceil(g.getAndIncrement() / DIR_SEPARATE_SIZE)) : platform;
 
@@ -215,8 +214,7 @@ public class TiviUtils {
         AtomicInteger i = new AtomicInteger(0);
         families.values().stream().filter(f -> f.getType() == FamilyType.GROUP)
                 .forEach(f -> {
-                    String clearName = f.getName().endsWith(".7z") ? StringUtils.stripExtension(f.getName()) : f.getName();
-                    String title = Character.toUpperCase(clearName.charAt(0)) + clearName.substring(1) + ":";
+                    String title = Character.toUpperCase(f.getName().charAt(0)) + f.getName().substring(1) + ":";
                     lines.add("    <tr><td></td></tr>");
                     lines.add(String.format("    <tr><td><b>%s</b></td></tr>", title));
                     linesTxt.add("");
@@ -228,11 +226,11 @@ public class TiviUtils {
                         String zipRomName = StringUtils.normalize(StringUtils.replaceExt(sourceRomName, "zip"));
 
                         Path sourceRom = romsCollection.getRomsPath().resolve(sourceRomName);
-                        String dir = GROUP_MAP.get(StringUtils.stripExtension(f.getName()).toLowerCase());
+                        String dir = GROUP_MAP.get(f.getName().toLowerCase());
                         if (dir != null) {
                             dir = String.format("%s_%s", platform, dir);
                         } else {
-                            dir = StringUtils.stripExtension(StringUtils.normalize(f.getName().replace("_", " "))).toLowerCase();
+                            dir = StringUtils.normalize(f.getName().replace("_", " ")).toLowerCase();
                         }
                         Path destZipRom = uniquePath.resolve(dir).resolve(zipRomName);
 

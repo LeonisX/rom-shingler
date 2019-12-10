@@ -1,10 +1,7 @@
 package md.leonis.shingler;
 
 import md.leonis.shingler.model.*;
-import md.leonis.shingler.utils.IOUtils;
-import md.leonis.shingler.utils.MeasureMethodTest;
-import md.leonis.shingler.utils.Measured;
-import md.leonis.shingler.utils.ShingleUtils;
+import md.leonis.shingler.utils.*;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 import org.slf4j.Logger;
@@ -120,7 +117,7 @@ public class ListFilesa {
         } else {*/
             LOGGER.info("Generating families based on GoodMerged source...");
             Map<String, List<Name>> namesList = new HashMap<>();
-            map.forEach((key, value) -> namesList.put(key.getName(), value.stream().map(v -> new Name(v, false)).collect(Collectors.toList())));
+            map.forEach((key, value) -> namesList.put(StringUtils.stripExtension(key.getName()), value.stream().map(v -> new Name(v, false)).collect(Collectors.toList())));
 
             families = namesList.entrySet().stream()/*.filter(e -> e.getValue().size() != 1)*/
                     .collect(Collectors.toMap(Map.Entry::getKey, e -> new Family(e.getKey(), e.getValue(), FamilyType.FAMILY)));
@@ -314,8 +311,8 @@ public class ListFilesa {
 
         List<Name> deleted = new ArrayList<>();
 
-        if (family.getName().equals("Public Domain.7z") || family.getName().equals("Multicarts Collection.7z")
-                || family.getName().equals("Wxn Collection.7z") || family.getName().equals("VT03 Collection.7z") || family.getName().equals("Multi-Game Pirate Carts.7z")) {
+        if (family.getName().equals("Public Domain") || family.getName().equals("Multicarts Collection")
+                || family.getName().equals("Wxn Collection") || family.getName().equals("VT03 Collection") || family.getName().equals("Multi-Game Pirate Carts")) {
             return deleted;
         }
 
@@ -335,7 +332,7 @@ public class ListFilesa {
 
         List<String> toDelete = families.values().stream().flatMap(family -> getNonSiblings(family, jakkardIndex).stream()
                 .sorted(Comparator.comparing(Name::getJakkardStatus))
-                .map(n -> String.format("\"%s\";\"%s\";\"%2.4f\"", family.getName().replace(".7z", ""), n.getName(), n.getJakkardStatus() / family.size()))).collect(Collectors.toList());
+                .map(n -> String.format("\"%s\";\"%s\";\"%2.4f\"", family.getName(), n.getName(), n.getJakkardStatus() / family.size()))).collect(Collectors.toList());
 
         try {
             Files.write(Paths.get("low-jakkard" + getDenominator() + ".csv"), toDelete, Charset.defaultCharset());
@@ -356,7 +353,7 @@ public class ListFilesa {
         List<String> lines = new ArrayList<>();
 
         filteredMap.entrySet().stream().sorted(Comparator.comparing(e -> e.getKey().getName())).forEach(e -> {
-            lines.add(e.getKey().getName().replace(".7z", ""));
+            lines.add(e.getKey().getName());
             if (e.getValue().size() >= 1) {
                 e.getValue().forEach(v -> lines.add("    " + v));
             }

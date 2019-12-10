@@ -3,6 +3,9 @@ package md.leonis.shingler.utils;
 import java.util.ArrayList;
 import java.util.List;
 
+import static md.leonis.shingler.model.ConfigHolder.platform;
+import static md.leonis.shingler.model.ConfigHolder.platformsByCpu;
+
 public class StringUtils {
 
     private static final int MAX_LENGTH = 64;
@@ -150,11 +153,13 @@ public class StringUtils {
         if (fileName == null) {
             return null;
         }
-        int lastIndexOf = fileName.lastIndexOf(".");
-        if (lastIndexOf == -1) {
-            return fileName;
+        for (String ext : platformsByCpu.get(platform).getExts()) {
+            int lastIndexOf = fileName.lastIndexOf(ext);
+            if (lastIndexOf != -1) {
+                return fileName.substring(0, lastIndexOf);
+            }
         }
-        return fileName.substring(0, lastIndexOf);
+        return fileName;
     }
 
     public static String getFileExtension(String fileName) {
@@ -172,5 +177,4 @@ public class StringUtils {
     public static String addExt(String fileName, String ext) {
         return fileName + (fileName.endsWith("." + ext) ? "" : "." + ext);
     }
-
 }

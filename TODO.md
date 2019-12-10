@@ -1,8 +1,6 @@
 # TODO list
 
-TODO nes (goodmerged): calc relations, relatives, tivi stuff
-
-TODO do not break letters in groups of 1000 - it doesn’t matter
+TODO sg1000 (goodmerged): calc relations, relatives, tivi stuff
 
 TODO full refactor TIVI stuff, other new code
 
@@ -17,6 +15,8 @@ TODO при стандартной упаковке паковать как ес
 TODO families with sha1 or other id!!!
 
 Export families to other precisions
+
+TODO full process for goodmerged (compress, tivi stuff)
 
 Find in families
 
