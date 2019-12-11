@@ -79,4 +79,18 @@ class StringUtilsTest {
         List<String> chunks = StringUtils.toChunks("test [T+Rus Leonis (test[1])] (Unl [a[s]])");
         assertArrayEquals(new String[]{"test", "[T+Rus Leonis (test[1])]", "(Unl [a[s]])"}, chunks.toArray(new String[0]));
     }
+
+    @Test
+    void translit() {
+        assertEquals("Zamechanie-po-baze-dannyh", StringUtils.translit("Замечание по базе данных"));
+    }
+
+    @Test
+    void cpu() {
+        assertEquals("89-dennou-kyuusei-uranai", StringUtils.cpu("&rsquo;89 Dennou Kyuusei Uranai"));
+        assertEquals("2-in-1-family-kid-aladdin-4", StringUtils.cpu("2-in-1 - Family Kid &amp; Aladdin 4"));
+        assertEquals("adventures-of-rocky-and-bullwinkle-and-friends-the", StringUtils.cpu("Adventures of Rocky and Bullwinkle and Friends, The"));
+    }
+
+
 }

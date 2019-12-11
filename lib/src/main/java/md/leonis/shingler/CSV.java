@@ -36,7 +36,7 @@ public class CSV {
     @Data
     @NoArgsConstructor
     @JsonPropertyOrder({"name", "cpu", "game", "rom"})
-    static class MySqlStructure {
+    static class MySqlStructure implements Cloneable {
 
         private String name;
         private String cpu;

@@ -1,6 +1,9 @@
 package md.leonis.shingler.utils;
 
+import org.apache.commons.text.StringEscapeUtils;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static md.leonis.shingler.model.ConfigHolder.platform;
@@ -179,4 +182,48 @@ public class StringUtils {
     public static String addExt(String fileName, String ext) {
         return fileName + (fileName.endsWith("." + ext) ? "" : "." + ext);
     }
+
+
+    public static String cpu(String cpu) {
+        cpu = cpu.replace("&rsquo;", "'");
+        cpu = StringEscapeUtils.unescapeHtml4(cpu);
+        cpu = cpu.replace(" ", "-");
+        cpu = cpu.replace("_", "-");
+        cpu = cpu.replace("+", "-");
+        cpu = cpu.replace("'", "");
+        cpu = cpu.replace("\"", "");
+        cpu = cpu.replace("(", "");
+        cpu = cpu.replace(")", "");
+        cpu = cpu.replace(".", "");
+        cpu = cpu.replace(",", "");
+        cpu = cpu.replace("&", "");
+        cpu = translit(cpu);
+        cpu = cpu.toLowerCase();
+        cpu = cpu.replace("--", "-");
+        cpu = cpu.replace("--", "-");
+        return cpu;
+    }
+
+    public static String translit(String string) {
+        /*Transliterator toLatinTrans = Transliterator.getInstance("Russian-Latin/BGN");
+        String result = toLatinTrans.transliterate(resursing);*/
+
+        List<String> rus = Arrays.asList("а", "б", "в", "г", "д", "е", "з", "и", "к", "л", "м", "н", "о", "п", "р",
+                "с", "т", "у", "ф", "ц", "ы", "й", "ё", "ж", "х", "ч", "ш", "щ", "э", "ю", "я", "ъ", "ь", "%20%20", "%20", " ");
+
+        List<String> lat = Arrays.asList("a", "b", "v", "g", "d", "e", "z", "i", "k", "l", "m", "n", "o", "p", "r",
+                "s", "t", "u", "f", "c", "y", "ij", "yo", "zh", "h", "ch", "sh", "shch", "je", "yu", "ya", "", "", "-", "-", "-");
+
+        for (int i = 0; i < rus.size(); i++) {
+            string = string.replace(rus.get(i), lat.get(i));
+        }
+
+        for (int i = 0; i < rus.size(); i++) {
+            string = string.replace(org.apache.commons.lang3.StringUtils.capitalize(rus.get(i)), org.apache.commons.lang3.StringUtils.capitalize(lat.get(i)));
+        }
+
+        string = string.replaceAll("/[^a-zA-Z0-9_\\-]+/si", "");
+        return string;
+    }
+
 }
