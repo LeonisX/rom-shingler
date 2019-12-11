@@ -114,8 +114,7 @@ public class TiviUtils {
         }
     }
 
-    // html+dump+force63+split
-    public static void generatePageAndRomsForTvRoms() {
+    public static void createCleanedXls() {
 
         // import CSV original
         List<CSV.MySqlStructure> records = readCsv();
@@ -129,6 +128,17 @@ public class TiviUtils {
             r.setRom("");
         });
 
+        // save as excel
+        IOUtils.backupFile(new File(xlsPath()));
+        writeXls(records);
+    }
+
+    // html+dump+force63+split
+    public static void generatePageAndRomsForTvRoms() {
+
+        // import XLS
+        List<CSV.MySqlStructure> records = readXls();
+
         Map<String, CSV.MySqlStructure> normalizedMap = records
                 .stream().collect(Collectors.toMap(r -> StringUtils.normalize(r.getName()), Function.identity()));
         Set<String> dbGamesSet = normalizedMap.keySet();
@@ -137,6 +147,7 @@ public class TiviUtils {
         List<String> txtLines = new ArrayList<>();
         List<String> unmappedLines = new ArrayList<>();
         List<String> updateLines = new ArrayList<>();
+        List<String> unmappedFamilies = new ArrayList<>();
 
         boolean needToSeparate = tribes.keySet().size() > DIR_SIZE;
         AtomicInteger g = new AtomicInteger(1);
@@ -166,6 +177,7 @@ public class TiviUtils {
                 for (Family f : tribes.get(t)) {
                     String familyName = escapeQuotes(f.getName());
                     if (!dbGamesSet.contains(StringUtils.normalize(familyName))) {
+                        unmappedFamilies.add(f.getName());
                         unmappedLines.add(romPath);
                     } else {
 
@@ -208,6 +220,7 @@ public class TiviUtils {
                     for (Family f : tribes.get(t)) {
                         String familyName = escapeQuotes(f.getName());
                         if (!dbGamesSet.contains(StringUtils.normalize(familyName))) {
+                            unmappedFamilies.add(f.getName());
                             unmappedLines.add(romPath);
                         } else {
                             CSV.MySqlStructure record = normalizedMap.get(StringUtils.normalize(familyName));
@@ -224,6 +237,7 @@ public class TiviUtils {
         IOUtils.saveToFile(platform + "_games.txt", txtLines);
         IOUtils.saveToFile(platform + "_games_update.sql", updateLines);
         IOUtils.saveToFile(platform + "_games_unmapped.txt", unmappedLines);
+        IOUtils.saveToFile(platform + "_games_unmapped_families.txt", unmappedFamilies);
         IOUtils.saveToFile(platform + "_games_unmapped_names.txt", dbGamesSet.stream().sorted().map(r -> normalizedMap.get(r).getName()).collect(Collectors.toList()));
 
         // save as excel
@@ -278,6 +292,7 @@ public class TiviUtils {
         List<String> linesTxt = new ArrayList<>();
         List<String> unmappedLines = new ArrayList<>();
         List<String> updateLines = new ArrayList<>();
+        List<String> unmappedFamilies = new ArrayList<>();
 
         LOGGER.info("Processing families...");
 
@@ -311,6 +326,7 @@ public class TiviUtils {
             linesTxt.add(String.format("%s/%s", platformGroup, zipRomName));
 
             if (!names.contains(StringUtils.normalize(familyName))) {
+                unmappedFamilies.add(e.getValue().getName());
                 unmappedLines.add(romPath);
             } else {
                 CSV.MySqlStructure record = normalizedMap.get(StringUtils.normalize(familyName));
@@ -353,6 +369,7 @@ public class TiviUtils {
                         linesTxt.add(String.format("%s/%s", dir, zipRomName));
 
                         if (!names.contains(StringUtils.normalize(familyName))) {
+                            unmappedFamilies.add(f.getName());
                             unmappedLines.add(romPath);
                         } else {
                             CSV.MySqlStructure record = normalizedMap.get(StringUtils.normalize(familyName));
@@ -367,6 +384,7 @@ public class TiviUtils {
         IOUtils.saveToFile(platform + "_roms.txt", linesTxt);
         IOUtils.saveToFile(platform + "_roms_update.sql", updateLines);
         IOUtils.saveToFile(platform + "_roms_unmapped.txt", unmappedLines);
+        IOUtils.saveToFile(platform + "_roms_unmapped_families.txt", unmappedFamilies);
         IOUtils.saveToFile(platform + "_roms_unmapped_names.txt", names.stream().sorted().map(r -> normalizedMap.get(r).getName()).collect(Collectors.toList()));
 
         // save as excel
@@ -374,6 +392,8 @@ public class TiviUtils {
 
         // update queries
         createUpdateQueries();
+
+        LOGGER.info("Done");
     }
 
     public static void createUpdateQueries() {

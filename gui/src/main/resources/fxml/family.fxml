@@ -105,6 +105,7 @@
                             <Button fx:id="compressButton" mnemonicParsing="false" onAction="#compressButtonClick" text="Compress" />
                             <Button fx:id="ultraCompressButton" mnemonicParsing="false" onAction="#ultraCompressButtonClick" text="Ultra Compression" />
                             <Separator orientation="VERTICAL" prefHeight="200.0" />
+                     <Button fx:id="tiviButton3" mnemonicParsing="false" onAction="#generateTiviXlsClick" text="!!!Clean Xml" />
                             <Button fx:id="tiviButton" mnemonicParsing="false" onAction="#generateTiviStuffClick" text="Generate TiVi stuff" />
                      <Button fx:id="tiviButton2" mnemonicParsing="false" onAction="#generateTiviUQClick" text="Gen update queries" />
                         </HBox>

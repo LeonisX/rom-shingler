@@ -131,6 +131,7 @@ public class FamilyController {
     public Button tiviButton;
     public Button regenIndexesButton;
     public Button tiviButton2;
+    public Button tiviButton3;
 
     private TreeItem<NameView> familyRootItem = new TreeItem<>(NameView.EMPTY);
     private TreeItem<NameView> tribeRelationsRootItem = new TreeItem<>(NameView.EMPTY);
@@ -1473,6 +1474,10 @@ public class FamilyController {
     public void regenIndexesButtonClick() {
         families.values().forEach(f -> f.getMembers().forEach(n -> n.setIndex(ListFilesa.calculateIndex(n.getName()))));
         familiesModified.set(true);
+    }
+
+    public void generateTiviXlsClick() {
+        TiviUtils.createCleanedXls();
     }
 
     public void generateTiviStuffClick() {
