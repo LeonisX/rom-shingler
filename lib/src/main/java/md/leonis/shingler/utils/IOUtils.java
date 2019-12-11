@@ -207,7 +207,7 @@ public class IOUtils {
         }
     }
 
-    private static void backupFile(File file) {
+    public static void backupFile(File file) {
         if (file.exists()) {
             File backupFile = new File(file.getAbsolutePath() + ".bak");
             if (backupFile.exists()) {

@@ -1,10 +1,18 @@
 package md.leonis.shingler.utils;
 
+import com.fasterxml.jackson.databind.MappingIterator;
+import com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvSchema;
+import md.leonis.shingler.CSV;
 import md.leonis.shingler.model.Family;
 import md.leonis.shingler.model.FamilyType;
 import md.leonis.shingler.model.Name;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 
+import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -34,15 +42,99 @@ public class TiviUtils {
     private static final int DIR_SIZE = 1000;
     private static final double DIR_SEPARATE_SIZE = 986.0;
 
+
+    private static List<CSV.MySqlStructure> readCsv() {
+
+        try {
+            File file = Paths.get("lists").resolve("base_" + platform + ".csv").toFile();
+            CsvSchema schema = new CsvMapper().schemaFor(CSV.MySqlStructure.class).withColumnSeparator(';').withoutHeader().withQuoteChar('"');
+            MappingIterator<CSV.MySqlStructure> personIter = new CsvMapper().readerFor(CSV.MySqlStructure.class).with(schema).readValues(file);
+            return personIter.readAll();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static String xlsPath() {
+        return "base_" + platform + ".xlsx";
+    }
+
+    private static void writeXls(List<CSV.MySqlStructure> records) {
+
+        XSSFWorkbook workbook = new XSSFWorkbook();
+        XSSFSheet sheet = workbook.createSheet("Sheet-1");
+
+        int rowNum = 0;
+        System.out.println("Creating excel");
+
+        for (CSV.MySqlStructure record : records) {
+            Row row = sheet.createRow(rowNum++);
+            Cell cell = row.createCell(0);
+            cell.setCellValue(record.getName());
+            cell = row.createCell(1);
+            cell.setCellValue(record.getCpu());
+            cell = row.createCell(2);
+            cell.setCellValue(record.getGame());
+            cell = row.createCell(3);
+            cell.setCellValue(record.getRom());
+        }
+        for (int i = 0; i < 4; i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        try {
+            FileOutputStream outputStream = new FileOutputStream(new File(xlsPath()));
+            workbook.write(outputStream);
+            workbook.close();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static List<CSV.MySqlStructure> readXls() {
+
+        try {
+            FileInputStream excelFile = new FileInputStream(new File(xlsPath()));
+            Workbook workbook = new XSSFWorkbook(excelFile);
+            Sheet datatypeSheet = workbook.getSheetAt(0);
+
+            List<CSV.MySqlStructure> records = new ArrayList<>();
+
+            for (Row currentRow : datatypeSheet) {
+                CSV.MySqlStructure record = new CSV.MySqlStructure();
+                record.setName(currentRow.getCell(0).getStringCellValue());
+                record.setCpu(currentRow.getCell(1).getStringCellValue());
+                record.setGame(currentRow.getCell(2).getStringCellValue());
+                record.setRom(currentRow.getCell(3).getStringCellValue());
+                records.add(record);
+            }
+            return records;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     // html+dump+force63+split
     public static void generatePageAndRomsForTvRoms() {
 
-        Map<String, String> normalizedMap = new HashSet<>(IOUtils.loadTextFile(Paths.get("lists").resolve(platform + ".txt")))
-                .stream().collect(Collectors.toMap(StringUtils::normalize, Function.identity()));
+        // import CSV original
+        List<CSV.MySqlStructure> records = readCsv();
+
+        // clean name, rom; calc cpu if not
+        records.forEach(r -> {
+            if (org.apache.commons.lang3.StringUtils.isBlank(r.getCpu())) {
+                r.setCpu(StringUtils.cpu(r.getName()));
+            }
+            r.setGame("");
+            r.setRom("");
+        });
+
+        Map<String, CSV.MySqlStructure> normalizedMap = records
+                .stream().collect(Collectors.toMap(r -> StringUtils.normalize(r.getName()), Function.identity()));
         Set<String> dbGamesSet = normalizedMap.keySet();
 
-        List<String> lines = new ArrayList<>();
-        List<String> linesTxt = new ArrayList<>();
+        List<String> htmlLines = new ArrayList<>();
+        List<String> txtLines = new ArrayList<>();
         List<String> unmappedLines = new ArrayList<>();
         List<String> updateLines = new ArrayList<>();
 
@@ -68,14 +160,17 @@ public class TiviUtils {
 
                 String romPath = formatRomPath(platformGroup, destArchiveName);
 
-                lines.add(formatTableCell(romPath, sourceArchiveName, fileSize));
-                linesTxt.add(romPath);
+                htmlLines.add(formatTableCell(romPath, sourceArchiveName, fileSize));
+                txtLines.add(romPath);
 
                 for (Family f : tribes.get(t)) {
                     String familyName = escapeQuotes(f.getName());
                     if (!dbGamesSet.contains(StringUtils.normalize(familyName))) {
                         unmappedLines.add(romPath);
                     } else {
+
+                        CSV.MySqlStructure record = normalizedMap.get(StringUtils.normalize(familyName));
+                        record.setGame(romPath);
                         dbGamesSet.remove(StringUtils.normalize(familyName));
                         updateLines.add(formatUpdateQuery(platform, romPath, familyName));
                     }
@@ -107,14 +202,16 @@ public class TiviUtils {
 
                     String romPath = formatRomPath(platformGroup, destArchiveName);
 
-                    lines.add(formatTableCell(romPath, sourceArchiveName, fileSize));
-                    linesTxt.add(romPath);
+                    htmlLines.add(formatTableCell(romPath, sourceArchiveName, fileSize));
+                    txtLines.add(romPath);
                     //TODO detect correct part
                     for (Family f : tribes.get(t)) {
                         String familyName = escapeQuotes(f.getName());
                         if (!dbGamesSet.contains(StringUtils.normalize(familyName))) {
                             unmappedLines.add(romPath);
                         } else {
+                            CSV.MySqlStructure record = normalizedMap.get(StringUtils.normalize(familyName));
+                            record.setGame(romPath);
                             dbGamesSet.remove(StringUtils.normalize(familyName));
                             updateLines.add(formatUpdateQuery(platform, romPath, familyName));
                         }
@@ -123,11 +220,15 @@ public class TiviUtils {
             }
         });
 
-        IOUtils.saveToFile(platform + "_games.htm", formatHead() + String.join("\n", lines) + FOOT);
-        IOUtils.saveToFile(platform + "_games.txt", linesTxt);
+        IOUtils.saveToFile(platform + "_games.htm", formatHead() + String.join("\n", htmlLines) + FOOT);
+        IOUtils.saveToFile(platform + "_games.txt", txtLines);
         IOUtils.saveToFile(platform + "_games_update.sql", updateLines);
         IOUtils.saveToFile(platform + "_games_unmapped.txt", unmappedLines);
-        IOUtils.saveToFile(platform + "_games_unmapped_names.txt", dbGamesSet.stream().sorted().map(normalizedMap::get).collect(Collectors.toList()));
+        IOUtils.saveToFile(platform + "_games_unmapped_names.txt", dbGamesSet.stream().sorted().map(r -> normalizedMap.get(r).getName()).collect(Collectors.toList()));
+
+        // save as excel
+        IOUtils.backupFile(new File(xlsPath()));
+        writeXls(records);
     }
 
     private static String formatHead() {
@@ -162,8 +263,11 @@ public class TiviUtils {
     //(list+dump+force63)
     public static void getAllUniqueRoms() {
 
-        Map<String, String> normalizedMap = new HashSet<>(IOUtils.loadTextFile(Paths.get("lists").resolve(platform + ".txt")))
-                .stream().collect(Collectors.toMap(StringUtils::normalize, Function.identity()));
+        // import XLS
+        List<CSV.MySqlStructure> records = readXls();
+
+        Map<String, CSV.MySqlStructure> normalizedMap = records
+                .stream().collect(Collectors.toMap(r -> StringUtils.normalize(r.getName()), Function.identity()));
         Set<String> names = normalizedMap.keySet();
 
         Path uniquePath = outputDir.resolve(platform).resolve("roms");
@@ -209,6 +313,8 @@ public class TiviUtils {
             if (!names.contains(StringUtils.normalize(familyName))) {
                 unmappedLines.add(romPath);
             } else {
+                CSV.MySqlStructure record = normalizedMap.get(StringUtils.normalize(familyName));
+                record.setRom(romPath);
                 names.remove(StringUtils.normalize(familyName));
                 updateLines.add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platformGroup, romPath, familyName));
             }
@@ -249,6 +355,8 @@ public class TiviUtils {
                         if (!names.contains(StringUtils.normalize(familyName))) {
                             unmappedLines.add(romPath);
                         } else {
+                            CSV.MySqlStructure record = normalizedMap.get(StringUtils.normalize(familyName));
+                            record.setRom(romPath);
                             names.remove(StringUtils.normalize(familyName));
                             updateLines.add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platform, romPath, escapeQuotes(familyName)));
                         }
@@ -259,7 +367,38 @@ public class TiviUtils {
         IOUtils.saveToFile(platform + "_roms.txt", linesTxt);
         IOUtils.saveToFile(platform + "_roms_update.sql", updateLines);
         IOUtils.saveToFile(platform + "_roms_unmapped.txt", unmappedLines);
-        IOUtils.saveToFile(platform + "_roms_unmapped_names.txt", names.stream().sorted().map(normalizedMap::get).collect(Collectors.toList()));
+        IOUtils.saveToFile(platform + "_roms_unmapped_names.txt", names.stream().sorted().map(r -> normalizedMap.get(r).getName()).collect(Collectors.toList()));
+
+        // save as excel
+        writeXls(records);
+
+        // update queries
+        createUpdateQueries();
+    }
+
+    public static void createUpdateQueries() {
+
+        List<CSV.MySqlStructure> originRecords = readCsv();
+        List<CSV.MySqlStructure> records = readXls();
+
+        List<String> updateList = new ArrayList<>();
+        for (int k = 0; k < originRecords.size(); k++) {
+            Map<String, String> vals = new LinkedHashMap<>();
+            if (!originRecords.get(k).getName().equals(records.get(k).getName())) {
+                vals.put("name", records.get(k).getName());
+            }
+            if (!originRecords.get(k).getGame().equals(records.get(k).getGame())) {
+                vals.put("game", records.get(k).getGame());
+            }
+            if (!originRecords.get(k).getRom().equals(records.get(k).getRom())) {
+                vals.put("rom", records.get(k).getRom());
+            }
+            if (vals.size() > 0) {
+                String sets = vals.entrySet().stream().map(e -> String.format("`%s`='%s'", e.getKey(), escapeQuotes(e.getValue()))).collect(Collectors.joining(", "));
+                updateList.add(String.format("UPDATE `base_%s` SET %s WHERE name='%s';", platform, sets, escapeQuotes(originRecords.get(k).getName())));
+            }
+        }
+        IOUtils.saveToFile(platform + "_update.sql", String.join("\n", updateList));
     }
 
     private static String formatUniqueRomPath(String platform, String destArchiveName) {

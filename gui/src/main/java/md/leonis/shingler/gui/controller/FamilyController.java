@@ -130,6 +130,7 @@ public class FamilyController {
     public MenuItem renameTribeMenuItem;
     public Button tiviButton;
     public Button regenIndexesButton;
+    public Button tiviButton2;
 
     private TreeItem<NameView> familyRootItem = new TreeItem<>(NameView.EMPTY);
     private TreeItem<NameView> tribeRelationsRootItem = new TreeItem<>(NameView.EMPTY);
@@ -1469,13 +1470,17 @@ public class FamilyController {
         showFamilies();
     }
 
+    public void regenIndexesButtonClick() {
+        families.values().forEach(f -> f.getMembers().forEach(n -> n.setIndex(ListFilesa.calculateIndex(n.getName()))));
+        familiesModified.set(true);
+    }
+
     public void generateTiviStuffClick() {
         TiviUtils.generatePageAndRomsForTvRoms();
         TiviUtils.getAllUniqueRoms();
     }
 
-    public void regenIndexesButtonClick() {
-        families.values().forEach(f -> f.getMembers().forEach(n -> n.setIndex(ListFilesa.calculateIndex(n.getName()))));
-        familiesModified.set(true);
+    public void generateTiviUQClick() {
+        TiviUtils.createUpdateQueries();
     }
 }
