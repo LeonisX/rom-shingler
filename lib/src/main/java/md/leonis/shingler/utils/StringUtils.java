@@ -15,7 +15,7 @@ public class StringUtils {
 
     public static String normalize(String fileName) {
         String result = StringUtils.removeSpecialChars(fileName.replace("_", " ")); // remove special symbols
-        return StringUtils.force63(result);
+        return StringUtils.force63(result).replace(" ", "_");
     }
 
     static String force63(String fileName) {
@@ -38,7 +38,7 @@ public class StringUtils {
             fileName = fileName.substring(0, fileName.indexOf(" The"));
         }
 
-        name = fileName.replace("  ", " ").replace(" - ", "-").replace(" -", "-").trim().replace(" ", "_");
+        name = fileName.replace("  ", " ").replace(" - ", "-").replace(" -", "-").trim();
 
         // If file name length <= 64 - return
         if (name.length() <= maxLength) {
