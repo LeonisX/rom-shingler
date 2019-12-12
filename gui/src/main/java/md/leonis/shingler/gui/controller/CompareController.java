@@ -312,7 +312,7 @@ public class CompareController {
 
         List<Pair<String, String>> renamed = pairs.stream().filter(p -> !ListFilesa.getCleanName(p.getKey().getTitle()).equals(ListFilesa.getCleanName(p.getValue().getTitle())))
                 .filter(p -> StringUtils.isNotBlank(p.getKey().getTitle()) && StringUtils.isNotBlank(p.getValue().getTitle()))
-                .map(p -> new Pair<>(p.getKey().getTitle(), p.getValue().getTitle())).collect(Collectors.toList());
+                .map(p -> new Pair<>(p.getValue().getTitle(), p.getKey().getTitle())).collect(Collectors.toList());
 
         Map<String, List<Pair<GID, GID>>> familyList = pairs.stream().collect(Collectors.groupingBy(pair -> ListFilesa.getCleanName(pair.getValue().getTitle())));
 
