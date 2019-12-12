@@ -3,6 +3,8 @@
 // SELECT name, cpu, game, rom FROM `base_nes` ORDER BY n LIMIT 0, 50000
 // SELECT name, '' as cpu, '' as game, '' as rom FROM `base_sg1000` ORDER BY n LIMIT 0, 50000
 
+TODO from phone 
+
 TODO recalculate all platforms
 
 TODO when open platforms - full clean families, relations

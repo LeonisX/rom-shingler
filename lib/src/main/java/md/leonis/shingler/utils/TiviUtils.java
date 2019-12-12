@@ -3,6 +3,7 @@ package md.leonis.shingler.utils;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
+import javafx.util.Pair;
 import md.leonis.shingler.CSV;
 import md.leonis.shingler.model.Family;
 import md.leonis.shingler.model.FamilyType;
@@ -386,6 +387,27 @@ public class TiviUtils {
         IOUtils.saveToFile(platform + "_roms_unmapped.txt", unmappedLines);
         IOUtils.saveToFile(platform + "_roms_unmapped_families.txt", unmappedFamilies);
         IOUtils.saveToFile(platform + "_roms_unmapped_names.txt", names.stream().sorted().map(r -> normalizedMap.get(r).getName()).collect(Collectors.toList()));
+
+        List<String> fams = new ArrayList<>();
+        families.values().stream().collect(Collectors.toMap(Family::getName, f -> f.getMembers().stream().map(Name::getCleanName).distinct().sorted()))
+                .entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).forEach(f -> {
+            fams.add(f.getKey());
+            f.getValue().map(r -> "    " + r).forEach(fams::add);
+        });
+
+        IOUtils.saveToFile(platform + "_families_to_games.txt", fams);
+
+        List<Pair<String, String>> pairs = new ArrayList<>();
+        families.values().stream().collect(Collectors.toMap(Family::getName, f -> f.getMembers().stream().map(Name::getCleanName).distinct().sorted()))
+                .entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).forEach(f -> {
+            f.getValue().forEach(v -> {
+                if (!v.equals(f.getKey())) {
+                    pairs.add(new Pair<>(v, f.getKey()));
+                }
+            });
+        });
+
+        IOUtils.saveToFile(platform + "_games_to_families.txt", pairs.stream().map(p -> p.getKey() + "\t\t" + p.getValue()).collect(Collectors.toList()));
 
         // save as excel
         writeXls(records);
