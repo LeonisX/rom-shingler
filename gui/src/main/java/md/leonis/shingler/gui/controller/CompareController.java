@@ -10,12 +10,14 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.util.Callback;
 import javafx.util.Pair;
+import md.leonis.shingler.ListFilesa;
 import md.leonis.shingler.gui.view.StageManager;
 import md.leonis.shingler.model.ConfigHolder;
 import md.leonis.shingler.model.GID;
 import md.leonis.shingler.model.Platform;
 import md.leonis.shingler.model.RomsCollection;
 import md.leonis.shingler.utils.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
@@ -61,6 +63,7 @@ public class CompareController {
 
     private final StageManager stageManager;
     private final ConfigHolder configHolder;
+    public Button auditButton;
 
     private List<Pair<GID, GID>> deletedPairs;
     private List<Pair<GID, GID>> addedPairs;
@@ -169,6 +172,7 @@ public class CompareController {
             Set<String> hashesSame = new HashSet<>(hashesLeft);
             hashesSame.retainAll(hashesRight);
 
+            //TODO here freeze if we have duplicate files (for example, Excellent Dizzy Collection, The (Prototype) [S][!].gg/sms)
             Map<String, GID> byLeftHash = romsCollection1.getGidsMap().values().stream().collect(Collectors.toMap(h -> bytesToHex(h.getSha1()), Function.identity()));
             Map<String, GID> byRightHash = romsCollection2.getGidsMap().values().stream().collect(Collectors.toMap(h -> bytesToHex(h.getSha1()), Function.identity()));
 
@@ -190,6 +194,10 @@ public class CompareController {
     }
 
     private void filterResult() {
+        tableView.setItems(FXCollections.observableArrayList(preparePairs()));
+    }
+
+    private List<Pair<GID, GID>> preparePairs() {
 
         boolean omitHeaders = headlessRadioButton.isSelected();
 
@@ -202,7 +210,7 @@ public class CompareController {
         LOGGER.info("Merging result...");
         pairs = mergePairs(pairs, omitHeaders);
 
-        tableView.setItems(FXCollections.observableArrayList(pairs));
+        return pairs;
     }
 
     private List<Pair<GID, GID>> filterPairs() {
@@ -297,6 +305,28 @@ public class CompareController {
             GID c2 = p2.getKey().getTitle().isEmpty() ? p2.getValue() : p2.getKey();
             return c1.getTitle().compareToIgnoreCase(c2.getTitle());
         }).collect(Collectors.toList());
+    }
+
+    public void auditButtonClick() {
+        List<Pair<GID, GID>> pairs = preparePairs();
+
+        List<Pair<String, String>> renamed = pairs.stream().filter(p -> !ListFilesa.getCleanName(p.getKey().getTitle()).equals(ListFilesa.getCleanName(p.getValue().getTitle())))
+                .filter(p -> StringUtils.isNotBlank(p.getKey().getTitle()) && StringUtils.isNotBlank(p.getValue().getTitle()))
+                .map(p -> new Pair<>(p.getKey().getTitle(), p.getValue().getTitle())).collect(Collectors.toList());
+
+        Map<String, List<Pair<GID, GID>>> familyList = pairs.stream().collect(Collectors.groupingBy(pair -> ListFilesa.getCleanName(pair.getValue().getTitle())));
+
+        Map<String, List<Pair<GID, GID>>> added = familyList.entrySet().stream()
+                .filter(e -> e.getValue().size() == e.getValue().stream().filter(v -> StringUtils.isBlank(v.getKey().getTitle())).count())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        Map<String, List<Pair<GID, GID>>> deleted = familyList.entrySet().stream()
+                .filter(e -> e.getValue().size() == e.getValue().stream().filter(v -> StringUtils.isBlank(v.getValue().getTitle())).count())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        IOUtils.saveToFile(platform + "_renamed.txt", renamed.stream().map(p -> ListFilesa.getCleanName(p.getKey()) + "\t\t" + ListFilesa.getCleanName(p.getValue())).distinct().collect(Collectors.toList()));
+        IOUtils.saveToFile(platform + "_added.txt", added.keySet().stream().sorted().collect(Collectors.toList()));
+        IOUtils.saveToFile(platform + "_deleted.txt", deleted.keySet().stream().sorted().collect(Collectors.toList()));
     }
 
     static class PairNameFactory implements Callback<TableColumn.CellDataFeatures<Pair<GID, GID>, Pair<GID, GID>>, ObservableValue<Pair<GID, GID>>> {

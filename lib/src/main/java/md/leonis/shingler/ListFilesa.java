@@ -434,7 +434,7 @@ public class ListFilesa {
         return chunks;
     }
 
-    private static String getCleanName(String s) {
+    public static String getCleanName(String s) {
         int braceIndex = s.indexOf("(");
         if (braceIndex > 0) {
             s = s.substring(0, braceIndex);
