@@ -38,7 +38,7 @@ public class StringUtils {
             fileName = fileName.substring(0, fileName.indexOf(" The"));
         }
 
-        name = fileName.replace("  ", " ").replace(" - ", "-").trim().replace(" ", "_");
+        name = fileName.replace("  ", " ").replace(" - ", "-").replace(" -", "-").trim().replace(" ", "_");
 
         // If file name length <= 64 - return
         if (name.length() <= maxLength) {

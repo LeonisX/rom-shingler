@@ -1,9 +1,14 @@
 package md.leonis.shingler.utils;
 
+import md.leonis.shingler.model.ConfigHolder;
+import md.leonis.shingler.model.Platform;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.List;
 
+import static md.leonis.shingler.model.ConfigHolder.platforms;
+import static md.leonis.shingler.model.ConfigHolder.platformsByCpu;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -92,5 +97,13 @@ class StringUtilsTest {
         assertEquals("adventures-of-rocky-and-bullwinkle-and-friends-the", StringUtils.cpu("Adventures of Rocky and Bullwinkle and Friends, The"));
     }
 
+    @Test
+    void normalize() {
+        ConfigHolder.platform = "gg";
+        platforms.put("Sega Game Gear", new Platform("Sega Game Gear", "gg", "(.*\\(Hack\\).*|.*\\(Hack .*|.* Hack\\).*)", "(.*\\[[bhot][0-9a-f]].*|.*\\[T[+\\-].*].*|.*\\[hM\\d{2}].*|.*\\[hFFE].*)", ".*\\(PD\\).*", Arrays.asList(".gg", ".sms", ".7z", ".zip")));
+        platforms.values().forEach(p -> platformsByCpu.put(p.getCpu(), p));
+
+        assertEquals("Ariel-Little_Mermaid", StringUtils.normalize("Ariel - The Little Mermaid"));
+    }
 
 }
