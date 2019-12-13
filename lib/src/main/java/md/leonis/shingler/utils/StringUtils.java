@@ -191,7 +191,7 @@ public class StringUtils {
         cpu = StringEscapeUtils.unescapeHtml4(cpu);
 
         String separators = " _+";
-        String restricted = "'\"().,&!";
+        String restricted = "'\"().,&!?$@#%^*=/\\[];:'\"|<>{}";
 
         for (char c : separators.toCharArray()) {
             cpu = cpu.replace("" + c, "-");
@@ -206,10 +206,24 @@ public class StringUtils {
         cpu = cpu.replace("--", "-");
         cpu = cpu.replace("--", "-");
 
+        List<String> tails = Arrays.asList("-unl", "-iv", "-v", "-vi", "-vii", "-");
+
+        for (String s : tails) {
+            cpu = replaceFromTail(s, cpu);
+        }
+
         cpu = cpu.replace("-iii", "-3");
         cpu = cpu.replace("-ii", "-2");
-        cpu = cpu.replace("-part-2", "-2");
+
         return cpu;
+    }
+
+    public static String replaceFromTail(String substr, String string) {
+        if (string.endsWith(substr)) {
+            return string.substring(0, string.length() - substr.length());
+        } else {
+            return string;
+        }
     }
 
     public static String translit(String string) {

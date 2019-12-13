@@ -107,4 +107,11 @@ class StringUtilsTest {
     void normalize() {
         assertEquals("Ariel-Little_Mermaid", StringUtils.normalize("Ariel - The Little Mermaid"));
     }
+
+    @Test
+    void replaceFromTheEnd() {
+        assertEquals("hot-dance-2000", StringUtils.replaceFromTail("-unl", "hot-dance-2000-unl"));
+        assertEquals("hot-dance-2000", StringUtils.replaceFromTail("-ii", "hot-dance-2000-ii"));
+    }
+
 }

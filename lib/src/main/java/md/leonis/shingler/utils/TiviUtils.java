@@ -234,9 +234,11 @@ public class TiviUtils {
             if (syn != null && lists.getNormalizedMap().get(syn) != null) {
                 CSV.MySqlStructure record = lists.getNormalizedMap().get(syn);
                 record.setName(f.getName());
+                record.setCpu(StringUtils.cpu(f.getName()));
                 record.setGame(romPath);
                 lists.getUnmappedNames().remove(normalizedFamilyName);
                 lists.getUpdateLines().add(formatUpdateQuery(platform, romPath, familyName));
+                //lists.getHtAccessLines().add(String.format("RewriteRule ^game/([a-zA-Z0-9_-]*)/([a-z]|num|pd|hak).html$ game/$1/group/$2.html [L,R=301]", romPath, familyName)); //TODO
             } else {
                 boolean isCreated = lists.getCreated().contains(normalizedFamilyName);
                 if (isCreated) {
@@ -276,7 +278,7 @@ public class TiviUtils {
 
         TiViLists() {
             this.records = readXls();
-            this.normalizedMap = records.stream().collect(Collectors.toMap(r -> StringUtils.normalize(r.getName()), Function.identity()));
+            this.normalizedMap = records.stream().collect(Collectors.toMap(r -> StringUtils.normalize(r.getName()), Function.identity(), (r1, r2) -> r1));
             this.unmappedNames = new HashSet<>(normalizedMap.keySet());
 
             IOUtils.loadTextFile(Paths.get(platform + "_renamed.txt")).forEach(s -> {
@@ -478,6 +480,7 @@ public class TiviUtils {
             if (syn != null && lists.getNormalizedMap().get(StringUtils.normalize(familyName)) != null) {
                 CSV.MySqlStructure record = lists.getNormalizedMap().get(StringUtils.normalize(familyName));
                 record.setName(familyName);
+                record.setCpu(StringUtils.cpu(familyName));
                 record.setRom(romPath);
                 lists.getUnmappedNames().remove(normalizedFamilyName);
                 lists.getUpdateLines().add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platform, romPath, escapeQuotes(f.getName())));

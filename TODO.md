@@ -3,7 +3,7 @@
 // SELECT name, cpu, game, rom FROM `base_nes` ORDER BY n LIMIT 0, 50000
 // SELECT name, '' as cpu, '' as game, '' as rom FROM `base_sg1000` ORDER BY n LIMIT 0, 50000
 
-TODO GG2SMS hacks GG- > SMS
+TODO GG2SMS hacks GG > SMS
 TODO all bases - revise regions!!!
 
 TODO надо учитывать, что бывает, переименовывается игра для одного региоан, для других остаётся такой же.
