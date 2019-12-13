@@ -3,6 +3,17 @@
 // SELECT name, cpu, game, rom FROM `base_nes` ORDER BY n LIMIT 0, 50000
 // SELECT name, '' as cpu, '' as game, '' as rom FROM `base_sg1000` ORDER BY n LIMIT 0, 50000
 
+TODO SG-1000: group chuugaku, tanoshii in families
+
+TODO generate full roms list. Right now it's not full
+
+TODO generate roms list with full path (http://...)
+
+TODO recalculate SID when generate update sql
+
+TODO Tototek Menu Boot - SG-1000 Mode by Chris Covell	tototek-menu-boot--sg-1000-mode		to SMS
+
+
 TODO GG2SMS hacks GG > SMS
 TODO all bases - revise regions!!!
 
