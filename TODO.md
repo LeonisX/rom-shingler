@@ -6,9 +6,6 @@
 TODO GG2SMS hacks GG- > SMS
 TODO all bases - revise regions!!!
 
-TODO Arlier ... - why not recognized???
-
-TODO cpu: !
 TODO надо учитывать, что бывает, переименовывается игра для одного региоан, для других остаётся такой же.
 Это ломает всю текущую логику
 

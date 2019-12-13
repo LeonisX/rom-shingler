@@ -474,7 +474,6 @@ public class TiviUtils {
         String familyName = f.getName();
         String normalizedFamilyName = StringUtils.normalize(escapeQuotes(familyName));
         if (!lists.getUnmappedNames().contains(normalizedFamilyName)) {
-            System.out.println(normalizedFamilyName);
             String syn = lists.getSynonyms().get(normalizedFamilyName);
             if (syn != null && lists.getNormalizedMap().get(StringUtils.normalize(familyName)) != null) {
                 CSV.MySqlStructure record = lists.getNormalizedMap().get(StringUtils.normalize(familyName));

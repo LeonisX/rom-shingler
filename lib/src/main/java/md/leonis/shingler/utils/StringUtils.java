@@ -189,20 +189,26 @@ public class StringUtils {
     public static String cpu(String cpu) {
         cpu = cpu.replace("&rsquo;", "'");
         cpu = StringEscapeUtils.unescapeHtml4(cpu);
-        cpu = cpu.replace(" ", "-");
-        cpu = cpu.replace("_", "-");
-        cpu = cpu.replace("+", "-");
-        cpu = cpu.replace("'", "");
-        cpu = cpu.replace("\"", "");
-        cpu = cpu.replace("(", "");
-        cpu = cpu.replace(")", "");
-        cpu = cpu.replace(".", "");
-        cpu = cpu.replace(",", "");
-        cpu = cpu.replace("&", "");
+
+        String separators = " _+";
+        String restricted = "'\"().,&!";
+
+        for (char c : separators.toCharArray()) {
+            cpu = cpu.replace("" + c, "-");
+        }
+
+        for (char c : restricted.toCharArray()) {
+            cpu = cpu.replace("" + c, "");
+        }
+
         cpu = translit(cpu);
         cpu = cpu.toLowerCase();
         cpu = cpu.replace("--", "-");
         cpu = cpu.replace("--", "-");
+
+        cpu = cpu.replace("-iii", "-3");
+        cpu = cpu.replace("-ii", "-2");
+        cpu = cpu.replace("-part-2", "-2");
         return cpu;
     }
 
