@@ -274,6 +274,9 @@ public class TiviUtils {
         if (s.startsWith("Disney's ")) {
             s = s.replace("Disney's ", "");
         }
+        if (s.startsWith("Fox's ")) {
+            s = s.replace("Fox's ", "");
+        }
         return s;
     }
 

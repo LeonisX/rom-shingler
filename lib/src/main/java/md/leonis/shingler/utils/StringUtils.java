@@ -207,9 +207,11 @@ public class StringUtils {
         cpu = cpu.replace("--", "-");
 
         List<String> tails = Arrays.asList("-unl", "-iv", "-v", "-vi", "-vii", "-");
+        List<String> tailsReplacement = Arrays.asList("", "-4", "-5", "-6", "-7", "");
 
-        for (String s : tails) {
-            cpu = replaceFromTail(s, cpu);
+        for (int i = 0; i < tails.size(); i++) {
+            String s = tails.get(i);
+            cpu = replaceFromTail(s, cpu) + tailsReplacement.get(i);
         }
 
         cpu = cpu.replace("-iii", "-3");
