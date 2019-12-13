@@ -217,6 +217,7 @@ public class TiviUtils {
         IOUtils.saveToFile(platform + "_games_unmapped.txt", lists.getUnmappedLines());
         IOUtils.saveToFile(platform + "_games_unmapped_families.txt", lists.getUnmappedFamilies());
         IOUtils.saveToFile(platform + "_games_unmapped_names.txt", lists.getUnmappedNames().stream().sorted().map(r -> lists.getNormalizedMap().get(r).getName()).collect(Collectors.toList()));
+        IOUtils.saveToFile(platform + "_create.sql", lists.getCreateLines().stream().sorted().map(r -> formatCreate(lists, r)).collect(Collectors.toList()));
 
         // save as excel
         IOUtils.backupFile(new File(xlsPath()));
@@ -237,8 +238,14 @@ public class TiviUtils {
                 lists.getUnmappedNames().remove(normalizedFamilyName);
                 lists.getUpdateLines().add(formatUpdateQuery(platform, romPath, familyName));
             } else {
-                lists.getUnmappedFamilies().add(f.getName());
-                lists.getUnmappedLines().add(romPath);
+                boolean isCreated = lists.getCreated().contains(normalizedFamilyName);
+                if (isCreated) {
+                    lists.getCreateLines().add(familyName);
+                    lists.getUnmappedNames().remove(normalizedFamilyName);
+                } else {
+                    lists.getUnmappedFamilies().add(f.getName());
+                    lists.getUnmappedLines().add(romPath);
+                }
             }
         } else {
             CSV.MySqlStructure record = lists.getNormalizedMap().get(normalizedFamilyName);
@@ -255,6 +262,7 @@ public class TiviUtils {
         private Map<String, CSV.MySqlStructure> normalizedMap;
 
         private Map<String, String> synonyms = new HashMap<>();
+        private Map<String, String> reversedSynonyms = new HashMap<>();
 
         private List<String> htmlLines = new ArrayList<>();
         private List<String> txtLines = new ArrayList<>();
@@ -262,6 +270,9 @@ public class TiviUtils {
         private List<String> unmappedLines = new ArrayList<>();
         private List<String> unmappedFamilies = new ArrayList<>();
         private Set<String> unmappedNames;
+
+        private Set<String> created;
+        private List<String> createLines = new ArrayList<>();
 
         TiViLists() {
             this.records = readXls();
@@ -271,7 +282,11 @@ public class TiviUtils {
             IOUtils.loadTextFile(Paths.get(platform + "_renamed.txt")).forEach(s -> {
                 String[] chunks = s.split("\t\t");
                 synonyms.put(StringUtils.normalize(escapeQuotes(chunks[0])), StringUtils.normalize(escapeQuotes(chunks[1])));
+                reversedSynonyms.put(StringUtils.normalize(escapeQuotes(chunks[1])), StringUtils.normalize(escapeQuotes(chunks[0])));
             });
+
+            created = IOUtils.loadTextFile(Paths.get(platform + "_added.txt")).stream().map(s -> StringUtils.normalize(escapeQuotes(s))).collect(Collectors.toSet());
+            //TODO deleted and generate
         }
     }
 
@@ -358,7 +373,6 @@ public class TiviUtils {
                     lists.getTxtLines().add(title);
 
                     f.getMembers().forEach(n -> {
-                        String familyName = f.getName();
                         String sourceRomName = n.getName();
                         String zipRomName = StringUtils.normalize(StringUtils.replaceExt(sourceRomName, "zip"));
 
@@ -400,13 +414,11 @@ public class TiviUtils {
 
         List<Pair<String, String>> pairs = new ArrayList<>();
         families.values().stream().collect(Collectors.toMap(Family::getName, f -> f.getMembers().stream().map(Name::getCleanName).distinct().sorted()))
-                .entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).forEach(f -> {
-            f.getValue().forEach(v -> {
-                if (!v.equals(f.getKey())) {
-                    pairs.add(new Pair<>(v, f.getKey()));
-                }
-            });
-        });
+                .entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).forEach(f -> f.getValue().forEach(v -> {
+                    if (!v.equals(f.getKey())) {
+                        pairs.add(new Pair<>(v, f.getKey()));
+                    }
+                }));
 
         IOUtils.saveToFile(platform + "_games_to_families.txt", pairs.stream().map(p -> p.getKey() + "\t\t" + p.getValue()).sorted().collect(Collectors.toList()));
 
@@ -419,18 +431,57 @@ public class TiviUtils {
         LOGGER.info("Done");
     }
 
+    //TODO add all fields (records). also in game.php
+    private static String formatCreate(TiViLists lists, String name) {
+
+        //TODO n INC: SELECT MAX(n) AS max FROM base_".$catcpu
+
+        String format = "INSERT INTO `base_%s` VALUES (null, '%s', '0','0', '%s', '%s'," +
+                "'%s''," + // name
+                "'',''," + // descript, keywords
+                "'%s''," + // region
+                "'',''," + // publisher, developer
+                "'','','0'," + // god, god1, ngamers
+                "'',''," + //type, genre
+                "'','','','','','',''," + // images 1-7
+                "'','','','','','',''," + // images 8-14
+                "'%s', 0, '', 0, '%s','yes'," + //game, ?, music, ?, rom, playable
+                "'',''," + // analog, drname
+                "'',''," + // cros, serie
+                "'',''," + // text1, text2
+                "'0', '0', 0)"; //rating, viewes, ?
+
+        String cpu = StringUtils.cpu(name);
+
+        String sid = name.toLowerCase().substring(0, 1);
+        if (platformsByCpu.get(platform).isPD(name)) {
+            sid = "pd";
+        } else if (platformsByCpu.get(platform).isHack(name)) {
+            sid = "hak";
+        } else if (sid.matches("\\d")) {
+            sid = "num";
+        }
+
+        String region = ""; //TODO
+        String game = ""; //TODO
+        String rom = ""; //TODO
+
+        return String.format(format, platform, platform, sid, cpu, escapeQuotes(name), region, game, rom);
+    }
+
     private static void processRomFamily(TiViLists lists, Family f, String romPath) {
 
-        String familyName = escapeQuotes(f.getName());
-        String normalizedFamilyName = StringUtils.normalize(familyName);
+        String familyName = f.getName();
+        String normalizedFamilyName = StringUtils.normalize(escapeQuotes(familyName));
         if (!lists.getUnmappedNames().contains(normalizedFamilyName)) {
+            System.out.println(normalizedFamilyName);
             String syn = lists.getSynonyms().get(normalizedFamilyName);
-            if (syn != null && lists.getNormalizedMap().get(syn) != null) {
-                CSV.MySqlStructure record = lists.getNormalizedMap().get(syn);
+            if (syn != null && lists.getNormalizedMap().get(StringUtils.normalize(familyName)) != null) {
+                CSV.MySqlStructure record = lists.getNormalizedMap().get(StringUtils.normalize(familyName));
                 record.setName(familyName);
                 record.setRom(romPath);
                 lists.getUnmappedNames().remove(normalizedFamilyName);
-                lists.getUpdateLines().add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platform, romPath, familyName));
+                lists.getUpdateLines().add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platform, romPath, escapeQuotes(f.getName())));
             } else {
                 lists.getUnmappedFamilies().add(f.getName());
                 lists.getUnmappedLines().add(romPath);
@@ -439,29 +490,8 @@ public class TiviUtils {
             CSV.MySqlStructure record = lists.getNormalizedMap().get(normalizedFamilyName);
             record.setRom(romPath);
             lists.getUnmappedNames().remove(normalizedFamilyName);
-            lists.getUpdateLines().add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platform, romPath, familyName));
+            lists.getUpdateLines().add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platform, romPath, escapeQuotes(f.getName())));
         }
-
-        /*String familyName = escapeQuotes(f.getName());
-        String normalizedFamilyName = StringUtils.normalize(familyName);
-        if (!lists.getUnmappedNames().contains(normalizedFamilyName)) {
-
-            String syn = lists.getSynonyms().get(normalizedFamilyName);
-            if (syn != null) {
-                CSV.MySqlStructure record = lists.getNormalizedMap().get(syn);
-                record.setGame(romPath);
-                lists.getUnmappedNames().remove(normalizedFamilyName);
-                lists.getUpdateLines().add(formatUpdateQuery(platform, romPath, familyName));
-            }
-
-            lists.getUnmappedFamilies().add(f.getName());
-            lists.getUnmappedLines().add(romPath);
-        } else {
-            CSV.MySqlStructure record = lists.getNormalizedMap().get(normalizedFamilyName);
-            record.setGame(romPath);
-            lists.getUnmappedNames().remove(normalizedFamilyName);
-            lists.getUpdateLines().add(formatUpdateQuery(platform, romPath, familyName));
-        }*/
     }
 
     public static void createUpdateQueries() {

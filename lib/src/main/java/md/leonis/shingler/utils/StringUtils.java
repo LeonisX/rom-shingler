@@ -22,9 +22,11 @@ public class StringUtils {
 
         String name = fileName;
 
+        name = fileName.replace(" The ", " ").replace(" The ", " ").replace(" the ", " ").replace(" The ", " ");
+
         // [t1][a1][T-Port] -> [t1a1T-Port]
         // From tail consistently delete these substrings:
-        String[] toDelete = new String[]{" The ", " the ", "][", ",", ";", "/", "\\", "~", "'", "\"", "`", "!", "."};
+        String[] toDelete = new String[]{"][", ",", ";", "/", "\\", "~", "'", "\"", "`", "!", "."};
 
         fileName = stripExtension(name);
         String ext = getFileExtension(name);
