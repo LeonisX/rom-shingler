@@ -18,10 +18,8 @@ public class CSV {
 
         List<MySqlStructure> records = readFile(new File("E:\\" + BASE_NAME + ".csv"));
 
-        records.forEach(r -> {
-            System.out.println(String.format("UPDATE `%s` SET `cpu`='%s', `game`='%s', `rom`='%s' WHERE `name`='%s'",
-                    BASE_NAME, r.getCpu(), r.getGame(), r.getRom(), r.getName()));
-        });
+        records.forEach(r -> System.out.println(String.format("UPDATE `%s` SET `cpu`='%s', `game`='%s', `rom`='%s' WHERE `name`='%s'",
+                BASE_NAME, r.getCpu(), r.getGame(), r.getRom(), r.getName())));
     }
 
     private static List<MySqlStructure> readFile(File csvFile) throws Exception {
@@ -44,11 +42,11 @@ public class CSV {
         private String rom;
 
         public String getGame() {
-            return game.trim();
+            return game == null ? "" : game.trim();
         }
 
         public String getRom() {
-            return rom.trim();
+            return rom == null ? "" : rom.trim();
         }
     }
 }

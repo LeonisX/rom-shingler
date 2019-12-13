@@ -111,9 +111,18 @@ public class TiviUtils {
             for (Row currentRow : datatypeSheet) {
                 CSV.MySqlStructure record = new CSV.MySqlStructure();
                 record.setName(currentRow.getCell(0).getStringCellValue());
-                record.setCpu(currentRow.getCell(1).getStringCellValue());
-                record.setGame(currentRow.getCell(2).getStringCellValue());
-                record.setRom(currentRow.getCell(3).getStringCellValue());
+                if (currentRow.getCell(1) != null) {
+                    String value = currentRow.getCell(1).getStringCellValue();
+                    record.setCpu(value.equals("") ? StringUtils.cpu(record.getName()) : value);
+                } else {
+                    record.setCpu(StringUtils.cpu(record.getName()));
+                }
+                if (currentRow.getCell(2) != null) {
+                    record.setGame(currentRow.getCell(2).getStringCellValue());
+                }
+                if (currentRow.getCell(3) != null) {
+                    record.setRom(currentRow.getCell(3).getStringCellValue());
+                }
                 records.add(record);
             }
             return records;
@@ -218,6 +227,7 @@ public class TiviUtils {
         IOUtils.saveToFile(platform + "_games_unmapped_families.txt", lists.getUnmappedFamilies());
         IOUtils.saveToFile(platform + "_games_unmapped_names.txt", lists.getUnmappedNames().stream().sorted().map(r -> lists.getNormalizedMap().get(r).getName()).collect(Collectors.toList()));
         IOUtils.saveToFile(platform + "_create.sql", lists.getCreateLines().stream().sorted().map(r -> formatCreate(lists, r)).collect(Collectors.toList()));
+        IOUtils.saveToFile(platform + "_htaccess.txt", lists.getHtAccessLines());
 
         // save as excel
         IOUtils.backupFile(new File(xlsPath()));
@@ -226,7 +236,7 @@ public class TiviUtils {
 
     private static void processFamily(TiViLists lists, Family f, String romPath) {
 
-        String familyName = escapeQuotes(f.getName());
+        String familyName = escapeQuotes(norm2(f.getName()));
         String normalizedFamilyName = StringUtils.normalize(familyName);
         if (!lists.getUnmappedNames().contains(normalizedFamilyName)) {
 
@@ -238,7 +248,7 @@ public class TiviUtils {
                 record.setGame(romPath);
                 lists.getUnmappedNames().remove(normalizedFamilyName);
                 lists.getUpdateLines().add(formatUpdateQuery(platform, romPath, familyName));
-                //lists.getHtAccessLines().add(String.format("RewriteRule ^game/([a-zA-Z0-9_-]*)/([a-z]|num|pd|hak).html$ game/$1/group/$2.html [L,R=301]", romPath, familyName)); //TODO
+                lists.getHtAccessLines().add(String.format("RewriteRule ^game/%s/%s.html$ game/%s/%s.html [L,R=301]", platform, toRegex(cryptTitle(f.getName())), platform, toRegex(StringUtils.cpu(f.getName()))));
             } else {
                 boolean isCreated = lists.getCreated().contains(normalizedFamilyName);
                 if (isCreated) {
@@ -257,6 +267,20 @@ public class TiviUtils {
         }
     }
 
+    private static  String norm2(String s) {
+        if (s.startsWith("Archer Maclean's ")) {
+            s = s.replace("Archer Maclean's ", "");
+        }
+        if (s.startsWith("Disney's ")) {
+            s = s.replace("Disney's ", "");
+        }
+        return s;
+    }
+
+    private static String toRegex(String s) {
+        return s.replaceAll("[-\\[\\]{}()*+?.,\\\\\\\\^$|#\\\\s]", "\\\\$0");
+    }
+
     @Data
     static class TiViLists {
 
@@ -272,6 +296,8 @@ public class TiviUtils {
         private List<String> unmappedLines = new ArrayList<>();
         private List<String> unmappedFamilies = new ArrayList<>();
         private Set<String> unmappedNames;
+
+        private List<String> htAccessLines = new ArrayList<>();
 
         private Set<String> created;
         private List<String> createLines = new ArrayList<>();
@@ -417,10 +443,10 @@ public class TiviUtils {
         List<Pair<String, String>> pairs = new ArrayList<>();
         families.values().stream().collect(Collectors.toMap(Family::getName, f -> f.getMembers().stream().map(Name::getCleanName).distinct().sorted()))
                 .entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).forEach(f -> f.getValue().forEach(v -> {
-                    if (!v.equals(f.getKey())) {
-                        pairs.add(new Pair<>(v, f.getKey()));
-                    }
-                }));
+            if (!v.equals(f.getKey())) {
+                pairs.add(new Pair<>(v, f.getKey()));
+            }
+        }));
 
         IOUtils.saveToFile(platform + "_games_to_families.txt", pairs.stream().map(p -> p.getKey() + "\t\t" + p.getValue()).sorted().collect(Collectors.toList()));
 
@@ -479,8 +505,8 @@ public class TiviUtils {
             String syn = lists.getSynonyms().get(normalizedFamilyName);
             if (syn != null && lists.getNormalizedMap().get(StringUtils.normalize(familyName)) != null) {
                 CSV.MySqlStructure record = lists.getNormalizedMap().get(StringUtils.normalize(familyName));
-                record.setName(familyName);
-                record.setCpu(StringUtils.cpu(familyName));
+                /*record.setName(familyName);
+                record.setCpu(StringUtils.cpu(familyName));*/
                 record.setRom(romPath);
                 lists.getUnmappedNames().remove(normalizedFamilyName);
                 lists.getUpdateLines().add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platform, romPath, escapeQuotes(f.getName())));
@@ -523,5 +549,25 @@ public class TiviUtils {
 
     private static String formatUniqueRomPath(String platform, String destArchiveName) {
         return String.format("http://cominf0.narod.ru/emularity/%s/%s", platform, destArchiveName);
+    }
+
+    private static String cryptTitle(String title) {
+        title = title.replace("/", "--");
+        title = title.replace("_", "__");
+        title = title.replace(" ", "_");
+        /*if ((strpos($s, 'а') > 0) || (strpos($s, 'е') > 0)) {
+            $st = 'Rus--' . ruslat($st);
+        }*/ //TODO
+
+        title = title.replace("&quot;", "-quote-");
+        title = title.replace("&rsquo;", "=");
+        title = title.replace("&amp;", "&");
+        title = title.replace("&", "__n__");
+        title = title.replace("#", "_diez_");
+        title = title.replace("*", "_star_");
+        title = title.replace("+", "-plus-");
+        title = title.replace("%", "_procent_");
+        title = title.replace("?", "");
+        return title;
     }
 }
