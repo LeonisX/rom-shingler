@@ -361,12 +361,16 @@ public class TiviUtils {
         GROUP_MAP.put("wxn collection", "multi");
     }
 
+    private static Path getUniquePath() {
+        return outputDir.resolve(platform).resolve("roms");
+    }
+
     //(list+dump+force63)
     public static void getAllUniqueRoms() {
 
         TiViLists lists = new TiViLists();
 
-        Path uniquePath = outputDir.resolve(platform).resolve("roms");
+        Path uniquePath = getUniquePath();
 
         IOUtils.createDirectories(uniquePath);
 
@@ -411,37 +415,11 @@ public class TiviUtils {
         LOGGER.info("Processing groups...");
 
         AtomicInteger i = new AtomicInteger(0);
-        families.values().stream().filter(f -> f.getType() == FamilyType.GROUP)
-                .forEach(f -> {
-                    String title = Character.toUpperCase(f.getName().charAt(0)) + f.getName().substring(1) + ":";
-                    lists.getHtmlLines().add("    <tr><td></td></tr>");
-                    lists.getHtmlLines().add(String.format("    <tr><td><b>%s</b></td></tr>", title));
-                    lists.getTxtLines().add("");
-                    lists.getTxtLines().add(title);
+        families.values().stream().filter(f -> f.getType() == FamilyType.GROUP).forEach(f -> processGroup(lists, f.getName(), f.getMembers(), i));
 
-                    f.getMembers().forEach(n -> {
-                        String sourceRomName = n.getName();
-                        String zipRomName = StringUtils.normalize(StringUtils.replaceExt(sourceRomName, "zip"));
-
-                        Path sourceRom = romsCollection.getRomsPath().resolve(sourceRomName);
-                        String dir = GROUP_MAP.get(f.getName().toLowerCase());
-                        if (dir != null) {
-                            dir = String.format("%s_%s", platform, dir);
-                        } else {
-                            dir = StringUtils.normalize(f.getName().replace("_", " ")).toLowerCase();
-                        }
-                        Path destZipRom = uniquePath.resolve(dir).resolve(zipRomName);
-
-                        ArchiveUtils.compressZip(destZipRom.toAbsolutePath().toString(), Collections.singletonList(sourceRom.toAbsolutePath().toString()), i.getAndIncrement());
-
-                        String romPath = formatUniqueRomPath(dir, zipRomName);
-                        int fileSize = (int) IOUtils.fileSize(destZipRom) / 1024;
-                        lists.getHtmlLines().add(formatTableCell(romPath, sourceRomName, fileSize));
-                        lists.getTxtLines().add(String.format("%s/%s", dir, zipRomName));
-
-                        processRomFamily(lists, n, romPath);
-                    });
-                });
+        LOGGER.info("Processing hacks...");
+        List<Name> hacks = families.values().stream().flatMap(f -> f.getMembers().stream()).filter(n -> platformsByCpu.get(platform).isHack(n.getName())).collect(Collectors.toList());
+        processGroup(lists, "hack", hacks, i);
 
         IOUtils.saveToFile(platform + "_roms.htm", formatHead() + String.join("\n", lists.getHtmlLines()) + FOOT);
         IOUtils.saveToFile(platform + "_roms.txt", lists.getTxtLines().stream().sorted().collect(Collectors.toList()));
@@ -476,6 +454,36 @@ public class TiviUtils {
         createUpdateQueries();
 
         LOGGER.info("Done");
+    }
+
+    private static void processGroup(TiViLists lists, String name, List<Name> members, AtomicInteger i) {
+        String title = Character.toUpperCase(name.charAt(0)) + name.substring(1) + ":";
+        lists.getHtmlLines().add("    <tr><td></td></tr>");
+        lists.getHtmlLines().add(String.format("    <tr><td><b>%s</b></td></tr>", title));
+        lists.getTxtLines().add("");
+        lists.getTxtLines().add(title);
+
+        members.forEach(n -> {
+            String sourceRomName = n.getName();
+            String zipRomName = StringUtils.normalize(StringUtils.replaceExt(sourceRomName, "zip"));
+
+            Path sourceRom = romsCollection.getRomsPath().resolve(sourceRomName);
+            String dir = GROUP_MAP.get(name.toLowerCase());
+            if (dir == null) {
+                dir = StringUtils.normalize(name.replace("_", " ")).toLowerCase();
+            }
+            dir = String.format("%s_%s", platform, dir);
+            Path destZipRom = getUniquePath().resolve(dir).resolve(zipRomName);
+
+            ArchiveUtils.compressZip(destZipRom.toAbsolutePath().toString(), Collections.singletonList(sourceRom.toAbsolutePath().toString()), i.getAndIncrement());
+
+            String romPath = formatUniqueRomPath(dir, zipRomName);
+            int fileSize = (int) IOUtils.fileSize(destZipRom) / 1024;
+            lists.getHtmlLines().add(formatTableCell(romPath, sourceRomName, fileSize));
+            lists.getTxtLines().add(String.format("%s/%s", dir, zipRomName));
+
+            processRomFamily(lists, n, romPath);
+        });
     }
 
     private static String formatCreate(TiViLists lists, String name) {

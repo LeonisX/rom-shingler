@@ -5,11 +5,7 @@
 
 TODO column status: ADDED, DELETED, RENAMED
 
-TODO hacks separately, as groups
-
-
-
-TODO recalculate SID when generate update sql
+TODO recalculate SID when generate update sql; CREATED, MODIFIED
 
 TODO all bases - revise regions!!!
 
