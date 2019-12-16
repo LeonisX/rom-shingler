@@ -387,7 +387,7 @@ public class TiviUtils {
             String romPath = formatUniqueRomPath(platformGroup, zipRomName);
             int fileSize = (int) IOUtils.fileSize(destZipRom) / 1024;
             lists.getHtmlLines().add(formatTableCell(romPath, sourceRomName, fileSize));
-            lists.getTxtLines().add(String.format("%s/%s", platformGroup, zipRomName));
+            lists.getTxtLines().add(romPath);
 
             processRomFamily(lists, e.getValue(), romPath);
         });
