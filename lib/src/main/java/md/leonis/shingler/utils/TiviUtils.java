@@ -490,7 +490,9 @@ public class TiviUtils {
 
         //TODO n INC: SELECT MAX(n) AS max FROM base_".$catcpu
 
-        String format = "INSERT INTO `base_%s` VALUES (null, '%s', '0','0', '%s', '%s'," +
+        long modified = new Date().getTime() / 1000;
+
+        String format = "INSERT INTO `base_%s` VALUES (null, '%s', '%s','%s', '%s', '%s'," + // n, platform, created, modified, sid, cpu
                 "'%s''," + // name
                 "'',''," + // descript, keywords
                 "'%s''," + // region
@@ -507,6 +509,16 @@ public class TiviUtils {
 
         String cpu = StringUtils.cpu(name);
 
+        String sid = getSid(name);
+
+        String region = ""; //TODO
+        String game = ""; //TODO
+        String rom = ""; //TODO
+
+        return String.format(format, platform, platform, modified, modified, sid, cpu, escapeQuotes(name), region, game, rom);
+    }
+
+    private static String getSid(String name) {
         String sid = name.toLowerCase().substring(0, 1);
         if (platformsByCpu.get(platform).isPD(name)) {
             sid = "pd";
@@ -515,12 +527,7 @@ public class TiviUtils {
         } else if (sid.matches("\\d")) {
             sid = "num";
         }
-
-        String region = ""; //TODO
-        String game = ""; //TODO
-        String rom = ""; //TODO
-
-        return String.format(format, platform, platform, sid, cpu, escapeQuotes(name), region, game, rom);
+        return sid;
     }
 
     private static void processRomFamily(TiViLists lists, Name n, String romPath) {
@@ -548,31 +555,6 @@ public class TiviUtils {
         }
     }
 
-    /*private static void processRomFamily(TiViLists lists, Family f, String romPath) {
-
-        String familyName = f.getName();
-        String normalizedFamilyName = StringUtils.normalize(escapeQuotes(familyName));
-        if (!lists.getUnmappedNames().contains(normalizedFamilyName)) {
-            String syn = lists.getSynonyms().get(normalizedFamilyName);
-            if (syn != null && lists.getNormalizedMap().get(StringUtils.normalize(familyName)) != null) {
-                CSV.MySqlStructure record = lists.getNormalizedMap().get(StringUtils.normalize(familyName));
-                *//*record.setName(familyName);
-                record.setCpu(StringUtils.cpu(familyName));*//*
-                record.setRom(romPath);
-                lists.getUnmappedNames().remove(normalizedFamilyName);
-                lists.getUpdateLines().add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platform, romPath, escapeQuotes(f.getName())));
-            } else {
-                lists.getUnmappedFamilies().add(f.getName());
-                lists.getUnmappedLines().add(romPath);
-            }
-        } else {
-            CSV.MySqlStructure record = lists.getNormalizedMap().get(normalizedFamilyName);
-            record.setRom(romPath);
-            lists.getUnmappedNames().remove(normalizedFamilyName);
-            lists.getUpdateLines().add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platform, romPath, escapeQuotes(f.getName())));
-        }
-    }*/
-
     public static void createUpdateQueries() {
 
         List<CSV.MySqlStructure> originRecords = readCsv();
@@ -584,6 +566,9 @@ public class TiviUtils {
             if (!originRecords.get(k).getName().equals(records.get(k).getName())) {
                 vals.put("name", records.get(k).getName());
             }
+            if (!getSid(originRecords.get(k).getName()).equals(getSid(records.get(k).getName()))) {
+                vals.put("sid", getSid(records.get(k).getName()));
+            }
             if (!originRecords.get(k).getGame().equals(records.get(k).getGame())) {
                 vals.put("game", records.get(k).getGame());
             }
@@ -591,6 +576,7 @@ public class TiviUtils {
                 vals.put("rom", records.get(k).getRom());
             }
             if (vals.size() > 0) {
+                vals.put("modified", Long.toString(new Date().getTime() / 1000));
                 String sets = vals.entrySet().stream().map(e -> String.format("`%s`='%s'", e.getKey(), escapeQuotes(e.getValue()))).collect(Collectors.joining(", "));
                 updateList.add(String.format("UPDATE `base_%s` SET %s WHERE name='%s';", platform, sets, escapeQuotes(originRecords.get(k).getName())));
             }
@@ -599,7 +585,7 @@ public class TiviUtils {
     }
 
     private static String formatUniqueRomPath(String platform, String destArchiveName) {
-        return String.format("http://cominf0.narod.ru/emularity/%s/%s", platform, destArchiveName);
+        return String.format("http://cominf0.narod.ru/mame/%s/%s", platform, destArchiveName);
     }
 
     private static String cryptTitle(String title) {

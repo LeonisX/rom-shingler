@@ -5,8 +5,6 @@
 
 TODO column status: ADDED, DELETED, RENAMED
 
-TODO recalculate SID when generate update sql; CREATED, MODIFIED
-
 TODO all bases - revise regions!!!
 
 TODO надо учитывать, что бывает, переименовывается игра для одного региоан, для других остаётся такой же.
