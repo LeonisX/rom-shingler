@@ -10,6 +10,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.util.Callback;
 import javafx.util.Pair;
+import md.leonis.shingler.CSV;
 import md.leonis.shingler.ListFilesa;
 import md.leonis.shingler.gui.view.StageManager;
 import md.leonis.shingler.model.ConfigHolder;
@@ -17,6 +18,7 @@ import md.leonis.shingler.model.GID;
 import md.leonis.shingler.model.Platform;
 import md.leonis.shingler.model.RomsCollection;
 import md.leonis.shingler.utils.IOUtils;
+import md.leonis.shingler.utils.TiviUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -324,9 +326,14 @@ public class CompareController {
                 .filter(e -> e.getValue().size() == e.getValue().stream().filter(v -> StringUtils.isBlank(v.getValue().getTitle())).count())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        IOUtils.saveToFile(platform + "_renamed.txt", renamed.stream().map(p -> ListFilesa.getCleanName(p.getKey()) + "\t\t" + ListFilesa.getCleanName(p.getValue())).distinct().collect(Collectors.toList()));
-        IOUtils.saveToFile(platform + "_added.txt", added.keySet().stream().sorted().collect(Collectors.toList()));
+        IOUtils.saveToFile(platform + "_renamed.csv", renamed.stream().map(p -> new CSV.RenamedStructure(TiviUtils.getSid(p.getKey()), ListFilesa.getCleanName(p.getKey()), ListFilesa.getCleanName(p.getValue()))).sorted(Comparator.comparing(CSV.RenamedStructure::getNewName)).sorted(Comparator.comparing(r -> sidOrder(r.getSid()))).map(p -> '"' + p.getSid() + "\";\"" + p.getNewName() + "\";\"" + p.getOldName() + '"').distinct().collect(Collectors.toList()));
+        IOUtils.saveToFile(platform + "_added.csv", added.entrySet().stream().map(p -> new CSV.AddedStructure(TiviUtils.getSid(p.getValue().get(0).getValue().getTitle()), p.getKey())).sorted(Comparator.comparing(CSV.AddedStructure::getName)).sorted(Comparator.comparing(r -> sidOrder(r.getSid()))).map(p -> '"' + p.getSid() + "\";\"" + p.getName() + '"').collect(Collectors.toList()));
         IOUtils.saveToFile(platform + "_deleted.txt", deleted.keySet().stream().sorted().collect(Collectors.toList()));
+    }
+
+    private String sidOrder(String sid) {
+        int repeat = (sid.equals("num")) ? 1 : sid.length();
+        return StringUtils.repeat("z", repeat) + sid;
     }
 
     static class PairNameFactory implements Callback<TableColumn.CellDataFeatures<Pair<GID, GID>, Pair<GID, GID>>, ObservableValue<Pair<GID, GID>>> {

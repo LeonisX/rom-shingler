@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import md.leonis.shingler.utils.StringUtils;
@@ -34,17 +35,19 @@ public class CSV {
 
     @Data
     @NoArgsConstructor
-    @JsonPropertyOrder({"name", "cpu", "game", "rom"})
+    @JsonPropertyOrder({"sid", "name", "cpu", "game", "rom"})
     public static class MySqlStructure implements Cloneable {
 
+        private String sid;
         private String name;
         private String cpu;
         private String game;
         private String rom;
 
-        public MySqlStructure(String name) {
-            this.name = name;
+        public MySqlStructure(AddedStructure addedStructure) {
+            this.name = addedStructure.getName();
             this.cpu = StringUtils.cpu(name);
+            this.sid = addedStructure.getSid();
         }
 
         public String getGame() {
@@ -54,5 +57,26 @@ public class CSV {
         public String getRom() {
             return rom == null ? "" : rom.trim();
         }
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @JsonPropertyOrder({"sid", "newName", "oldName"})
+    public static class RenamedStructure {
+
+        private String sid;
+        private String newName;
+        private String oldName;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @JsonPropertyOrder({"sid", "name"})
+    public static class AddedStructure {
+
+        private String sid;
+        private String name;
     }
 }

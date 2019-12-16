@@ -63,6 +63,30 @@ public class TiviUtils {
         }
     }
 
+    private static List<CSV.RenamedStructure> readRenamedCsv() {
+
+        try {
+            File file = Paths.get(platform + "_renamed.csv").toFile();
+            CsvSchema schema = new CsvMapper().schemaFor(CSV.RenamedStructure.class).withColumnSeparator(';').withoutHeader().withQuoteChar('"');
+            MappingIterator<CSV.RenamedStructure> personIter = new CsvMapper().readerFor(CSV.RenamedStructure.class).with(schema).readValues(file);
+            return personIter.readAll();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static List<CSV.AddedStructure> readAddedCsv() {
+
+        try {
+            File file = Paths.get(platform + "_added.csv").toFile();
+            CsvSchema schema = new CsvMapper().schemaFor(CSV.AddedStructure.class).withColumnSeparator(';').withoutHeader().withQuoteChar('"');
+            MappingIterator<CSV.AddedStructure> personIter = new CsvMapper().readerFor(CSV.AddedStructure.class).with(schema).readValues(file);
+            return personIter.readAll();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private static String xlsUpdatePath() {
         return "base_" + platform + ".xlsx";
     }
@@ -82,15 +106,17 @@ public class TiviUtils {
         for (CSV.MySqlStructure record : records) {
             Row row = sheet.createRow(rowNum++);
             Cell cell = row.createCell(0);
-            cell.setCellValue(record.getName());
+            cell.setCellValue(record.getSid());
             cell = row.createCell(1);
-            cell.setCellValue(record.getCpu());
+            cell.setCellValue(record.getName());
             cell = row.createCell(2);
-            cell.setCellValue(record.getGame());
+            cell.setCellValue(record.getCpu());
             cell = row.createCell(3);
+            cell.setCellValue(record.getGame());
+            cell = row.createCell(4);
             cell.setCellValue(record.getRom());
         }
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 5; i++) {
             sheet.autoSizeColumn(i);
         }
 
@@ -114,18 +140,19 @@ public class TiviUtils {
 
             for (Row currentRow : datatypeSheet) {
                 CSV.MySqlStructure record = new CSV.MySqlStructure();
-                record.setName(currentRow.getCell(0).getStringCellValue());
-                if (currentRow.getCell(1) != null) {
-                    String value = currentRow.getCell(1).getStringCellValue();
+                record.setSid(currentRow.getCell(0).getStringCellValue());
+                record.setName(currentRow.getCell(1).getStringCellValue());
+                if (currentRow.getCell(2) != null) {
+                    String value = currentRow.getCell(2).getStringCellValue();
                     record.setCpu(value.equals("") ? StringUtils.cpu(record.getName()) : value);
                 } else {
                     record.setCpu(StringUtils.cpu(record.getName()));
                 }
-                if (currentRow.getCell(2) != null) {
-                    record.setGame(currentRow.getCell(2).getStringCellValue());
-                }
                 if (currentRow.getCell(3) != null) {
-                    record.setRom(currentRow.getCell(3).getStringCellValue());
+                    record.setGame(currentRow.getCell(3).getStringCellValue());
+                }
+                if (currentRow.getCell(4) != null) {
+                    record.setRom(currentRow.getCell(4).getStringCellValue());
                 }
                 records.add(record);
             }
@@ -154,8 +181,7 @@ public class TiviUtils {
         writeXls(xlsUpdatePath(), records);
 
         // Added
-        List<String> added = IOUtils.loadTextFile(Paths.get(platform + "_added.txt"));
-        records = added.stream().map(CSV.MySqlStructure::new).collect(Collectors.toList());
+        records = readAddedCsv().stream().map(CSV.MySqlStructure::new).collect(Collectors.toList());
 
         IOUtils.backupFile(new File(xlsCreatePath()));
         writeXls(xlsCreatePath(), records);
@@ -248,7 +274,7 @@ public class TiviUtils {
         IOUtils.saveToFile(platform + "_games_unmapped.txt", lists.getUnmappedLines());
         IOUtils.saveToFile(platform + "_games_unmapped_families.txt", lists.getUnmappedFamilies());
         IOUtils.saveToFile(platform + "_games_unmapped_names.txt", lists.getUnmappedNames().stream().sorted().map(r -> lists.getNormalizedMap().get(r).getName()).collect(Collectors.toList()));
-        IOUtils.saveToFile(platform + "_create.sql", lists.getCreateLines().stream().sorted().map(r -> formatCreate(r, StringUtils.cpu(r), null, null)).collect(Collectors.toList()));
+        IOUtils.saveToFile(platform + "_create.sql", lists.getCreateLines().stream().sorted().map(r -> formatCreate(getSid(r), r, StringUtils.cpu(r), null, null)).collect(Collectors.toList()));
         IOUtils.saveToFile(platform + "_htaccess.txt", lists.getHtAccessLines());
 
         // save as excel
@@ -346,13 +372,13 @@ public class TiviUtils {
             this.addedRecords = readXls(xlsCreatePath());
             this.addedNormalizedMap = addedRecords.stream().collect(Collectors.toMap(r -> StringUtils.normalize(r.getName()), Function.identity(), (r1, r2) -> r1));
 
-            IOUtils.loadTextFile(Paths.get(platform + "_renamed.txt")).forEach(s -> {
-                String[] chunks = s.split("\t\t");
-                synonyms.put(StringUtils.normalize(escapeQuotes(chunks[0])), StringUtils.normalize(escapeQuotes(chunks[1])));
-                synonymsNames.put(StringUtils.normalize(escapeQuotes(chunks[1])), chunks[1]);
+            List<CSV.RenamedStructure> renamed = readRenamedCsv();
+            renamed.forEach(r -> {
+                synonyms.put(StringUtils.normalize(escapeQuotes(r.getNewName())), StringUtils.normalize(escapeQuotes(r.getOldName())));
+                synonymsNames.put(StringUtils.normalize(escapeQuotes(r.getOldName())), r.getOldName());
             });
 
-            created = IOUtils.loadTextFile(Paths.get(platform + "_added.txt")).stream().map(s -> StringUtils.normalize(escapeQuotes(s))).collect(Collectors.toSet());
+            created = readAddedCsv().stream().map(s -> StringUtils.normalize(escapeQuotes(s.getName()))).collect(Collectors.toSet());
             //TODO deleted and generate
         }
     }
@@ -586,12 +612,12 @@ public class TiviUtils {
 
         List<String> createList = new ArrayList<>();
         for (CSV.MySqlStructure record : records) {
-            createList.add(formatCreate(record.getName(), record.getCpu(), record.getGame(), record.getRom()));
+            createList.add(formatCreate(record.getSid(), record.getName(), record.getCpu(), record.getGame(), record.getRom()));
         }
         IOUtils.saveToFile(platform + "_create.sql", String.join("\n", createList));
     }
 
-    private static String formatCreate(String name, String cpu, String game, String rom) {
+    private static String formatCreate(String sid, String name, String cpu, String game, String rom) {
 
         //TODO n INC: SELECT MAX(n) AS max FROM base_".$catcpu
 
@@ -614,10 +640,13 @@ public class TiviUtils {
 
         String region = "";
 
-        return String.format(format, platform, platform, modified, modified, getSid(name), cpu, escapeQuotes(name), region, game, rom);
+        return String.format(format, platform, platform, modified, modified, sid, cpu, escapeQuotes(name), region, game, rom);
     }
 
-    private static String getSid(String name) {
+    public static String getSid(String name) {
+        if (org.apache.commons.lang3.StringUtils.isBlank(name)) {
+            return "";
+        }
         String sid = name.toLowerCase().substring(0, 1);
         if (platformsByCpu.get(platform).isPD(name)) {
             sid = "pd";
