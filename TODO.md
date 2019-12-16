@@ -13,8 +13,6 @@ TODO надо учитывать, что бывает, переименовыв�
 
 TODO from phone 
 
-TODO recalculate all platforms
-
 TODO when open platforms - full clean families, relations
 
 TODO full refactor TIVI stuff, other new code

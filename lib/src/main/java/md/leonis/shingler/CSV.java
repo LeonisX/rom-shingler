@@ -6,6 +6,7 @@ import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import md.leonis.shingler.utils.StringUtils;
 
 import java.io.File;
 import java.util.List;
@@ -40,6 +41,11 @@ public class CSV {
         private String cpu;
         private String game;
         private String rom;
+
+        public MySqlStructure(String name) {
+            this.name = name;
+            this.cpu = StringUtils.cpu(name);
+        }
 
         public String getGame() {
             return game == null ? "" : game.trim();

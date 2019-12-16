@@ -63,11 +63,15 @@ public class TiviUtils {
         }
     }
 
-    private static String xlsPath() {
+    private static String xlsUpdatePath() {
         return "base_" + platform + ".xlsx";
     }
 
-    private static void writeXls(List<CSV.MySqlStructure> records) {
+    private static String xlsCreatePath() {
+        return "base_" + platform + "_create.xlsx";
+    }
+
+    private static void writeXls(String file, List<CSV.MySqlStructure> records) {
 
         XSSFWorkbook workbook = new XSSFWorkbook();
         XSSFSheet sheet = workbook.createSheet("Sheet-1");
@@ -91,7 +95,7 @@ public class TiviUtils {
         }
 
         try {
-            FileOutputStream outputStream = new FileOutputStream(new File(xlsPath()));
+            FileOutputStream outputStream = new FileOutputStream(new File(file));
             workbook.write(outputStream);
             workbook.close();
         } catch (Exception e) {
@@ -99,10 +103,10 @@ public class TiviUtils {
         }
     }
 
-    private static List<CSV.MySqlStructure> readXls() {
+    private static List<CSV.MySqlStructure> readXls(String file) {
 
         try {
-            FileInputStream excelFile = new FileInputStream(new File(xlsPath()));
+            FileInputStream excelFile = new FileInputStream(new File(file));
             Workbook workbook = new XSSFWorkbook(excelFile);
             Sheet datatypeSheet = workbook.getSheetAt(0);
 
@@ -146,8 +150,15 @@ public class TiviUtils {
         });
 
         // save as excel
-        IOUtils.backupFile(new File(xlsPath()));
-        writeXls(records);
+        IOUtils.backupFile(new File(xlsUpdatePath()));
+        writeXls(xlsUpdatePath(), records);
+
+        // Added
+        List<String> added = IOUtils.loadTextFile(Paths.get(platform + "_added.txt"));
+        records = added.stream().map(CSV.MySqlStructure::new).collect(Collectors.toList());
+
+        IOUtils.backupFile(new File(xlsCreatePath()));
+        writeXls(xlsCreatePath(), records);
     }
 
     // html+dump+force63+split
@@ -237,12 +248,15 @@ public class TiviUtils {
         IOUtils.saveToFile(platform + "_games_unmapped.txt", lists.getUnmappedLines());
         IOUtils.saveToFile(platform + "_games_unmapped_families.txt", lists.getUnmappedFamilies());
         IOUtils.saveToFile(platform + "_games_unmapped_names.txt", lists.getUnmappedNames().stream().sorted().map(r -> lists.getNormalizedMap().get(r).getName()).collect(Collectors.toList()));
-        IOUtils.saveToFile(platform + "_create.sql", lists.getCreateLines().stream().sorted().map(r -> formatCreate(lists, r)).collect(Collectors.toList()));
+        IOUtils.saveToFile(platform + "_create.sql", lists.getCreateLines().stream().sorted().map(r -> formatCreate(r, StringUtils.cpu(r), null, null)).collect(Collectors.toList()));
         IOUtils.saveToFile(platform + "_htaccess.txt", lists.getHtAccessLines());
 
         // save as excel
-        IOUtils.backupFile(new File(xlsPath()));
-        writeXls(lists.getRecords());
+        IOUtils.backupFile(new File(xlsUpdatePath()));
+        writeXls(xlsUpdatePath(), lists.getRecords());
+
+        IOUtils.backupFile(new File(xlsUpdatePath()));
+        writeXls(xlsCreatePath(), lists.getAddedRecords());
     }
 
     private static void processFamily(TiViLists lists, Family f, String romPath) {
@@ -276,6 +290,11 @@ public class TiviUtils {
             lists.getUnmappedNames().remove(normalizedFamilyName);
             lists.getUpdateLines().add(formatUpdateQuery(platform, romPath, familyName));
         }
+
+        CSV.MySqlStructure record = lists.getAddedNormalizedMap().get(normalizedFamilyName);
+        if (record != null) {
+            record.setGame(romPath);
+        }
     }
 
     private static  String norm2(String s) {
@@ -292,7 +311,7 @@ public class TiviUtils {
     }
 
     private static String toRegex(String s) {
-        return s.replaceAll("[-\\[\\]{}()*+?.,\\\\\\\\^$|#\\\\s]", "\\\\$0");
+        return s.replaceAll("[\\[\\]{}()*+?.,\\\\^$|#\\s]", "\\\\$0");
     }
 
     @Data
@@ -300,6 +319,9 @@ public class TiviUtils {
 
         private List<CSV.MySqlStructure> records;
         private Map<String, CSV.MySqlStructure> normalizedMap;
+
+        private List<CSV.MySqlStructure> addedRecords;
+        private Map<String, CSV.MySqlStructure> addedNormalizedMap;
 
         private Map<String, String> synonyms = new HashMap<>();
         private Map<String, String> reversedSynonyms = new HashMap<>();
@@ -317,9 +339,12 @@ public class TiviUtils {
         private List<String> createLines = new ArrayList<>();
 
         TiViLists() {
-            this.records = readXls();
+            this.records = readXls(xlsUpdatePath());
             this.normalizedMap = records.stream().collect(Collectors.toMap(r -> StringUtils.normalize(r.getName()), Function.identity(), (r1, r2) -> r1));
             this.unmappedNames = new HashSet<>(normalizedMap.keySet());
+
+            this.addedRecords = readXls(xlsCreatePath());
+            this.addedNormalizedMap = addedRecords.stream().collect(Collectors.toMap(r -> StringUtils.normalize(r.getName()), Function.identity(), (r1, r2) -> r1));
 
             IOUtils.loadTextFile(Paths.get(platform + "_renamed.txt")).forEach(s -> {
                 String[] chunks = s.split("\t\t");
@@ -422,7 +447,7 @@ public class TiviUtils {
         processGroup(lists, "hack", hacks, i);
 
         IOUtils.saveToFile(platform + "_roms.htm", formatHead() + String.join("\n", lists.getHtmlLines()) + FOOT);
-        IOUtils.saveToFile(platform + "_roms.txt", lists.getTxtLines().stream().sorted().collect(Collectors.toList()));
+        IOUtils.saveToFile(platform + "_roms.txt", lists.getTxtLines())/*.stream().sorted().collect(Collectors.toList()))*/; // mess with hacks, pd
         IOUtils.saveToFile(platform + "_roms_update.sql", lists.getUpdateLines());
         IOUtils.saveToFile(platform + "_roms_unmapped.txt", lists.getUnmappedLines());
         IOUtils.saveToFile(platform + "_roms_unmapped_families.txt", lists.getUnmappedFamilies());
@@ -448,7 +473,8 @@ public class TiviUtils {
         IOUtils.saveToFile(platform + "_games_to_families.txt", pairs.stream().map(p -> p.getKey() + "\t\t" + p.getValue()).sorted().collect(Collectors.toList()));
 
         // save as excel
-        writeXls(lists.getRecords());
+        writeXls(xlsUpdatePath(), lists.getRecords());
+        writeXls(xlsCreatePath(), lists.getAddedRecords());
 
         // update queries
         createUpdateQueries();
@@ -480,54 +506,10 @@ public class TiviUtils {
             String romPath = formatUniqueRomPath(dir, zipRomName);
             int fileSize = (int) IOUtils.fileSize(destZipRom) / 1024;
             lists.getHtmlLines().add(formatTableCell(romPath, sourceRomName, fileSize));
-            lists.getTxtLines().add(String.format("%s/%s", dir, zipRomName));
+            lists.getTxtLines().add(romPath);
 
             processRomFamily(lists, n, romPath);
         });
-    }
-
-    private static String formatCreate(TiViLists lists, String name) {
-
-        //TODO n INC: SELECT MAX(n) AS max FROM base_".$catcpu
-
-        long modified = new Date().getTime() / 1000;
-
-        String format = "INSERT INTO `base_%s` VALUES (null, '%s', '%s','%s', '%s', '%s'," + // n, platform, created, modified, sid, cpu
-                "'%s''," + // name
-                "'',''," + // descript, keywords
-                "'%s''," + // region
-                "'',''," + // publisher, developer
-                "'','','0'," + // god, god1, ngamers
-                "'',''," + //type, genre
-                "'','','','','','',''," + // images 1-7
-                "'','','','','','',''," + // images 8-14
-                "'%s', 0, '', 0, '%s','yes'," + //game, ?, music, ?, rom, playable
-                "'',''," + // analog, drname
-                "'',''," + // cros, serie
-                "'',''," + // text1, text2
-                "'0', '0','0', '0', 0)"; //rating, viewes, ?
-
-        String cpu = StringUtils.cpu(name);
-
-        String sid = getSid(name);
-
-        String region = ""; //TODO
-        String game = ""; //TODO
-        String rom = ""; //TODO
-
-        return String.format(format, platform, platform, modified, modified, sid, cpu, escapeQuotes(name), region, game, rom);
-    }
-
-    private static String getSid(String name) {
-        String sid = name.toLowerCase().substring(0, 1);
-        if (platformsByCpu.get(platform).isPD(name)) {
-            sid = "pd";
-        } else if (platformsByCpu.get(platform).isHack(name)) {
-            sid = "hak";
-        } else if (sid.matches("\\d")) {
-            sid = "num";
-        }
-        return sid;
     }
 
     private static void processRomFamily(TiViLists lists, Name n, String romPath) {
@@ -553,12 +535,17 @@ public class TiviUtils {
             lists.getUnmappedNames().remove(normalizedFamilyName);
             lists.getUpdateLines().add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platform, romPath, escapeQuotes(n.getCleanName())));
         }
+
+        CSV.MySqlStructure record = lists.getAddedNormalizedMap().get(normalizedFamilyName);
+        if (record != null) {
+            record.setRom(romPath);
+        }
     }
 
     public static void createUpdateQueries() {
 
         List<CSV.MySqlStructure> originRecords = readCsv();
-        List<CSV.MySqlStructure> records = readXls();
+        List<CSV.MySqlStructure> records = readXls(xlsUpdatePath());
 
         List<String> updateList = new ArrayList<>();
         for (int k = 0; k < originRecords.size(); k++) {
@@ -582,6 +569,53 @@ public class TiviUtils {
             }
         }
         IOUtils.saveToFile(platform + "_update.sql", String.join("\n", updateList));
+
+        // Added
+        records = readXls(xlsCreatePath());
+
+        List<String> createList = new ArrayList<>();
+        for (CSV.MySqlStructure record : records) {
+            createList.add(formatCreate(record.getName(), record.getCpu(), record.getGame(), record.getRom()));
+        }
+        IOUtils.saveToFile(platform + "_create.sql", String.join("\n", createList));
+    }
+
+    private static String formatCreate(String name, String cpu, String game, String rom) {
+
+        //TODO n INC: SELECT MAX(n) AS max FROM base_".$catcpu
+
+        long modified = new Date().getTime() / 1000;
+
+        String format = "INSERT INTO `base_%s` VALUES (null, '%s', '%s','%s', '%s', '%s'," + // n, platform, created, modified, sid, cpu
+                "'%s''," + // name
+                "'',''," + // descript, keywords
+                "'%s''," + // region
+                "'',''," + // publisher, developer
+                "'','','0'," + // god, god1, ngamers
+                "'',''," + //type, genre
+                "'','','','','','',''," + // images 1-7
+                "'','','','','','',''," + // images 8-14
+                "'%s', 0, '', 0, '%s','yes'," + //game, ?, music, ?, rom, playable
+                "'',''," + // analog, drname
+                "'',''," + // cros, serie
+                "'',''," + // text1, text2
+                "'0', '0','0', '0', 0)"; //rating, viewes, ?
+
+        String region = ""; //TODO
+
+        return String.format(format, platform, platform, modified, modified, getSid(name), cpu, escapeQuotes(name), region, game, rom);
+    }
+
+    private static String getSid(String name) {
+        String sid = name.toLowerCase().substring(0, 1);
+        if (platformsByCpu.get(platform).isPD(name)) {
+            sid = "pd";
+        } else if (platformsByCpu.get(platform).isHack(name)) {
+            sid = "hak";
+        } else if (sid.matches("\\d")) {
+            sid = "num";
+        }
+        return sid;
     }
 
     private static String formatUniqueRomPath(String platform, String destArchiveName) {
