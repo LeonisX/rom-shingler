@@ -211,7 +211,7 @@ public class StringUtils {
 
         for (int i = 0; i < tails.size(); i++) {
             String s = tails.get(i);
-            cpu = replaceFromTail(s, cpu) + tailsReplacement.get(i);
+            cpu = replaceFromTail(s, tailsReplacement.get(i), cpu);
         }
 
         cpu = cpu.replace("-iii", "-3");
@@ -220,9 +220,9 @@ public class StringUtils {
         return cpu;
     }
 
-    public static String replaceFromTail(String substr, String string) {
+    public static String replaceFromTail(String substr, String replace, String string) {
         if (string.endsWith(substr)) {
-            return string.substring(0, string.length() - substr.length());
+            return string.substring(0, string.length() - substr.length()) + replace;
         } else {
             return string;
         }

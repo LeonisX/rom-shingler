@@ -366,16 +366,18 @@ public class TiviUtils {
         AtomicInteger g = new AtomicInteger(1);
 
         for (Family family : families.values().stream().filter(f -> f.getType() == FamilyType.FAMILY).collect(Collectors.toList())) {
-            Name name = family.getMembers().stream()/*.filter(n -> ListFilesa.nonHack(n.getName()))*/
+            family.getMembers().stream().filter(n -> platformsByCpu.get(platform).nonHack(n.getName()))
                     .collect(Collectors.groupingBy(Name::getCleanName))
-                    .values().stream().flatMap(l -> l.stream().sorted(Comparator.comparing(Name::getIndex).reversed())).findFirst().orElse(null);
-            familyMap.put(name, family);
+                    .values().stream().map(l -> l.stream().max(Comparator.comparing(Name::getIndex)).orElse(null)).forEach(name -> familyMap.put(name, family));
         }
+
+        //familyMap.keySet().stream().sorted(Comparator.comparing(Name::getName)).forEach(System.out::println);
 
         AtomicInteger j = new AtomicInteger(0);
         familyMap.entrySet().stream().sorted(Comparator.comparing(e -> e.getValue().getName())).forEach(e -> {
             String sourceRomName = e.getKey().getName();
-            String zipRomName = StringUtils.normalize(StringUtils.addExt(e.getValue().getName(), "zip"));
+            //TODO collizions
+            String zipRomName = StringUtils.normalize(StringUtils.addExt(e.getKey().getCleanName(), "zip"));
 
             String platformGroup = needToSeparate ? String.format("%s%s", platform, (int) Math.ceil(g.getAndIncrement() / DIR_SEPARATE_SIZE)) : platform;
 
@@ -389,7 +391,7 @@ public class TiviUtils {
             lists.getHtmlLines().add(formatTableCell(romPath, sourceRomName, fileSize));
             lists.getTxtLines().add(romPath);
 
-            processRomFamily(lists, e.getValue(), romPath);
+            processRomFamily(lists, e.getKey(), romPath);
         });
 
         LOGGER.info("Processing groups...");
@@ -423,7 +425,7 @@ public class TiviUtils {
                         lists.getHtmlLines().add(formatTableCell(romPath, sourceRomName, fileSize));
                         lists.getTxtLines().add(String.format("%s/%s", dir, zipRomName));
 
-                        processRomFamily(lists, f, romPath);
+                        processRomFamily(lists, n, romPath);
                     });
                 });
 
@@ -462,7 +464,6 @@ public class TiviUtils {
         LOGGER.info("Done");
     }
 
-    //TODO add all fields (records). also in game.php
     private static String formatCreate(TiViLists lists, String name) {
 
         //TODO n INC: SELECT MAX(n) AS max FROM base_".$catcpu
@@ -480,7 +481,7 @@ public class TiviUtils {
                 "'',''," + // analog, drname
                 "'',''," + // cros, serie
                 "'',''," + // text1, text2
-                "'0', '0', 0)"; //rating, viewes, ?
+                "'0', '0','0', '0', 0)"; //rating, viewes, ?
 
         String cpu = StringUtils.cpu(name);
 
@@ -500,9 +501,9 @@ public class TiviUtils {
         return String.format(format, platform, platform, sid, cpu, escapeQuotes(name), region, game, rom);
     }
 
-    private static void processRomFamily(TiViLists lists, Family f, String romPath) {
+    private static void processRomFamily(TiViLists lists, Name n, String romPath) {
 
-        String familyName = f.getName();
+        String familyName = n.getCleanName();
         String normalizedFamilyName = StringUtils.normalize(escapeQuotes(familyName));
         if (!lists.getUnmappedNames().contains(normalizedFamilyName)) {
             String syn = lists.getSynonyms().get(normalizedFamilyName);
@@ -510,6 +511,31 @@ public class TiviUtils {
                 CSV.MySqlStructure record = lists.getNormalizedMap().get(StringUtils.normalize(familyName));
                 /*record.setName(familyName);
                 record.setCpu(StringUtils.cpu(familyName));*/
+                record.setRom(romPath);
+                lists.getUnmappedNames().remove(normalizedFamilyName);
+                lists.getUpdateLines().add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platform, romPath, escapeQuotes(n.getCleanName())));
+            } else {
+                lists.getUnmappedFamilies().add(n.getCleanName());
+                lists.getUnmappedLines().add(romPath);
+            }
+        } else {
+            CSV.MySqlStructure record = lists.getNormalizedMap().get(normalizedFamilyName);
+            record.setRom(romPath);
+            lists.getUnmappedNames().remove(normalizedFamilyName);
+            lists.getUpdateLines().add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platform, romPath, escapeQuotes(n.getCleanName())));
+        }
+    }
+
+    /*private static void processRomFamily(TiViLists lists, Family f, String romPath) {
+
+        String familyName = f.getName();
+        String normalizedFamilyName = StringUtils.normalize(escapeQuotes(familyName));
+        if (!lists.getUnmappedNames().contains(normalizedFamilyName)) {
+            String syn = lists.getSynonyms().get(normalizedFamilyName);
+            if (syn != null && lists.getNormalizedMap().get(StringUtils.normalize(familyName)) != null) {
+                CSV.MySqlStructure record = lists.getNormalizedMap().get(StringUtils.normalize(familyName));
+                *//*record.setName(familyName);
+                record.setCpu(StringUtils.cpu(familyName));*//*
                 record.setRom(romPath);
                 lists.getUnmappedNames().remove(normalizedFamilyName);
                 lists.getUpdateLines().add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platform, romPath, escapeQuotes(f.getName())));
@@ -523,7 +549,7 @@ public class TiviUtils {
             lists.getUnmappedNames().remove(normalizedFamilyName);
             lists.getUpdateLines().add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platform, romPath, escapeQuotes(f.getName())));
         }
-    }
+    }*/
 
     public static void createUpdateQueries() {
 

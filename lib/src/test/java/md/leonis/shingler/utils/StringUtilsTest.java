@@ -110,8 +110,8 @@ class StringUtilsTest {
 
     @Test
     void replaceFromTheEnd() {
-        assertEquals("hot-dance-2000", StringUtils.replaceFromTail("-unl", "hot-dance-2000-unl"));
-        assertEquals("hot-dance-2000", StringUtils.replaceFromTail("-ii", "hot-dance-2000-ii"));
+        assertEquals("hot-dance-2000", StringUtils.replaceFromTail("-unl", "hot-dance-2000-unl", ""));
+        assertEquals("hot-dance-2000-2", StringUtils.replaceFromTail("-ii", "hot-dance-2000-ii", "-2"));
     }
 
 }

@@ -3,7 +3,11 @@
 // SELECT name, cpu, game, rom FROM `base_nes` ORDER BY n LIMIT 0, 50000
 // SELECT name, '' as cpu, '' as game, '' as rom FROM `base_sg1000` ORDER BY n LIMIT 0, 50000
 
-TODO generate full roms list. Right now it's not full
+TODO column status: ADDED, DELETED, RENAMED
+
+TODO hacks separately, as groups
+
+TODO rename entry name + cpu
 
 TODO recalculate SID when generate update sql
 
