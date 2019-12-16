@@ -3,15 +3,8 @@
 // SELECT name, cpu, game, rom FROM `base_nes` ORDER BY n LIMIT 0, 50000
 // SELECT name, '' as cpu, '' as game, '' as rom FROM `base_sg1000` ORDER BY n LIMIT 0, 50000
 
-TODO column status: ADDED, DELETED, RENAMED
-
+TODO create - act = 'yes'
 TODO all bases - revise regions!!!
-
-TODO надо учитывать, что бывает, переименовывается игра для одного региоан, для других остаётся такой же.
-Это ломает всю текущую логику
-
-
-TODO from phone 
 
 TODO when open platforms - full clean families, relations
 

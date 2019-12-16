@@ -273,7 +273,7 @@ public class TiviUtils {
                 record.setGame(romPath);
                 lists.getUnmappedNames().remove(normalizedFamilyName);
                 lists.getUpdateLines().add(formatUpdateQuery(platform, romPath, familyName));
-                lists.getHtAccessLines().add(String.format("RewriteRule ^game/%s/%s.html$ game/%s/%s.html [L,R=301]", platform, toRegex(cryptTitle(f.getName())), platform, toRegex(StringUtils.cpu(f.getName()))));
+                lists.getHtAccessLines().add(String.format("RewriteRule ^game/%s/%s.html$ game/%s/%s.html [L,R=301]", platform, toRegex(cryptTitle(lists.getSynonymsNames().get(syn))), platform, toRegex(StringUtils.cpu(f.getName()))));
             } else {
                 boolean isCreated = lists.getCreated().contains(normalizedFamilyName);
                 if (isCreated) {
@@ -297,7 +297,7 @@ public class TiviUtils {
         }
     }
 
-    private static  String norm2(String s) {
+    private static String norm2(String s) {
         if (s.startsWith("Archer Maclean's ")) {
             s = s.replace("Archer Maclean's ", "");
         }
@@ -324,7 +324,7 @@ public class TiviUtils {
         private Map<String, CSV.MySqlStructure> addedNormalizedMap;
 
         private Map<String, String> synonyms = new HashMap<>();
-        private Map<String, String> reversedSynonyms = new HashMap<>();
+        private Map<String, String> synonymsNames = new HashMap<>();
 
         private List<String> htmlLines = new ArrayList<>();
         private List<String> txtLines = new ArrayList<>();
@@ -349,7 +349,7 @@ public class TiviUtils {
             IOUtils.loadTextFile(Paths.get(platform + "_renamed.txt")).forEach(s -> {
                 String[] chunks = s.split("\t\t");
                 synonyms.put(StringUtils.normalize(escapeQuotes(chunks[0])), StringUtils.normalize(escapeQuotes(chunks[1])));
-                reversedSynonyms.put(StringUtils.normalize(escapeQuotes(chunks[1])), StringUtils.normalize(escapeQuotes(chunks[0])));
+                synonymsNames.put(StringUtils.normalize(escapeQuotes(chunks[1])), chunks[1]);
             });
 
             created = IOUtils.loadTextFile(Paths.get(platform + "_added.txt")).stream().map(s -> StringUtils.normalize(escapeQuotes(s))).collect(Collectors.toSet());
@@ -417,7 +417,7 @@ public class TiviUtils {
 
 
         AtomicInteger j = new AtomicInteger(0);
-        familyMap.entrySet().stream().sorted(Comparator.comparing(e -> e.getValue().getName())).forEach(e -> {
+        familyMap.entrySet().stream().sorted(Comparator.comparing(e -> e.getKey().getName())).forEach(e -> {
             String sourceRomName = e.getKey().getName();
             //TODO collizions
             String zipRomName = StringUtils.normalize(StringUtils.addExt(e.getKey().getCleanName(), "zip"));
@@ -440,10 +440,10 @@ public class TiviUtils {
         LOGGER.info("Processing groups...");
 
         AtomicInteger i = new AtomicInteger(0);
-        families.values().stream().filter(f -> f.getType() == FamilyType.GROUP).forEach(f -> processGroup(lists, f.getName(), f.getMembers(), i));
+        families.values().stream().filter(f -> f.getType() == FamilyType.GROUP).forEach(f -> processGroup(lists, f.getName(), f.getMembers().stream().sorted(Comparator.comparing(Name::getName)).collect(Collectors.toList()), i));
 
         LOGGER.info("Processing hacks...");
-        List<Name> hacks = families.values().stream().flatMap(f -> f.getMembers().stream()).filter(n -> platformsByCpu.get(platform).isHack(n.getName())).collect(Collectors.toList());
+        List<Name> hacks = families.values().stream().flatMap(f -> f.getMembers().stream()).filter(n -> platformsByCpu.get(platform).isHack(n.getName())).sorted(Comparator.comparing(Name::getName)).collect(Collectors.toList());
         processGroup(lists, "hack", hacks, i);
 
         IOUtils.saveToFile(platform + "_roms.htm", formatHead() + String.join("\n", lists.getHtmlLines()) + FOOT);
@@ -489,7 +489,15 @@ public class TiviUtils {
         lists.getTxtLines().add("");
         lists.getTxtLines().add(title);
 
+        boolean needToSeparate = members.size() > DIR_SIZE;
+        AtomicInteger g = new AtomicInteger(1);
+
         members.forEach(n -> {
+
+            String num = needToSeparate ? "" + (int) Math.ceil(g.getAndIncrement() / DIR_SEPARATE_SIZE) : "";
+            /*Path destPath = outputDir.resolve(platform).resolve("games").resolve(num);
+            IOUtils.createDirectories(destPath);*/
+
             String sourceRomName = n.getName();
             String zipRomName = StringUtils.normalize(StringUtils.replaceExt(sourceRomName, "zip"));
 
@@ -498,7 +506,8 @@ public class TiviUtils {
             if (dir == null) {
                 dir = StringUtils.normalize(name.replace("_", " ")).toLowerCase();
             }
-            dir = String.format("%s_%s", platform, dir);
+            dir = String.format("%s_%s%s", platform, dir, num);
+
             Path destZipRom = getUniquePath().resolve(dir).resolve(zipRomName);
 
             ArchiveUtils.compressZip(destZipRom.toAbsolutePath().toString(), Collections.singletonList(sourceRom.toAbsolutePath().toString()), i.getAndIncrement());
@@ -562,11 +571,13 @@ public class TiviUtils {
             if (!originRecords.get(k).getRom().equals(records.get(k).getRom())) {
                 vals.put("rom", records.get(k).getRom());
             }
-            if (vals.size() > 0) {
-                vals.put("modified", Long.toString(new Date().getTime() / 1000));
-                String sets = vals.entrySet().stream().map(e -> String.format("`%s`='%s'", e.getKey(), escapeQuotes(e.getValue()))).collect(Collectors.joining(", "));
-                updateList.add(String.format("UPDATE `base_%s` SET %s WHERE name='%s';", platform, sets, escapeQuotes(originRecords.get(k).getName())));
-            }
+
+            vals.put("cpu", records.get(k).getCpu());
+
+            vals.put("modified", Long.toString(new Date().getTime() / 1000));
+            String sets = vals.entrySet().stream().map(e -> String.format("`%s`='%s'", e.getKey(), escapeQuotes(e.getValue()))).collect(Collectors.joining(", "));
+            updateList.add(String.format("UPDATE `base_%s` SET %s WHERE name='%s';", platform, sets, escapeQuotes(originRecords.get(k).getName())));
+
         }
         IOUtils.saveToFile(platform + "_update.sql", String.join("\n", updateList));
 
@@ -599,9 +610,9 @@ public class TiviUtils {
                 "'',''," + // analog, drname
                 "'',''," + // cros, serie
                 "'',''," + // text1, text2
-                "'0', '0','0', '0', 0)"; //rating, viewes, ?
+                "'0', '0','0', '0', 0, 'yes')"; //rating, user ratings, viewes, ?
 
-        String region = ""; //TODO
+        String region = "";
 
         return String.format(format, platform, platform, modified, modified, getSid(name), cpu, escapeQuotes(name), region, game, rom);
     }
@@ -626,6 +637,7 @@ public class TiviUtils {
         title = title.replace("/", "--");
         title = title.replace("_", "__");
         title = title.replace(" ", "_");
+        title = title.replace("'", "&rsquo;");
         /*if ((strpos($s, 'а') > 0) || (strpos($s, 'е') > 0)) {
             $st = 'Rus--' . ruslat($st);
         }*/ //TODO
