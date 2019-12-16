@@ -158,10 +158,21 @@ public class TiviUtils {
         boolean needToSeparate = tribes.keySet().size() > DIR_SIZE;
         AtomicInteger g = new AtomicInteger(1);
 
+        //lists.getSynonyms().entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).forEach(System.out::println);
+
         tribes.keySet().stream().sorted().forEach(t -> {
 
             String sourceArchiveName = StringUtils.addExt(t, "7z");
             Path sourceArchive = outputDir.resolve(platform).resolve(sourceArchiveName);
+
+            // compress all families to one tribe
+            /*if (tribes.get(t).size() > 1) {
+                LOGGER.info("Compressing tribe {}", t);
+                List<String> members = tribes.get(t).stream().flatMap(f -> f.getMembers().stream()).map(Name::getName).sorted().collect(Collectors.toList());
+
+                ArchiveUtils.compress7z(sourceArchive.toAbsolutePath().toString(), members, -1);
+            }*/
+
             int fileSize = (int) IOUtils.fileSize(sourceArchive) / 1024;
 
             String platformGroup = needToSeparate ? String.format("%s%s", platform, (int) Math.ceil(g.getAndIncrement() / DIR_SEPARATE_SIZE)) : platform;
@@ -372,6 +383,9 @@ public class TiviUtils {
         }
 
         //familyMap.keySet().stream().sorted(Comparator.comparing(Name::getName)).forEach(System.out::println);
+        //System.out.println("=============================== getNormalizedMap");
+        //lists.getNormalizedMap().keySet().stream().sorted().forEach(System.out::println);
+
 
         AtomicInteger j = new AtomicInteger(0);
         familyMap.entrySet().stream().sorted(Comparator.comparing(e -> e.getValue().getName())).forEach(e -> {
@@ -430,7 +444,7 @@ public class TiviUtils {
                 });
 
         IOUtils.saveToFile(platform + "_roms.htm", formatHead() + String.join("\n", lists.getHtmlLines()) + FOOT);
-        IOUtils.saveToFile(platform + "_roms.txt", lists.getTxtLines());
+        IOUtils.saveToFile(platform + "_roms.txt", lists.getTxtLines().stream().sorted().collect(Collectors.toList()));
         IOUtils.saveToFile(platform + "_roms_update.sql", lists.getUpdateLines());
         IOUtils.saveToFile(platform + "_roms_unmapped.txt", lists.getUnmappedLines());
         IOUtils.saveToFile(platform + "_roms_unmapped_families.txt", lists.getUnmappedFamilies());
@@ -503,14 +517,14 @@ public class TiviUtils {
 
     private static void processRomFamily(TiViLists lists, Name n, String romPath) {
 
-        String familyName = n.getCleanName();
-        String normalizedFamilyName = StringUtils.normalize(escapeQuotes(familyName));
+        String name = n.getCleanName();
+        String normalizedFamilyName = StringUtils.normalize(escapeQuotes(name));
         if (!lists.getUnmappedNames().contains(normalizedFamilyName)) {
             String syn = lists.getSynonyms().get(normalizedFamilyName);
-            if (syn != null && lists.getNormalizedMap().get(StringUtils.normalize(familyName)) != null) {
-                CSV.MySqlStructure record = lists.getNormalizedMap().get(StringUtils.normalize(familyName));
-                /*record.setName(familyName);
-                record.setCpu(StringUtils.cpu(familyName));*/
+            if (syn != null && lists.getNormalizedMap().get(syn) != null) {
+                CSV.MySqlStructure record = lists.getNormalizedMap().get(syn);
+                record.setName(name);
+                record.setCpu(StringUtils.cpu(name));
                 record.setRom(romPath);
                 lists.getUnmappedNames().remove(normalizedFamilyName);
                 lists.getUpdateLines().add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platform, romPath, escapeQuotes(n.getCleanName())));

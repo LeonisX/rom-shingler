@@ -7,7 +7,7 @@ TODO column status: ADDED, DELETED, RENAMED
 
 TODO hacks separately, as groups
 
-TODO rename entry name + cpu
+
 
 TODO recalculate SID when generate update sql
 
