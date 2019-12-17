@@ -45,6 +45,12 @@ public class ConfigHolder {
     public static Path collectionsDir = rootWorkDir.resolve("collections");
     public static Path familiesDir = rootWorkDir.resolve("families");
 
+    public static Path inputDir = Paths.get("D:\\Downloads\\input");
+    public static Path outputDir = Paths.get("D:\\Downloads\\merged-roms");
+
+    public static String romsUrl = "http://tv-roms.narod.ru/games/";
+    public static String uniqueRomsUrl = "http://cominf0.narod.ru/mame/";
+
     public static LinkedHashMap<String, Platform> platforms = new LinkedHashMap<>();
     public static HashMap<String, Platform> platformsByCpu = new HashMap<>();
 
@@ -117,6 +123,4 @@ public class ConfigHolder {
 
     public static int candidates = 48;
     public static int showCandidates = 8;
-
-    public static Path outputDir = Paths.get("D:\\Downloads\\merged-roms");
 }

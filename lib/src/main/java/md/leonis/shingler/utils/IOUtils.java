@@ -207,6 +207,10 @@ public class IOUtils {
         }
     }
 
+    public static void backupFile(Path path) {
+        backupFile(path.toFile());
+    }
+
     public static void backupFile(File file) {
         if (file.exists()) {
             File backupFile = new File(file.getAbsolutePath() + ".bak");
@@ -356,15 +360,11 @@ public class IOUtils {
     }
 
     public static void saveToFile(Path path, List<String> list) {
-        saveToFile(path.toAbsolutePath().toString(), list);
+        saveToFile(path, String.join("\n", list));
     }
 
-    public static void saveToFile(String fileName, List<String> list) {
-        saveToFile(fileName, String.join("\n", list));
-    }
-
-    public static void saveToFile(String fileName, String text) {
-        try (PrintWriter out = new PrintWriter(fileName)) {
+    public static void saveToFile(Path path, String text) {
+        try (PrintWriter out = new PrintWriter(path.toFile())) {
             out.println(text);
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
