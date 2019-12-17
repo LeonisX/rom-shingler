@@ -29,6 +29,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static md.leonis.shingler.model.ConfigHolder.*;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.slf4j.LoggerFactory.getLogger;
 
 public class TiviUtils {
@@ -169,7 +171,7 @@ public class TiviUtils {
 
         // clean name, rom; calc cpu if not
         records.forEach(r -> {
-            if (org.apache.commons.lang3.StringUtils.isBlank(r.getCpu())) {
+            if (isBlank(r.getCpu())) {
                 r.setCpu(StringUtils.cpu(r.getName()));
             }
             r.setGame("");
@@ -223,13 +225,13 @@ public class TiviUtils {
 
                 IOUtils.copyFile(sourceArchive, destArchive);
 
-                String romPath = formatRomPath(platformGroup, destArchiveName);
+                String shortRomPath = formatShortRomPath(platformGroup, destArchiveName);
 
-                lists.getHtmlLines().add(formatTableCell(romPath, sourceArchiveName, fileSize));
-                lists.getTxtLines().add(romPath);
+                lists.getHtmlLines().add(formatTableCell(formatRomPath(shortRomPath), sourceArchiveName, fileSize));
+                lists.getTxtLines().add(shortRomPath);
 
                 for (Family f : tribes.get(t)) {
-                    processFamily(lists, f, romPath);
+                    processFamily(lists, f, shortRomPath);
                 }
             } else {
                 //TODO split  by letters or families, don't tear them
@@ -256,13 +258,13 @@ public class TiviUtils {
                     IOUtils.copyFile(sourceArchive, destArchive);
                     IOUtils.deleteFile(sourceArchive);
 
-                    String romPath = formatRomPath(platformGroup, destArchiveName);
+                    String shortRomPath = formatShortRomPath(platformGroup, destArchiveName);
 
-                    lists.getHtmlLines().add(formatTableCell(romPath, sourceArchiveName, fileSize));
-                    lists.getTxtLines().add(romPath);
+                    lists.getHtmlLines().add(formatTableCell(formatRomPath(shortRomPath), sourceArchiveName, fileSize));
+                    lists.getTxtLines().add(shortRomPath);
                     //TODO detect correct part
                     for (Family f : tribes.get(t)) {
-                        processFamily(lists, f, romPath);
+                        processFamily(lists, f, shortRomPath);
                     }
                 }
             }
@@ -285,8 +287,9 @@ public class TiviUtils {
         writeXls(xlsCreatePath(), lists.getAddedRecords());
     }
 
-    private static void processFamily(TiViLists lists, Family f, String romPath) {
+    private static void processFamily(TiViLists lists, Family f, String shortRomPath) {
 
+        String romPath = formatRomPath(shortRomPath);
         String familyName = escapeQuotes(norm2(f.getName()));
         String normalizedFamilyName = StringUtils.normalize(familyName);
         if (!lists.getUnmappedNames().contains(normalizedFamilyName)) {
@@ -296,7 +299,7 @@ public class TiviUtils {
                 CSV.MySqlStructure record = lists.getNormalizedMap().get(syn);
                 record.setName(f.getName());
                 record.setCpu(StringUtils.cpu(f.getName()));
-                record.setGame(romPath);
+                record.setGame(shortRomPath);
                 lists.getUnmappedNames().remove(normalizedFamilyName);
                 lists.getUpdateLines().add(formatUpdateQuery(platform, romPath, familyName));
                 lists.getHtAccessLines().add(String.format("RewriteRule ^game/%s/%s.html$ game/%s/%s.html [L,R=301]", platform, toRegex(cryptTitle(lists.getSynonymsNames().get(syn))), platform, toRegex(StringUtils.cpu(f.getName()))));
@@ -307,19 +310,19 @@ public class TiviUtils {
                     lists.getUnmappedNames().remove(normalizedFamilyName);
                 } else {
                     lists.getUnmappedFamilies().add(f.getName());
-                    lists.getUnmappedLines().add(romPath);
+                    lists.getUnmappedLines().add(shortRomPath);
                 }
             }
         } else {
             CSV.MySqlStructure record = lists.getNormalizedMap().get(normalizedFamilyName);
-            record.setGame(romPath);
+            record.setGame(shortRomPath);
             lists.getUnmappedNames().remove(normalizedFamilyName);
             lists.getUpdateLines().add(formatUpdateQuery(platform, romPath, familyName));
         }
 
         CSV.MySqlStructure record = lists.getAddedNormalizedMap().get(normalizedFamilyName);
         if (record != null) {
-            record.setGame(romPath);
+            record.setGame(shortRomPath);
         }
     }
 
@@ -387,8 +390,12 @@ public class TiviUtils {
         return String.format(HEAD, platformsByCpu.get(platform).getTitle());
     }
 
-    private static String formatRomPath(String platform, String destArchiveName) {
-        return String.format("http://tv-roms.narod.ru/games/%s/%s", platform, destArchiveName);
+    private static String formatShortRomPath(String platform, String destArchiveName) {
+        return String.format("%s/%s", platform, destArchiveName);
+    }
+
+    private static String formatRomPath(String shortRomPath) {
+        return String.format("http://tv-roms.narod.ru/games/%s", shortRomPath);
     }
 
     private static String formatTableCell(String romPath, String sourceArchiveName, int fileSize) {
@@ -455,12 +462,12 @@ public class TiviUtils {
 
             ArchiveUtils.compressZip(destZipRom.toAbsolutePath().toString(), Collections.singletonList(sourceRom.toAbsolutePath().toString()), j.getAndIncrement());
 
-            String romPath = formatUniqueRomPath(platformGroup, zipRomName);
+            String shortRomPath = formatShortUniqueRomPath(platformGroup, zipRomName);
             int fileSize = (int) IOUtils.fileSize(destZipRom) / 1024;
-            lists.getHtmlLines().add(formatTableCell(romPath, sourceRomName, fileSize));
-            lists.getTxtLines().add(romPath);
+            lists.getHtmlLines().add(formatTableCell(formatUniqueRomPath(shortRomPath), sourceRomName, fileSize));
+            lists.getTxtLines().add(shortRomPath);
 
-            processRomFamily(lists, e.getKey(), romPath);
+            processRomFamily(lists, e.getKey(), shortRomPath);
         });
 
         LOGGER.info("Processing groups...");
@@ -538,17 +545,18 @@ public class TiviUtils {
 
             ArchiveUtils.compressZip(destZipRom.toAbsolutePath().toString(), Collections.singletonList(sourceRom.toAbsolutePath().toString()), i.getAndIncrement());
 
-            String romPath = formatUniqueRomPath(dir, zipRomName);
+            String shortRomPath = formatShortUniqueRomPath(dir, zipRomName);
             int fileSize = (int) IOUtils.fileSize(destZipRom) / 1024;
-            lists.getHtmlLines().add(formatTableCell(romPath, sourceRomName, fileSize));
-            lists.getTxtLines().add(romPath);
+            lists.getHtmlLines().add(formatTableCell(formatUniqueRomPath(shortRomPath), sourceRomName, fileSize));
+            lists.getTxtLines().add(shortRomPath);
 
-            processRomFamily(lists, n, romPath);
+            processRomFamily(lists, n, shortRomPath);
         });
     }
 
-    private static void processRomFamily(TiViLists lists, Name n, String romPath) {
+    private static void processRomFamily(TiViLists lists, Name n, String shortRomPath) {
 
+        String romPath = formatRomPath(shortRomPath);
         String name = n.getCleanName();
         String normalizedFamilyName = StringUtils.normalize(escapeQuotes(name));
         if (!lists.getUnmappedNames().contains(normalizedFamilyName)) {
@@ -557,23 +565,23 @@ public class TiviUtils {
                 CSV.MySqlStructure record = lists.getNormalizedMap().get(syn);
                 record.setName(name);
                 record.setCpu(StringUtils.cpu(name));
-                record.setRom(romPath);
+                record.setRom(shortRomPath);
                 lists.getUnmappedNames().remove(normalizedFamilyName);
                 lists.getUpdateLines().add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platform, romPath, escapeQuotes(n.getCleanName())));
             } else {
                 lists.getUnmappedFamilies().add(n.getCleanName());
-                lists.getUnmappedLines().add(romPath);
+                lists.getUnmappedLines().add(shortRomPath);
             }
         } else {
             CSV.MySqlStructure record = lists.getNormalizedMap().get(normalizedFamilyName);
-            record.setRom(romPath);
+            record.setRom(shortRomPath);
             lists.getUnmappedNames().remove(normalizedFamilyName);
             lists.getUpdateLines().add(String.format("UPDATE `base_%s` SET rom='%s' WHERE name='%s';", platform, romPath, escapeQuotes(n.getCleanName())));
         }
 
         CSV.MySqlStructure record = lists.getAddedNormalizedMap().get(normalizedFamilyName);
         if (record != null) {
-            record.setRom(romPath);
+            record.setRom(shortRomPath);
         }
     }
 
@@ -592,10 +600,14 @@ public class TiviUtils {
                 vals.put("sid", getSid(records.get(k).getName()));
             }
             if (!originRecords.get(k).getGame().equals(records.get(k).getGame())) {
-                vals.put("game", records.get(k).getGame());
+                if (isNotBlank(records.get(k).getGame())) {
+                    vals.put("game", formatRomPath(records.get(k).getGame()));
+                }
             }
             if (!originRecords.get(k).getRom().equals(records.get(k).getRom())) {
-                vals.put("rom", records.get(k).getRom());
+                if (isNotBlank(records.get(k).getRom())) {
+                    vals.put("rom", formatUniqueRomPath(records.get(k).getRom()));
+                }
             }
 
             vals.put("cpu", records.get(k).getCpu());
@@ -603,7 +615,6 @@ public class TiviUtils {
             vals.put("modified", Long.toString(new Date().getTime() / 1000));
             String sets = vals.entrySet().stream().map(e -> String.format("`%s`='%s'", e.getKey(), escapeQuotes(e.getValue()))).collect(Collectors.joining(", "));
             updateList.add(String.format("UPDATE `base_%s` SET %s WHERE name='%s';", platform, sets, escapeQuotes(originRecords.get(k).getName())));
-
         }
         IOUtils.saveToFile(platform + "_update.sql", String.join("\n", updateList));
 
@@ -640,11 +651,19 @@ public class TiviUtils {
 
         String region = "";
 
+        if (isNotBlank(game)) {
+            game = formatRomPath(game);
+        }
+
+        if (isNotBlank(rom)) {
+            rom = formatUniqueRomPath(rom);
+        }
+
         return String.format(format, platform, platform, modified, modified, sid, cpu, escapeQuotes(name), region, game, rom);
     }
 
     public static String getSid(String name) {
-        if (org.apache.commons.lang3.StringUtils.isBlank(name)) {
+        if (isBlank(name)) {
             return "";
         }
         String sid = name.toLowerCase().substring(0, 1);
@@ -658,8 +677,12 @@ public class TiviUtils {
         return sid;
     }
 
-    private static String formatUniqueRomPath(String platform, String destArchiveName) {
-        return String.format("http://cominf0.narod.ru/mame/%s/%s", platform, destArchiveName);
+    private static String formatShortUniqueRomPath(String platform, String destArchiveName) {
+        return String.format("%s/%s", platform, destArchiveName);
+    }
+
+    private static String formatUniqueRomPath(String shortRomPath) {
+        return String.format("http://cominf0.narod.ru/mame/%s", shortRomPath);
     }
 
     private static String cryptTitle(String title) {
