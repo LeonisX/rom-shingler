@@ -697,7 +697,7 @@ public class TiviUtils {
     }
 
     private static String formatUniqueRomPath(String shortRomPath) {
-        return romsUrl + shortRomPath;
+        return uniqueRomsUrl + shortRomPath;
     }
 
     private static String cryptTitle(String title) {

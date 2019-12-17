@@ -3,6 +3,10 @@
 // SELECT sid, name, cpu, game, rom FROM `base_nes` ORDER BY n LIMIT 0, 50000
 // SELECT sid, name, '' as cpu, '' as game, '' as rom FROM `base_sg1000` ORDER BY n LIMIT 0, 50000
 
+TODO Music Station V1.6 (SG-1000) to SMS
+TODO merge Penguin Land to Doki Doki Penguin Land
+TODO use renamed doc to modify alt names
+
 TODO create - act = 'yes'
 
 TODO all bases - revise regions!!!
