@@ -609,23 +609,23 @@ public class TiviUtils {
         for (int k = 0; k < originRecords.size(); k++) {
             Map<String, String> vals = new LinkedHashMap<>();
             if (!originRecords.get(k).getName().equals(records.get(k).getName())) {
-                vals.put("name", records.get(k).getName());
+                vals.put("name", records.get(k).getName().trim());
             }
             if (!getSid(originRecords.get(k).getName()).equals(getSid(records.get(k).getName()))) {
                 vals.put("sid", getSid(records.get(k).getName()));
             }
             if (!originRecords.get(k).getGame().equals(records.get(k).getGame())) {
                 if (isNotBlank(records.get(k).getGame())) {
-                    vals.put("game", formatRomPath(records.get(k).getGame()));
+                    vals.put("game", formatRomPath(records.get(k).getGame().trim()));
                 }
             }
             if (!originRecords.get(k).getRom().equals(records.get(k).getRom())) {
                 if (isNotBlank(records.get(k).getRom())) {
-                    vals.put("rom", formatUniqueRomPath(records.get(k).getRom()));
+                    vals.put("rom", formatUniqueRomPath(records.get(k).getRom().trim()));
                 }
             }
 
-            vals.put("cpu", records.get(k).getCpu());
+            vals.put("cpu", records.get(k).getCpu().trim());
 
             vals.put("modified", Long.toString(new Date().getTime() / 1000));
             String sets = vals.entrySet().stream().map(e -> String.format("`%s`='%s'", e.getKey(), escapeQuotes(e.getValue()))).collect(Collectors.joining(", "));
@@ -674,7 +674,7 @@ public class TiviUtils {
             rom = formatUniqueRomPath(rom);
         }
 
-        return String.format(format, platform, platform, modified, modified, sid, cpu, escapeQuotes(name), region, game, rom);
+        return String.format(format, platform, platform, modified, modified, sid.trim(), cpu.trim(), escapeQuotes(name.trim()), region.trim(), game.trim(), rom.trim());
     }
 
     public static String getSid(String name) {

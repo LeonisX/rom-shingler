@@ -7,6 +7,10 @@ TODO Music Station V1.6 (SG-1000) to SMS
 TODO merge Penguin Land to Doki Doki Penguin Land
 TODO use renamed doc to modify alt names
 
+TODO check availability of uploaded roms (cominfo, tv-roms) based on 2 xlsx
+Or even better - create active romset, based on 2 xlsx, to copy
+
+
 TODO create - act = 'yes'
 
 TODO all bases - revise regions!!!
