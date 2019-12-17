@@ -132,6 +132,7 @@ public class FamilyController {
     public Button regenIndexesButton;
     public Button tiviButton2;
     public Button tiviButton3;
+    public CheckBox ioCheckBox;
 
     private TreeItem<NameView> familyRootItem = new TreeItem<>(NameView.EMPTY);
     private TreeItem<NameView> tribeRelationsRootItem = new TreeItem<>(NameView.EMPTY);
@@ -1487,5 +1488,9 @@ public class FamilyController {
 
     public void generateTiviUQClick() {
         TiviUtils.createUpdateQueries();
+    }
+
+    public void ioCheckBoxClick() {
+        TiviUtils.isIO = ioCheckBox.isSelected();
     }
 }

@@ -52,6 +52,7 @@ public class TiviUtils {
     private static final int DIR_SIZE = 1000;
     private static final double DIR_SEPARATE_SIZE = 986.0;
 
+    public static boolean isIO = true;
 
     private static List<CSV.MySqlStructure> readCsv() {
 
@@ -216,14 +217,18 @@ public class TiviUtils {
 
             String platformGroup = needToSeparate ? String.format("%s%s", platform, (int) Math.ceil(g.getAndIncrement() / DIR_SEPARATE_SIZE)) : platform;
             Path destPath = outputDir.resolve(platform).resolve("games").resolve(platformGroup);
-            IOUtils.createDirectories(destPath);
+            if (isIO) {
+                IOUtils.createDirectories(destPath);
+            }
 
             if (fileSize < MAX_SIZE) {
 
                 String destArchiveName = StringUtils.normalize(sourceArchiveName);
                 Path destArchive = destPath.resolve(destArchiveName);
 
-                IOUtils.copyFile(sourceArchive, destArchive);
+                if (isIO) {
+                    IOUtils.copyFile(sourceArchive, destArchive);
+                }
 
                 String shortRomPath = formatShortRomPath(platformGroup, destArchiveName);
 
@@ -250,13 +255,15 @@ public class TiviUtils {
                     sourceArchiveName = String.format("%s (part %s).7z", t, i);
                     String destArchiveName = StringUtils.normalize(String.format("%s part %s.7z", t, i).replace("_", " "));
 
-                    ArchiveUtils.compress7z(destArchiveName, chunk, i++);
+                    if (isIO) {
+                        ArchiveUtils.compress7z(destArchiveName, chunk, i++);
 
-                    sourceArchive = outputDir.resolve(platform).resolve(destArchiveName);
-                    Path destArchive = destPath.resolve(destArchiveName);
-                    fileSize = (int) IOUtils.fileSize(sourceArchive) / 1024;
-                    IOUtils.copyFile(sourceArchive, destArchive);
-                    IOUtils.deleteFile(sourceArchive);
+                        sourceArchive = outputDir.resolve(platform).resolve(destArchiveName);
+                        Path destArchive = destPath.resolve(destArchiveName);
+                        fileSize = (int) IOUtils.fileSize(sourceArchive) / 1024;
+                        IOUtils.copyFile(sourceArchive, destArchive);
+                        IOUtils.deleteFile(sourceArchive);
+                    }
 
                     String shortRomPath = formatShortRomPath(platformGroup, destArchiveName);
 
@@ -430,7 +437,9 @@ public class TiviUtils {
 
         Path uniquePath = getUniquePath();
 
-        IOUtils.createDirectories(uniquePath);
+        if (isIO) {
+            IOUtils.createDirectories(uniquePath);
+        }
 
         LOGGER.info("Processing families...");
 
@@ -460,10 +469,12 @@ public class TiviUtils {
             Path sourceRom = romsCollection.getRomsPath().resolve(sourceRomName);
             Path destZipRom = uniquePath.resolve(platformGroup).resolve(zipRomName);
 
-            ArchiveUtils.compressZip(destZipRom.toAbsolutePath().toString(), Collections.singletonList(sourceRom.toAbsolutePath().toString()), j.getAndIncrement());
+            if (isIO) {
+                ArchiveUtils.compressZip(destZipRom.toAbsolutePath().toString(), Collections.singletonList(sourceRom.toAbsolutePath().toString()), j.getAndIncrement());
+            }
 
             String shortRomPath = formatShortUniqueRomPath(platformGroup, zipRomName);
-            int fileSize = (int) IOUtils.fileSize(destZipRom) / 1024;
+            int fileSize = isIO ? (int) IOUtils.fileSize(destZipRom) / 1024 : -1;
             lists.getHtmlLines().add(formatTableCell(formatUniqueRomPath(shortRomPath), sourceRomName, fileSize));
             lists.getTxtLines().add(shortRomPath);
 
@@ -543,10 +554,12 @@ public class TiviUtils {
 
             Path destZipRom = getUniquePath().resolve(dir).resolve(zipRomName);
 
-            ArchiveUtils.compressZip(destZipRom.toAbsolutePath().toString(), Collections.singletonList(sourceRom.toAbsolutePath().toString()), i.getAndIncrement());
+            if (isIO) {
+                ArchiveUtils.compressZip(destZipRom.toAbsolutePath().toString(), Collections.singletonList(sourceRom.toAbsolutePath().toString()), i.getAndIncrement());
+            }
 
             String shortRomPath = formatShortUniqueRomPath(dir, zipRomName);
-            int fileSize = (int) IOUtils.fileSize(destZipRom) / 1024;
+            int fileSize = isIO ? (int) IOUtils.fileSize(destZipRom) / 1024 : -1;
             lists.getHtmlLines().add(formatTableCell(formatUniqueRomPath(shortRomPath), sourceRomName, fileSize));
             lists.getTxtLines().add(shortRomPath);
 
@@ -647,7 +660,7 @@ public class TiviUtils {
                 "'',''," + // analog, drname
                 "'',''," + // cros, serie
                 "'',''," + // text1, text2
-                "'0', '0','0', '0', 0, 'yes')"; //rating, user ratings, viewes, ?
+                "'0', '0','0', '0', 0)"; //rating, user ratings, viewes, ?, act //TODO add act: ", 'yes'"
 
         String region = "";
 
