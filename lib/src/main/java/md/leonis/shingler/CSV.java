@@ -40,12 +40,15 @@ public class CSV {
 
         private String sid;
         private String name;
+        //@JsonIgnore
+        private String oldName;
         private String cpu;
         private String game;
         private String rom;
 
         public MySqlStructure(AddedStructure addedStructure) {
             this.name = addedStructure.getName();
+            this.oldName = name;
             this.cpu = StringUtils.cpu(name);
             this.sid = addedStructure.getSid();
         }

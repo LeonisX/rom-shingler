@@ -9,10 +9,8 @@ import md.leonis.shingler.CSV;
 import md.leonis.shingler.model.Family;
 import md.leonis.shingler.model.FamilyType;
 import md.leonis.shingler.model.Name;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.hssf.util.HSSFColor;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
@@ -59,7 +57,7 @@ public class TiviUtils {
             File file = inputDir.resolve("lists").resolve("base_" + platform + ".csv").toFile();
             CsvSchema schema = new CsvMapper().schemaFor(CSV.MySqlStructure.class).withColumnSeparator(';').withoutHeader().withQuoteChar('"');
             MappingIterator<CSV.MySqlStructure> personIter = new CsvMapper().readerFor(CSV.MySqlStructure.class).with(schema).readValues(file);
-            return personIter.readAll();
+            return personIter.readAll().stream().peek(s -> s.setOldName(s.getName())).collect(Collectors.toList());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -107,16 +105,18 @@ public class TiviUtils {
 
         for (CSV.MySqlStructure record : records) {
             Row row = sheet.createRow(rowNum++);
-            Cell cell = row.createCell(0);
-            cell.setCellValue(record.getSid());
-            cell = row.createCell(1);
-            cell.setCellValue(record.getName());
-            cell = row.createCell(2);
-            cell.setCellValue(record.getCpu());
-            cell = row.createCell(3);
-            cell.setCellValue(record.getGame());
-            cell = row.createCell(4);
-            cell.setCellValue(record.getRom());
+            row.createCell(0).setCellValue(record.getSid());
+            row.createCell(1).setCellValue(record.getName());
+            row.createCell(2).setCellValue(record.getCpu());
+            row.createCell(3).setCellValue(record.getGame());
+            row.createCell(4).setCellValue(record.getRom());
+            Cell cell = row.createCell(5);
+            cell.setCellValue(record.getOldName());
+            if (!record.getName().equals(record.getOldName())) {
+                Font font = workbook.createFont();
+                font.setColor(HSSFColor.HSSFColorPredefined.GREY_25_PERCENT.getIndex());
+                cell.getCellStyle().setFont(font);
+            }
         }
         for (int i = 0; i < 5; i++) {
             sheet.autoSizeColumn(i);
@@ -155,6 +155,9 @@ public class TiviUtils {
                 }
                 if (currentRow.getCell(4) != null) {
                     record.setRom(currentRow.getCell(4).getStringCellValue());
+                }
+                if (currentRow.getCell(5) != null) {
+                    record.setOldName(currentRow.getCell(5).getStringCellValue());
                 }
                 records.add(record);
             }
