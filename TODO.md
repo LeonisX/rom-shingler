@@ -3,6 +3,10 @@
 // SELECT sid, name, cpu, game, rom FROM `base_nes` ORDER BY n LIMIT 0, 50000
 // SELECT sid, name, '' as cpu, '' as game, '' as rom FROM `base_sg1000` ORDER BY n LIMIT 0, 50000
 
+TODO GG:
+Sqweek -> delete, alt name to Skweek
+
+
 TODO check availability of uploaded roms (cominfo, tv-roms) based on 2 xlsx
 Or even better - create active romset, based on 2 xlsx, to copy
 

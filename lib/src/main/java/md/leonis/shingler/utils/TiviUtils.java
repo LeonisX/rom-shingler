@@ -667,14 +667,14 @@ public class TiviUtils {
         String region = "";
 
         if (isNotBlank(game)) {
-            game = formatRomPath(game);
+            game = formatRomPath(game).trim();
         }
 
         if (isNotBlank(rom)) {
-            rom = formatUniqueRomPath(rom);
+            rom = formatUniqueRomPath(rom).trim();
         }
 
-        return String.format(format, platform, platform, modified, modified, sid.trim(), cpu.trim(), escapeQuotes(name.trim()), region.trim(), game.trim(), rom.trim());
+        return String.format(format, platform, platform, modified, modified, sid.trim(), cpu.trim(), escapeQuotes(name.trim()), region.trim(), game, rom);
     }
 
     public static String getSid(String name) {
