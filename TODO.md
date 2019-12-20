@@ -6,6 +6,8 @@
 TODO GG:
 Sqweek -> delete, alt name to Skweek
 
+http://tv-games.ru/game/nes/Gluk_the_Thunder_Warrior.html - broken images
+
 TODO (on final only!!) notify if empty cpu, game, rom
 
 TODO when compare titles - delete (Unl), (Wxn) at the end of title (add game, rom); to lower case
