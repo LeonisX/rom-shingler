@@ -6,6 +6,16 @@
 TODO GG:
 Sqweek -> delete, alt name to Skweek
 
+TODO (on final only!!) notify if empty cpu, game, rom
+
+TODO when compare titles - delete (Unl), (Wxn) at the end of title (add game, rom); to lower case
+Need unified normalization code
+
+TODO fix - WXN, VT03 games were unpacked to nes_multi
+
+
+TODO when generate create.xlsx - replace &, ' to &amp;. &rsquo;, may be other
+
 
 TODO check availability of uploaded roms (cominfo, tv-roms) based on 2 xlsx
 Or even better - create active romset, based on 2 xlsx, to copy

@@ -336,14 +336,17 @@ public class TiviUtils {
     }
 
     private static String norm2(String s) {
-        if (s.startsWith("Archer Maclean's ")) {
-            s = s.replace("Archer Maclean's ", "");
+        if (s.startsWith("Archer Maclean&rsquo;s ")) {
+            s = s.replace("Archer Maclean&rsquo;s ", "");
         }
-        if (s.startsWith("Disney's ")) {
-            s = s.replace("Disney's ", "");
+        if (s.startsWith("Disney&rsquo;s ")) {
+            s = s.replace("Disney&rsquo;s ", "");
         }
-        if (s.startsWith("Fox's ")) {
-            s = s.replace("Fox's ", "");
+        if (s.startsWith("Fox&rsquo;s ")) {
+            s = s.replace("Fox&rsquo;s ", "");
+        }
+        if (s.startsWith("Capcom&rsquo;s ")) {
+            s = s.replace("Capcom&rsquo;s ", "");
         }
         return s;
     }
