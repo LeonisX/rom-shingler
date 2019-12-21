@@ -3,13 +3,6 @@
 // SELECT sid, name, cpu, game, rom FROM `base_nes` ORDER BY n LIMIT 0, 50000
 // SELECT sid, name, '' as cpu, '' as game, '' as rom FROM `base_sg1000` ORDER BY n LIMIT 0, 50000
 
-TODO GG:
-Sqweek -> delete, alt name to Skweek
-
-http://tv-games.ru/game/nes/Gluk_the_Thunder_Warrior.html - broken images
-
-Red Arremer II - delete
-
 TODO (on final only!!) notify if empty cpu, game, rom
 
 TODO when compare titles - delete (Unl), (Wxn) at the end of title (add game, rom); to lower case
