@@ -36,6 +36,7 @@ TODO compress in parallel: lzma1 1/2
 TODO при стандартной упаковке паковать как есть. при продвинутой для плохих жаккартов искать семьи поудачнее.
 
 TODO families with sha1 or other id!!!
+TODO when find games - use SHA1 as key if have
 
 Export families to other precisions
 
