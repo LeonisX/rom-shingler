@@ -150,7 +150,7 @@ public class FamilyController {
 
     private TreeItem<NameView> lastNameView = null;
 
-    private Map<TreeView, String> searchMap = new HashMap<>();
+    private Map<TreeView<NameView>, String> searchMap = new HashMap<>();
 
     private Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(2), ev -> searchMap.entrySet().forEach(e -> e.setValue(""))));
 
@@ -1388,7 +1388,7 @@ public class FamilyController {
 
         runInBackground(() -> {
             int i = 0;
-            for (Map.Entry<String, List<Family>> entry : tribes.entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).collect(Collectors.toList())) {
+            for (Map.Entry<String, List<Family>> entry : tribes.entrySet().stream().sorted(Map.Entry.comparingByKey()).collect(Collectors.toList())) {
                 String name = entry.getKey();
                 List<Name> members = entry.getValue().stream().flatMap(e -> e.getMembers().stream()).collect(Collectors.toList());
 
@@ -1487,7 +1487,7 @@ public class FamilyController {
     }
 
     public void generateTiviUQClick() {
-        TiviUtils.createUpdateQueries();
+        TiviUtils.createUpdateQueries(true);
     }
 
     public void ioCheckBoxClick() {

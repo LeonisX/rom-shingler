@@ -285,7 +285,7 @@ public class TiviUtils {
         IOUtils.saveToFile(inputDir.resolve(platform + "_games_unmapped.txt"), lists.getUnmappedLines());
         IOUtils.saveToFile(inputDir.resolve(platform + "_games_unmapped_families.txt"), lists.getUnmappedFamilies());
         IOUtils.saveToFile(inputDir.resolve(platform + "_games_unmapped_names.txt"), lists.getUnmappedNames().stream().sorted().map(r -> lists.getNormalizedMap().get(r).getName()).collect(Collectors.toList()));
-        IOUtils.saveToFile(inputDir.resolve(platform + "_create.sql"), lists.getCreateLines().stream().sorted().map(r -> formatCreate(getSid(r), r, StringUtils.cpu(r), null, null)).collect(Collectors.toList()));
+        IOUtils.saveToFile(inputDir.resolve(platform + "_create.sql"), lists.getCreateLines().stream().sorted().map(r -> formatCreate(getSid(r), r, StringUtils.cpu(r), null, null, false)).collect(Collectors.toList()));
         IOUtils.saveToFile(inputDir.resolve(platform + "_htaccess.txt"), lists.getHtAccessLines());
 
         // save as excel
@@ -504,7 +504,7 @@ public class TiviUtils {
 
         List<String> fams = new ArrayList<>();
         families.values().stream().collect(Collectors.toMap(Family::getName, f -> f.getMembers().stream().map(Name::getCleanName).distinct().sorted()))
-                .entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).forEach(f -> {
+                .entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(f -> {
             fams.add(f.getKey());
             f.getValue().map(r -> "    " + r).forEach(fams::add);
         });
@@ -513,7 +513,7 @@ public class TiviUtils {
 
         List<Pair<String, String>> pairs = new ArrayList<>();
         families.values().stream().collect(Collectors.toMap(Family::getName, f -> f.getMembers().stream().map(Name::getCleanName).distinct().sorted()))
-                .entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).forEach(f -> f.getValue().forEach(v -> {
+                .entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(f -> f.getValue().forEach(v -> {
             if (!v.equals(f.getKey())) {
                 pairs.add(new Pair<>(v, f.getKey()));
             }
@@ -526,7 +526,7 @@ public class TiviUtils {
         writeXls(xlsCreatePath(), lists.getAddedRecords());
 
         // update queries
-        createUpdateQueries();
+        createUpdateQueries(false);
 
         LOGGER.info("Done");
     }
@@ -603,13 +603,28 @@ public class TiviUtils {
         }
     }
 
-    public static void createUpdateQueries() {
+    public static void createUpdateQueries(boolean extraValidation) {
+
+        List<String> warnings = new ArrayList<>();
 
         List<CSV.MySqlStructure> originRecords = readCsv();
         List<CSV.MySqlStructure> records = readXls(xlsUpdatePath());
 
         List<String> updateList = new ArrayList<>();
         for (int k = 0; k < originRecords.size(); k++) {
+
+            if (isBlank(records.get(k).getCpu()) && extraValidation) {
+                warnings.add("CPU is blank for " + records.get(k).getCpu());
+            }
+
+            if (isBlank(records.get(k).getCpu()) && extraValidation) {
+                warnings.add("CPU is blank for " + records.get(k).getGame());
+            }
+
+            if (isBlank(records.get(k).getCpu()) && extraValidation) {
+                warnings.add("CPU is blank for " + records.get(k).getRom());
+            }
+
             Map<String, String> vals = new LinkedHashMap<>();
             if (!originRecords.get(k).getName().equals(records.get(k).getName())) {
                 vals.put("name", records.get(k).getName().trim());
@@ -641,12 +656,17 @@ public class TiviUtils {
 
         List<String> createList = new ArrayList<>();
         for (CSV.MySqlStructure record : records) {
-            createList.add(formatCreate(record.getSid(), record.getName(), record.getCpu(), record.getGame(), record.getRom()));
+            createList.add(formatCreate(record.getSid(), record.getName(), record.getCpu(), record.getGame(), record.getRom(), true));
         }
         IOUtils.saveToFile(inputDir.resolve(platform + "_create.sql"), String.join("\n", createList));
+
+        if (!warnings.isEmpty()) {
+            LOGGER.warn("UPDATE warnings:");
+            warnings.forEach(LOGGER::warn);
+        }
     }
 
-    private static String formatCreate(String sid, String name, String cpu, String game, String rom) {
+    private static String formatCreate(String sid, String name, String cpu, String game, String rom, boolean extraValidation) {
 
         //TODO n INC: SELECT MAX(n) AS max FROM base_".$catcpu
 
@@ -669,12 +689,24 @@ public class TiviUtils {
 
         String region = "";
 
+        if (isBlank(sid) && extraValidation) {
+            LOGGER.warn("SID is blank for {}", name);
+        }
+
+        if (isBlank(cpu) && extraValidation) {
+            LOGGER.warn("CPU is blank for {}", name);
+        }
+
         if (isNotBlank(game)) {
             game = formatRomPath(game).trim();
+        } else if (extraValidation) {
+            LOGGER.warn("Game is blank for {}", name);
         }
 
         if (isNotBlank(rom)) {
             rom = formatUniqueRomPath(rom).trim();
+        } else if (extraValidation) {
+            LOGGER.warn("Rom is blank for {}", name);
         }
 
         return String.format(format, platform, platform, modified, modified, sid.trim(), cpu.trim(), escapeQuotes(name.trim()), region.trim(), game, rom);

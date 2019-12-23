@@ -3,8 +3,6 @@
 // SELECT sid, name, cpu, game, rom FROM `base_nes` ORDER BY n LIMIT 0, 50000
 // SELECT sid, name, '' as cpu, '' as game, '' as rom FROM `base_sg1000` ORDER BY n LIMIT 0, 50000
 
-TODO (on final only!!) notify if empty cpu, game, rom
-
 TODO when compare titles - delete (Unl), (Wxn) at the end of title (add game, rom); to lower case
 Need unified normalization code
 
