@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -152,28 +153,45 @@ public class TiviUtils {
 
             for (Row currentRow : datatypeSheet) {
                 CSV.MySqlStructure record = new CSV.MySqlStructure();
-                record.setSid(currentRow.getCell(0).getStringCellValue());
-                record.setName(currentRow.getCell(1).getStringCellValue());
+                record.setName(readValue(currentRow.getCell(1)));
+
+                if (currentRow.getCell(0) != null) {
+                    record.setSid(readValue(currentRow.getCell(0)));
+                } else {
+                    LOGGER.warn("Empty SID for {}", record.getName());
+                    record.setSid(getSid(record.getName()));
+                }
+
                 if (currentRow.getCell(2) != null) {
-                    String value = currentRow.getCell(2).getStringCellValue();
+                    String value = readValue(currentRow.getCell(2));
                     record.setCpu(value.equals("") ? StringUtils.cpu(record.getName()) : value);
                 } else {
                     record.setCpu(StringUtils.cpu(record.getName()));
                 }
                 if (currentRow.getCell(3) != null) {
-                    record.setGame(currentRow.getCell(3).getStringCellValue());
+                    record.setGame(readValue(currentRow.getCell(3)));
                 }
                 if (currentRow.getCell(4) != null) {
-                    record.setRom(currentRow.getCell(4).getStringCellValue());
+                    record.setRom(readValue(currentRow.getCell(4)));
                 }
                 if (currentRow.getCell(5) != null) {
-                    record.setOldName(currentRow.getCell(5).getStringCellValue());
+                    record.setOldName(readValue(currentRow.getCell(5)));
                 }
                 records.add(record);
             }
             return records;
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private static String readValue(Cell cell) {
+        if (cell.getCellType() == CellType.STRING) {
+            return cell.getStringCellValue();
+        } else if (cell.getCellType() == CellType.NUMERIC) {
+            return Integer.toString(Double.valueOf(cell.getNumericCellValue()).intValue());
+        } else {
+            throw new RuntimeException("Unsupported cell type: " + cell.getCellType());
         }
     }
 
@@ -613,7 +631,7 @@ public class TiviUtils {
         }
     }
 
-    public static void createUpdateQueries(boolean extraValidation) {
+    public static void createUpdateQueries(boolean isFinal) {
 
         List<String> warnings = new ArrayList<>();
         List<CSV.RenamedStructure> renamed = new ArrayList<>();
@@ -621,19 +639,21 @@ public class TiviUtils {
         List<CSV.MySqlStructure> originRecords = readCsv();
         List<CSV.MySqlStructure> records = readXls(xlsUpdatePath());
 
+        Set<String> copied = new HashSet<>();
+
         List<String> updateList = new ArrayList<>();
         for (int k = 0; k < originRecords.size(); k++) {
 
-            if (isBlank(records.get(k).getCpu()) && extraValidation) {
+            if (isBlank(records.get(k).getCpu()) && isFinal) {
                 warnings.add("CPU is blank for " + records.get(k).getCpu());
             }
 
-            if (isBlank(records.get(k).getCpu()) && extraValidation) {
-                warnings.add("CPU is blank for " + records.get(k).getGame());
+            if (isBlank(records.get(k).getCpu()) && isFinal) {
+                warnings.add("Game is blank for " + records.get(k).getGame());
             }
 
-            if (isBlank(records.get(k).getCpu()) && extraValidation) {
-                warnings.add("CPU is blank for " + records.get(k).getRom());
+            if (isBlank(records.get(k).getCpu()) && isFinal) {
+                warnings.add("Rom is blank for " + records.get(k).getRom());
             }
 
             Map<String, String> vals = new LinkedHashMap<>();
@@ -655,6 +675,11 @@ public class TiviUtils {
                 }
             }
 
+            if (isFinal) {
+                copyFinal(records.get(k).getGame(), "games", copied);
+                copyFinal(records.get(k).getRom(), "roms", copied);
+            }
+
             vals.put("cpu", records.get(k).getCpu().trim());
 
             vals.put("modified", Long.toString(new Date().getTime() / 1000));
@@ -669,6 +694,11 @@ public class TiviUtils {
         List<String> createList = new ArrayList<>();
         for (CSV.MySqlStructure record : records) {
             createList.add(formatCreate(record.getSid(), record.getName(), record.getCpu(), record.getGame(), record.getRom(), true));
+
+            if (isFinal) {
+                copyFinal(record.getGame(), "games", copied);
+                copyFinal(record.getRom(), "roms", copied);
+            }
         }
         IOUtils.saveToFile(inputDir.resolve(platform + "_create.sql"), String.join("\n", createList));
 
@@ -678,9 +708,27 @@ public class TiviUtils {
             LOGGER.warn("UPDATE warnings:");
             warnings.forEach(LOGGER::warn);
         }
+
+        LOGGER.info("Done");
     }
 
-    private static String formatCreate(String sid, String name, String cpu, String game, String rom, boolean extraValidation) {
+    private static void copyFinal(String source, String path, Set<String> copied) {
+        if (isIO && org.apache.commons.lang3.StringUtils.isNotBlank(source)) {
+            Path sourceFile = outputDir.resolve(platform).resolve(path).resolve(source.trim());
+            Path destFile = outputDir.resolve(platform + "-final").resolve(path).resolve(source.trim());
+            if (Files.exists(sourceFile)) {
+                if (Files.notExists(destFile.getParent())) {
+                    IOUtils.createDirectories(destFile.getParent());
+                }
+                IOUtils.copyFile(sourceFile, destFile);
+            } else if (!copied.contains(source)) {
+                LOGGER.warn("File is not found: {}", sourceFile.toAbsolutePath().toString());
+            }
+            copied.add(source);
+        }
+    }
+
+    private static String formatCreate(String sid, String name, String cpu, String game, String rom, boolean isFinal) {
 
         //TODO n INC: SELECT MAX(n) AS max FROM base_".$catcpu
 
@@ -703,23 +751,23 @@ public class TiviUtils {
 
         String region = "";
 
-        if (isBlank(sid) && extraValidation) {
+        if (isBlank(sid) && isFinal) {
             LOGGER.warn("SID is blank for {}", name);
         }
 
-        if (isBlank(cpu) && extraValidation) {
+        if (isBlank(cpu) && isFinal) {
             LOGGER.warn("CPU is blank for {}", name);
         }
 
         if (isNotBlank(game)) {
             game = formatRomPath(game).trim();
-        } else if (extraValidation) {
+        } else if (isFinal) {
             LOGGER.warn("Game is blank for {}", name);
         }
 
         if (isNotBlank(rom)) {
             rom = formatUniqueRomPath(rom).trim();
-        } else if (extraValidation) {
+        } else if (isFinal) {
             LOGGER.warn("Rom is blank for {}", name);
         }
 

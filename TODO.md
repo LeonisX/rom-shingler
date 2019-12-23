@@ -3,9 +3,6 @@
 // SELECT sid, name, cpu, game, rom FROM `base_nes` ORDER BY n LIMIT 0, 50000
 // SELECT sid, name, '' as cpu, '' as game, '' as rom FROM `base_sg1000` ORDER BY n LIMIT 0, 50000
 
-TODO check availability of uploaded roms (cominfo, tv-roms) based on 2 xlsx
-Or even better - create active romset, based on 2 xlsx, to copy
-
 TODO when compare titles - delete (Unl), (Wxn) at the end of title (add game, rom); to lower case
 Need unified normalization code
 
