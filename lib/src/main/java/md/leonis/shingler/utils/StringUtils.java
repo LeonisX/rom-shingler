@@ -20,9 +20,7 @@ public class StringUtils {
 
     static String force63(String fileName) {
 
-        String name = fileName;
-
-        name = fileName.replace(" The ", " ").replace(" The ", " ").replace(" the ", " ").replace(" The ", " ");
+        String name = fileName.replace(" The ", " ").replace(" The ", " ").replace(" the ", " ").replace(" The ", " ");
 
         // [t1][a1][T-Port] -> [t1a1T-Port]
         // From tail consistently delete these substrings:
@@ -185,13 +183,19 @@ public class StringUtils {
         return fileName + (fileName.endsWith("." + ext) ? "" : "." + ext);
     }
 
+    public static String escapeChars(String s) {
+        s = s.replace("&", "&amp;");
+        s = s.replace("'", "&rsquo;");
+        s = s.replace("`", "&rsquo;");
+        return s;
+    }
 
     public static String cpu(String cpu) {
         cpu = cpu.replace("&rsquo;", "'");
-        cpu = StringEscapeUtils.unescapeHtml4(cpu);
+        cpu = StringEscapeUtils.unescapeHtml4(cpu); // &amp;, ...
 
         String separators = " _+";
-        String restricted = "'\"().,&!?$@#%^*=/\\[];:'\"|<>{}";
+        String restricted = "'\"().,&!?$@#%^*=/\\[];:|<>{}";
 
         for (char c : separators.toCharArray()) {
             cpu = cpu.replace("" + c, "-");

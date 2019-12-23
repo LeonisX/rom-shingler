@@ -54,7 +54,7 @@ public class TiviUtils {
     private static List<CSV.MySqlStructure> readCsv() {
 
         try {
-            File file = inputDir.resolve("lists").resolve("base_" + platform + ".csv").toFile();
+            File file = inputDir.resolve("lists").resolve("base_" + platform + ".csv").toFile(); // Already escaped to &amp;, ...
             CsvSchema schema = new CsvMapper().schemaFor(CSV.MySqlStructure.class).withColumnSeparator(';').withoutHeader().withQuoteChar('"');
             MappingIterator<CSV.MySqlStructure> personIter = new CsvMapper().readerFor(CSV.MySqlStructure.class).with(schema).readValues(file);
             return personIter.readAll().stream().peek(s -> s.setOldName(s.getName())).collect(Collectors.toList());
@@ -69,7 +69,7 @@ public class TiviUtils {
             File file = inputDir.resolve(platform + "_renamed.csv").toFile();
             CsvSchema schema = new CsvMapper().schemaFor(CSV.RenamedStructure.class).withColumnSeparator(';').withoutHeader().withQuoteChar('"');
             MappingIterator<CSV.RenamedStructure> personIter = new CsvMapper().readerFor(CSV.RenamedStructure.class).with(schema).readValues(file);
-            return personIter.readAll();
+            return personIter.readAll().stream().peek(r -> r.setNewName(StringUtils.escapeChars(r.getNewName()))).collect(Collectors.toList());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -81,7 +81,7 @@ public class TiviUtils {
             File file = inputDir.resolve(platform + "_added.csv").toFile();
             CsvSchema schema = new CsvMapper().schemaFor(CSV.AddedStructure.class).withColumnSeparator(';').withoutHeader().withQuoteChar('"');
             MappingIterator<CSV.AddedStructure> personIter = new CsvMapper().readerFor(CSV.AddedStructure.class).with(schema).readValues(file);
-            return personIter.readAll();
+            return personIter.readAll().stream().peek(r -> r.setName(StringUtils.escapeChars(r.getName()))).collect(Collectors.toList());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

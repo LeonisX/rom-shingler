@@ -6,9 +6,6 @@
 TODO when compare titles - delete (Unl), (Wxn) at the end of title (add game, rom); to lower case
 Need unified normalization code
 
-TODO when generate create.xlsx - replace &, ' to &amp;. &rsquo;, may be other
-
-
 TODO check availability of uploaded roms (cominfo, tv-roms) based on 2 xlsx
 Or even better - create active romset, based on 2 xlsx, to copy
 
