@@ -56,8 +56,8 @@ public class TiviUtils {
         try {
             File file = inputDir.resolve("lists").resolve("base_" + platform + ".csv").toFile(); // Already escaped to &amp;, ...
             CsvSchema schema = new CsvMapper().schemaFor(CSV.MySqlStructure.class).withColumnSeparator(';').withoutHeader().withQuoteChar('"');
-            MappingIterator<CSV.MySqlStructure> personIter = new CsvMapper().readerFor(CSV.MySqlStructure.class).with(schema).readValues(file);
-            return personIter.readAll().stream().peek(s -> s.setOldName(s.getName())).collect(Collectors.toList());
+            MappingIterator<CSV.MySqlStructure> iter = new CsvMapper().readerFor(CSV.MySqlStructure.class).with(schema).readValues(file);
+            return iter.readAll().stream().peek(s -> s.setOldName(s.getName())).collect(Collectors.toList());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -68,8 +68,18 @@ public class TiviUtils {
         try {
             File file = inputDir.resolve(platform + "_renamed.csv").toFile();
             CsvSchema schema = new CsvMapper().schemaFor(CSV.RenamedStructure.class).withColumnSeparator(';').withoutHeader().withQuoteChar('"');
-            MappingIterator<CSV.RenamedStructure> personIter = new CsvMapper().readerFor(CSV.RenamedStructure.class).with(schema).readValues(file);
-            return personIter.readAll().stream().peek(r -> r.setNewName(StringUtils.escapeChars(r.getNewName()))).collect(Collectors.toList());
+            MappingIterator<CSV.RenamedStructure> iter = new CsvMapper().readerFor(CSV.RenamedStructure.class).with(schema).readValues(file);
+            return iter.readAll().stream().peek(r -> r.setNewName(StringUtils.escapeChars(r.getNewName()))).collect(Collectors.toList());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void saveRenamedCsv(List<CSV.RenamedStructure> renamed) {
+        try {
+            File file = inputDir.resolve(platform + "_renamed_final.csv").toFile();
+            CsvSchema schema = new CsvMapper().schemaFor(CSV.RenamedStructure.class).withColumnSeparator(';').withoutHeader().withQuoteChar('"');
+            new CsvMapper().writerFor(CSV.RenamedStructure.class).with(schema).writeValues(file).writeAll(renamed).close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -80,8 +90,8 @@ public class TiviUtils {
         try {
             File file = inputDir.resolve(platform + "_added.csv").toFile();
             CsvSchema schema = new CsvMapper().schemaFor(CSV.AddedStructure.class).withColumnSeparator(';').withoutHeader().withQuoteChar('"');
-            MappingIterator<CSV.AddedStructure> personIter = new CsvMapper().readerFor(CSV.AddedStructure.class).with(schema).readValues(file);
-            return personIter.readAll().stream().peek(r -> r.setName(StringUtils.escapeChars(r.getName()))).collect(Collectors.toList());
+            MappingIterator<CSV.AddedStructure> iter = new CsvMapper().readerFor(CSV.AddedStructure.class).with(schema).readValues(file);
+            return iter.readAll().stream().peek(r -> r.setName(StringUtils.escapeChars(r.getName()))).collect(Collectors.toList());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -606,6 +616,7 @@ public class TiviUtils {
     public static void createUpdateQueries(boolean extraValidation) {
 
         List<String> warnings = new ArrayList<>();
+        List<CSV.RenamedStructure> renamed = new ArrayList<>();
 
         List<CSV.MySqlStructure> originRecords = readCsv();
         List<CSV.MySqlStructure> records = readXls(xlsUpdatePath());
@@ -628,6 +639,7 @@ public class TiviUtils {
             Map<String, String> vals = new LinkedHashMap<>();
             if (!originRecords.get(k).getName().equals(records.get(k).getName())) {
                 vals.put("name", records.get(k).getName().trim());
+                renamed.add(new CSV.RenamedStructure(getSid(records.get(k).getName()), records.get(k).getName(), originRecords.get(k).getName()));
             }
             if (!getSid(originRecords.get(k).getName()).equals(getSid(records.get(k).getName()))) {
                 vals.put("sid", getSid(records.get(k).getName()));
@@ -659,6 +671,8 @@ public class TiviUtils {
             createList.add(formatCreate(record.getSid(), record.getName(), record.getCpu(), record.getGame(), record.getRom(), true));
         }
         IOUtils.saveToFile(inputDir.resolve(platform + "_create.sql"), String.join("\n", createList));
+
+        saveRenamedCsv(renamed);
 
         if (!warnings.isEmpty()) {
             LOGGER.warn("UPDATE warnings:");
