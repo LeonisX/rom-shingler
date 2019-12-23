@@ -6,9 +6,6 @@
 TODO when compare titles - delete (Unl), (Wxn) at the end of title (add game, rom); to lower case
 Need unified normalization code
 
-TODO fix - WXN, VT03 games were unpacked to nes_multi
-
-
 TODO when generate create.xlsx - replace &, ' to &amp;. &rsquo;, may be other
 
 

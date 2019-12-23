@@ -428,7 +428,7 @@ public class TiviUtils {
         GROUP_MAP.put("public domain", "pd");
         GROUP_MAP.put("multicarts collection", "multi");
         GROUP_MAP.put("vt03 collection", "vt03");
-        GROUP_MAP.put("wxn collection", "multi");
+        GROUP_MAP.put("wxn collection", "wxn");
     }
 
     private static Path getUniquePath() {
