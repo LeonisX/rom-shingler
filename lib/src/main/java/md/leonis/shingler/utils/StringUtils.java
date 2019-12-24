@@ -69,7 +69,7 @@ public class StringUtils {
         name = name.replace("(", "-");
 
         // Get first 21 characters + "~" + tail.
-        return name.substring(0, 21) + "~" + name.substring(name.length() - 42) + ext;
+        return name.substring(0, 21) + "-" + name.substring(name.length() - 42) + ext;
     }
 
     private static String removeSpecialChars(String fileName) {
