@@ -3,15 +3,6 @@
 // SELECT sid, name, cpu, game, rom FROM `base_nes` ORDER BY n LIMIT 0, 50000
 // SELECT sid, name, '' as cpu, '' as game, '' as rom FROM `base_sg1000` ORDER BY n LIMIT 0, 50000
 
-Roms list - size == -1
-
-Replace ~ to -; Full length: 64
-
-нормализация - lowercase, минусы в пробелы
-
-TODO when compare titles - delete (Unl), (Wxn) at the end of title (add game, rom); to lower case
-Need unified normalization code
-
 TODO create - act = 'yes'
 
 TODO all bases - revise regions, names!!!

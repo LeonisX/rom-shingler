@@ -14,6 +14,15 @@ public class StringUtils {
     private static final int MAX_LENGTH = 64;
 
     public static String normalize(String fileName) {
+        fileName = fileName.replace(" (SG-1000)", "");
+        fileName = fileName.replace(" (SC-3000)", "");
+        fileName = fileName.replace(" (SF-7000)", "");
+        fileName = fileName.replace(" (MV)", "");
+        fileName = fileName.replace(" (Prototype)", "");
+        fileName = fileName.replace(" (Sample)", "");
+        fileName = fileName.replace(" (Beta)", "");
+        fileName = fileName.replace(" (Unl)", "");
+        fileName = fileName.replace(" (Wxn)", "");
         String result = StringUtils.removeSpecialChars(fileName.replace("_", " ")); // remove special symbols
         return StringUtils.force63(result).replace(" ", "_");
     }
