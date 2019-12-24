@@ -767,7 +767,7 @@ public class TiviUtils {
                 }
                 IOUtils.copyFile(sourceFile, destFile);
             } else if (!copied.contains(source)) {
-                LOGGER.warn("File is not found: {}", sourceFile.toAbsolutePath().toString());
+                LOGGER.warn("File isn't found: {}", sourceFile.toAbsolutePath().toString());
             }
             copied.add(source);
         }
