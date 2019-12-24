@@ -734,20 +734,20 @@ public class TiviUtils {
 
         long modified = new Date().getTime() / 1000;
 
-        String format = "INSERT INTO `base_%s` VALUES (null, '%s', '%s','%s', '%s', '%s'," + // n, platform, created, modified, sid, cpu
-                "'%s''," + // name
+        String format = "INSERT INTO `base_%s` VALUES (99999, '%s', '%s','%s', '%s', '%s'," + // n, platform, created, modified, sid, cpu
+                "'%s'," + // name
                 "'',''," + // descript, keywords
-                "'%s''," + // region
+                "'%s'," + // region
                 "'',''," + // publisher, developer
                 "'','','0'," + // god, god1, ngamers
                 "'',''," + //type, genre
                 "'','','','','','',''," + // images 1-7
                 "'','','','','','',''," + // images 8-14
-                "'%s', 0, '', 0, '%s','yes'," + //game, ?, music, ?, rom, playable
+                "'%s', 0, '', 0, '%s','yes',0," + //game, ?, music, ?, rom, playable
                 "'',''," + // analog, drname
                 "'',''," + // cros, serie
                 "'',''," + // text1, text2
-                "'0', '0','0', '0', 0)"; //rating, user ratings, viewes, ?, act //TODO add act: ", 'yes'"
+                "'0', '0','0', '0', 0);"; //rating, user ratings, viewes, ?, act //TODO add act: ", 'yes'"
 
         String region = "";
 

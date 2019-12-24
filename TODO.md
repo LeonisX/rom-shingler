@@ -7,11 +7,7 @@ Roms list - size == -1
 
 Replace ~ to -; Full length: 64
 
-TODO fix
-
-INSERT INTO `base_sg1000` VALUES (null, 'sg1000', '1576589698','1576589698', 'c', 'cabbage-patch-kids','Cabbage Patch Kids'','','',''','','','','','0','','','','','','','','','','','','','','','','','http://tv-roms.narod.ru/games/sg1000/Cabbage_Patch_Kids.7z', 0, '', 0, 'http://cominf0.narod.ru/mame/sg1000/Cabbage_Patch_Kids.zip','yes','','','','','','','0', '0','0', '0', 0)
-INSERT INTO `base_sg1000` VALUES (99999, 'sg1000', '1576589698','1576589698', 'c', 'cabbage-patch-kids','Cabbage Patch Kids','','','','','','','','0','','','','','','','','','','','','','','','','','http://tv-roms.narod.ru/games/sg1000/Cabbage_Patch_Kids.7z', 0, '', 0, 'http://cominf0.narod.ru/mame/sg1000/Cabbage_Patch_Kids.zip','yes',0,'','','','','','','0', '0','0', '0', 0);
-
+нормализация - lowercase, минусы в пробелы
 
 TODO when compare titles - delete (Unl), (Wxn) at the end of title (add game, rom); to lower case
 Need unified normalization code
