@@ -18,6 +18,7 @@ public class StringUtils {
         fileName = fileName.replace(" (SC-3000)", "");
         fileName = fileName.replace(" (SF-7000)", "");
         fileName = fileName.replace(" (MV)", "");
+        fileName = fileName.replace(" (Unreleased)", "");
         fileName = fileName.replace(" (Prototype)", "");
         fileName = fileName.replace(" (Sample)", "");
         fileName = fileName.replace(" (Beta)", "");
