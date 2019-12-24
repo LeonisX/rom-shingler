@@ -115,7 +115,7 @@ public class TiviUtils {
         XSSFSheet sheet = workbook.createSheet("Sheet-1");
 
         int rowNum = 0;
-        System.out.println("Creating excel");
+        LOGGER.info("Creating excel: {}", path);
 
         for (CSV.MySqlStructure record : records) {
             Row row = sheet.createRow(rowNum++);
@@ -221,6 +221,8 @@ public class TiviUtils {
 
         IOUtils.backupFile(xlsCreatePath());
         writeXls(xlsCreatePath(), records);
+
+        LOGGER.info("Done");
     }
 
     // html+dump+force63+split
@@ -522,14 +524,25 @@ public class TiviUtils {
         LOGGER.info("Processing groups...");
 
         AtomicInteger i = new AtomicInteger(0);
-        families.values().stream().filter(f -> f.getType() == FamilyType.GROUP).forEach(f -> processGroup(lists, f.getName(), f, f.getMembers().stream().sorted(Comparator.comparing(Name::getName)).collect(Collectors.toList()), i, games));
+        families.values().stream().filter(f -> f.getType() == FamilyType.GROUP).forEach(f -> processGroup(lists, f.getName(), f, f.getMembers().stream().sorted(Comparator.comparing(Name::getName)).collect(Collectors.toList()), i, games, f.getMembers().size() > DIR_SIZE));
 
         LOGGER.info("Processing hacks...");
+        Map<Name, Family> hackedFamilyMap = new HashMap<>();
+
         families.values().stream().map(f -> {
             Family newFamily = new Family(f);
             newFamily.setMembers(f.getMembers().stream().filter(n -> platformsByCpu.get(platform).isHack(n.getName())).sorted(Comparator.comparing(Name::getName)).collect(Collectors.toList()));
             return newFamily;
-        }).filter(f -> !f.getMembers().isEmpty()).sorted(Comparator.comparing(Family::getName)).forEach(f -> processGroup(lists, "hack", f, f.getMembers(), i, games));
+        }).filter(f -> !f.getMembers().isEmpty()).forEach(f -> f.getMembers().forEach(m -> hackedFamilyMap.put(m, f)));
+
+        lists.getHtmlLines().add("    <tr><td></td></tr>");
+        lists.getHtmlLines().add("    <tr><td><b>Hacks</b></td></tr>");
+        lists.getTxtLines().add("");
+        lists.getTxtLines().add("Hacks");
+
+        boolean separateHacks = hackedFamilyMap.size() > DIR_SIZE;
+        AtomicInteger k = new AtomicInteger(0);
+        hackedFamilyMap.entrySet().stream().sorted(Comparator.comparing(e -> e.getKey().getName())).forEach(e -> processMember(lists, "hack", e.getValue(), e.getKey(), k, games, separateHacks));
 
         //List<Name> hacks = families.values().stream().flatMap(f -> f.getMembers().stream()).filter(n -> platformsByCpu.get(platform).isHack(n.getName())).sorted(Comparator.comparing(Name::getName)).collect(Collectors.toList());
         //processGroup(lists, new Family("hack", null, null), hacks, i, games);
@@ -570,7 +583,7 @@ public class TiviUtils {
         LOGGER.info("Done");
     }
 
-    private static void processGroup(TiViLists lists, String groupName, Family f, List<Name> members, AtomicInteger i, List<String> games) {
+    private static void processGroup(TiViLists lists, String groupName, Family f, List<Name> members, AtomicInteger i, List<String> games, boolean needToSeparate) {
 
         String title = Character.toUpperCase(groupName.charAt(0)) + groupName.substring(1) + ":";
         lists.getHtmlLines().add("    <tr><td></td></tr>");
@@ -578,38 +591,35 @@ public class TiviUtils {
         lists.getTxtLines().add("");
         lists.getTxtLines().add(title);
 
-        boolean needToSeparate = members.size() > DIR_SIZE;
-        AtomicInteger g = new AtomicInteger(1);
+        members.forEach(n -> processMember(lists, groupName, f, n, i, games, needToSeparate));
+    }
 
-        members.forEach(n -> {
+    private static void processMember(TiViLists lists, String groupName, Family f, Name name, AtomicInteger i, List<String> games, boolean needToSeparate) {
 
-            String num = needToSeparate ? "" + (int) Math.ceil(g.getAndIncrement() / DIR_SEPARATE_SIZE) : "";
-            /*Path destPath = outputDir.resolve(platform).resolve("games").resolve(num);
-            IOUtils.createDirectories(destPath);*/
+        String num = needToSeparate ? "" + (int) Math.ceil((i.getAndIncrement() + 1) / DIR_SEPARATE_SIZE) : "";
 
-            String sourceRomName = n.getName();
-            String zipRomName = StringUtils.normalize(StringUtils.replaceExt(sourceRomName, "zip"));
+        String sourceRomName = name.getName();
+        String zipRomName = StringUtils.normalize(StringUtils.replaceExt(sourceRomName, "zip"));
 
-            Path sourceRom = romsCollection.getRomsPath().resolve(sourceRomName);
-            String dir = GROUP_MAP.get(groupName.toLowerCase());
-            if (dir == null) {
-                dir = StringUtils.normalize(groupName.replace("_", " ")).toLowerCase();
-            }
-            dir = String.format("%s_%s%s", platform, dir, num);
+        Path sourceRom = romsCollection.getRomsPath().resolve(sourceRomName);
+        String dir = GROUP_MAP.get(groupName.toLowerCase());
+        if (dir == null) {
+            dir = StringUtils.normalize(groupName.replace("_", " ")).toLowerCase();
+        }
+        dir = String.format("%s_%s%s", platform, dir, num);
 
-            Path destZipRom = getUniquePath().resolve(dir).resolve(zipRomName);
+        Path destZipRom = getUniquePath().resolve(dir).resolve(zipRomName);
 
-            if (isIO) {
-                ArchiveUtils.compressZip(destZipRom.toAbsolutePath().toString(), Collections.singletonList(sourceRom.toAbsolutePath().toString()), i.getAndIncrement());
-            }
+        if (isIO) {
+            ArchiveUtils.compressZip(destZipRom.toAbsolutePath().toString(), Collections.singletonList(sourceRom.toAbsolutePath().toString()), i.get());
+        }
 
-            String shortRomPath = formatShortUniqueRomPath(dir, zipRomName);
-            int fileSize = isIO ? (int) IOUtils.fileSize(destZipRom) / 1024 : -1;
-            lists.getHtmlLines().add(formatTableCell(formatUniqueRomPath(shortRomPath), sourceRomName, fileSize));
-            lists.getTxtLines().add(shortRomPath);
+        String shortRomPath = formatShortUniqueRomPath(dir, zipRomName);
+        int fileSize = isIO ? (int) IOUtils.fileSize(destZipRom) / 1024 : -1;
+        lists.getHtmlLines().add(formatTableCell(formatUniqueRomPath(shortRomPath), sourceRomName, fileSize));
+        lists.getTxtLines().add(shortRomPath);
 
-            processRomFamily(lists, n, f, shortRomPath, games);
-        });
+        processRomFamily(lists, name, f, shortRomPath, games);
     }
 
     private static void processRomFamily(TiViLists lists, Name n, Family f, String shortRomPath, List<String> games) {

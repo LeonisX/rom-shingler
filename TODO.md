@@ -7,6 +7,9 @@ TODO create - act = 'yes'
 
 TODO all bases - revise regions, names!!!
 
+TODO при повторном проходе необходимо обновлять ссылки. Это очень актуально для больших баз, например NES,
+поскольку группируем по 1000, и в зависимости от количества игр игры, хаки, pd могут менять свою группу.
+
 TODO when open platforms - full clean families, relations
 
 TODO full refactor TIVI stuff, other new code
