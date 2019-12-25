@@ -3,6 +3,11 @@
 // SELECT sid, name, cpu, game, rom FROM `base_nes` ORDER BY n LIMIT 0, 50000
 // SELECT sid, name, '' as cpu, '' as game, '' as rom FROM `base_sg1000` ORDER BY n LIMIT 0, 50000
 
+
+TODO перегенерить всё для NES, залить на сайты, cominf0 - убрать хаки, pd
+SMS (cominf0)
+TODO  sg-1000 перегенерить - непонятно что с roms
+
 TODO create - act = 'yes'
 
 TODO all bases - revise regions, names!!!

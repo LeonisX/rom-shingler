@@ -8,10 +8,17 @@ import java.util.List;
 
 import static md.leonis.shingler.model.ConfigHolder.platform;
 import static md.leonis.shingler.model.ConfigHolder.platformsByCpu;
+import static org.apache.commons.lang3.StringUtils.repeat;
 
 public class StringUtils {
 
     private static final int MAX_LENGTH = 64;
+
+    public static String normalize(String fileName, String ext) {
+        String stub = repeat("|", ext.length() + 1);
+        String result = normalize(fileName + stub);
+        return StringUtils.addExt(result.replace(stub, ""), ext);
+    }
 
     public static String normalize(String fileName) {
         fileName = fileName.replace(" (SG-1000)", "");

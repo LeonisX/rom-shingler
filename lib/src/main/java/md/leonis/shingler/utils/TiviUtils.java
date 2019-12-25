@@ -288,7 +288,7 @@ public class TiviUtils {
                 for (List<String> chunk : result) {
 
                     sourceArchiveName = String.format("%s (part %s).7z", t, i);
-                    String destArchiveName = StringUtils.normalize(String.format("%s part %s.7z", t, i).replace("_", " "));
+                    String destArchiveName = StringUtils.normalize(String.format("%s part %s", t, i).replace("_", " "), "7z");
 
                     if (isIO) {
                         ArchiveUtils.compress7z(destArchiveName, chunk, i++);
@@ -502,7 +502,7 @@ public class TiviUtils {
         familyMap.entrySet().stream().sorted(Comparator.comparing(e -> e.getKey().getName())).forEach(e -> {
             String sourceRomName = e.getKey().getName();
             //TODO collizions
-            String zipRomName = StringUtils.normalize(StringUtils.addExt(e.getKey().getCleanName(), "zip"));
+            String zipRomName = StringUtils.normalize(e.getKey().getCleanName(), "zip");
 
             String platformGroup = needToSeparate ? String.format("%s%s", platform, (int) Math.ceil(g.getAndIncrement() / DIR_SEPARATE_SIZE)) : platform;
 
@@ -666,7 +666,7 @@ public class TiviUtils {
     private static void addGameIfNeed(CSV.MySqlStructure record, Family f, List<String> games) {
 
         if (org.apache.commons.lang3.StringUtils.isBlank(record.getGame())) {
-            String archiveName = StringUtils.addExt(StringUtils.normalize(f.getName()), "7z");
+            String archiveName = StringUtils.normalize(f.getName(), "7z");
             String fullArchiveName = games.stream().filter(g -> g.endsWith("/" + archiveName)).findFirst().orElse(null);
             if (null != fullArchiveName) {
                 record.setGame(fullArchiveName);

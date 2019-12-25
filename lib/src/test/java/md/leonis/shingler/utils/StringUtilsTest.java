@@ -106,6 +106,42 @@ class StringUtilsTest {
     @Test
     void normalize() {
         assertEquals("Ariel-Little_Mermaid", StringUtils.normalize("Ariel - The Little Mermaid"));
+
+        assertEquals("Famicom_Doubutsu_Seitai_Zukan-KatteniShirokuma-MoriwoSukuenoMaki", StringUtils.normalize("Famicom Doubutsu Seitai Zukan! - Katte ni Shirokuma - Mori wo Sukue no Maki!"));
+        assertEquals("Family_Trainer_10-Rai_Rai_Kyonshis-Baby_Kyonshi_noAmidaDaibouken", StringUtils.normalize("Family Trainer 10 - Rai Rai! Kyonshis - Baby Kyonshi no Amida Daibouken"));
+        assertEquals("Hokuto_no_Ken_4-Shichisei_Haken_Den-Hokuto_Shinken_no_Kanata_e", StringUtils.normalize("Hokuto no Ken 4 - Shichisei Haken Den - Hokuto Shinken no Kanata e"));
+        assertEquals("Kuai_Le_Bi_Qi_III-Di_Qiu_Zhan_Shi_Happy_Biqi_III-World_Fighter", StringUtils.normalize("Kuai Le Bi Qi III - Di Qiu Zhan Shi (Happy Biqi III - World Fighter)"));
+
+        assertEquals("Famicom_Doubutsu_Seit-ukan-KatteniShirokuma-MoriwoSukuenoMaki.7z", StringUtils.normalize("Famicom Doubutsu Seitai Zukan! - Katte ni Shirokuma - Mori wo Sukue no Maki!", "7z"));
+        assertEquals("Family_Trainer_10-Rai_RaiKyonshis-BabyKyonshinoAmidaDaibouken.7z", StringUtils.normalize("Family Trainer 10 - Rai Rai! Kyonshis - Baby Kyonshi no Amida Daibouken", "7z"));
+        assertEquals("Hokuto_no_Ken_4-Shichisei_Haken_Den-Hokuto_Shinken_no_Kanatae.7z", StringUtils.normalize("Hokuto no Ken 4 - Shichisei Haken Den - Hokuto Shinken no Kanata e", "7z"));
+        assertEquals("Kuai_Le_Bi_Qi_III-Di_Qiu_Zhan_Shi_Happy_Biqi_III-WorldFighter.7z", StringUtils.normalize("Kuai Le Bi Qi III - Di Qiu Zhan Shi (Happy Biqi III - World Fighter)", "7z"));
+
+        assertEquals("Famicom_Doubutsu_Seit-kan-KatteniShirokuma-MoriwoSukuenoMaki.zip", StringUtils.normalize("Famicom Doubutsu Seitai Zukan! - Katte ni Shirokuma - Mori wo Sukue no Maki!", "zip"));
+        assertEquals("Family_Trainer_10-RaiRaiKyonshis-BabyKyonshinoAmidaDaibouken.zip", StringUtils.normalize("Family Trainer 10 - Rai Rai! Kyonshis - Baby Kyonshi no Amida Daibouken", "zip"));
+        assertEquals("Hokuto_no_Ken_4-Shichisei_Haken_Den-Hokuto_Shinken_noKanatae.zip", StringUtils.normalize("Hokuto no Ken 4 - Shichisei Haken Den - Hokuto Shinken no Kanata e", "zip"));
+        assertEquals("Kuai_Le_Bi_Qi_III-Di_Qiu_Zhan_Shi_Happy_BiqiIII-WorldFighter.zip", StringUtils.normalize("Kuai Le Bi Qi III - Di Qiu Zhan Shi (Happy Biqi III - World Fighter)", "zip"));
+
+        assertEquals("Hokuto_no_Ken_4-Shich-hisei_Haken_Den-HokutoShinkennoKanatae.zip", StringUtils.normalize("Hokuto_no_Ken_4-Shich-hisei_Haken_Den-Hokuto_Shinken_no_Kanata_e", "zip"));
+        assertEquals("Family_Trainer_10-Rai-aiKyonshis-BabyKyonshinoAmidaDaibouken.zip", StringUtils.normalize("Family_Trainer_10-Rai-Rai_Kyonshis-Baby_Kyonshi_noAmidaDaibouken", "zip"));
+
+        assertEquals("SD_Gundam_Gaiden-Knight_Gundam_Monogatari3-DensetsunoKishiDan.7z", StringUtils.normalize("SD Gundam Gaiden - Knight Gundam Monogatari 3 - Densetsu no Kishi Dan", "7z"));
+        assertEquals("Yamamura_Misa_Suspense-Kyouto_Hana_no_Misshitsu_SatsujinJiken.7z", StringUtils.normalize("Yamamura Misa Suspense - Kyouto Hana no Misshitsu Satsujin Jiken", "7z"));
+        assertEquals("Zui_Zhong_Huan_XiangIVGuangYuAnShuiJingFenZhengFinalFantasyIV.7z", StringUtils.normalize("Zui Zhong Huan Xiang IV Guang Yu An Shui Jing Fen Zheng (Final Fantasy IV)", "7z"));
+
+        assertEquals("2-in-1-Mortal_Kombat_3_Extra_60_People-SuperShinobiKing005Ch.zip", StringUtils.normalize("2-in-1 - Mortal Kombat 3 Extra 60 People + Super Shinobi (King005) (Ch)", "zip"));
+        assertEquals("180-in-1_15-in-1_18-i--in-158-in-1160-in-1288-in-1SJ-0027p1U.zip", StringUtils.normalize("180-in-1 (15-in-1, 18-in-1, 30-in-1, 52-in-1, 58-in-1, 160-in-1, 288-in-1) (SJ-0027) [p1][U][!]", "zip"));
+        assertEquals("SD_Gundam_Gaiden-Knight_GundamMonogatari3-DensetsunoKishiDan.zip", StringUtils.normalize("SD Gundam Gaiden - Knight Gundam Monogatari 3 - Densetsu no Kishi Dan", "zip"));
+        assertEquals("Yamamura_Misa_Suspense-Kyouto_Hana_no_MisshitsuSatsujinJiken.zip", StringUtils.normalize("Yamamura Misa Suspense - Kyouto Hana no Misshitsu Satsujin Jiken", "zip"));
+
+        assertEquals("Phantasy_Star-Hordes-f_Nei-Noah_VersionbyKomradeV144PS12Hack.zip", StringUtils.normalize("Phantasy_Star-Hordes_-f_Nei-Noah_Version_by_Komrade_V144PS12Hack", "zip"));
+        assertEquals("Rodrigo_2_em-Mate_O_P-_Papai_Noel-Versao_deNatalTeddyBoyHack.zip", StringUtils.normalize("Rodrigo_2_em-Mate_O_P-_Papai_Noel-Versao_de_Natal_Teddy_Boy_Hack", "zip"));
+
+        assertEquals("DCEvolutionnet_Intro-by_Ventzislav_Tzvetkov_MazeApathyV100PD.zip", StringUtils.normalize("DCEvolutionnet_Intro_-by_Ventzislav_Tzvetkov_Maze_Apathy_V100_PD", "zip"));
+        assertEquals("Sega_Genesis_6-Button-rollerv2byCharlesMacDonaldpooraussiePD.zip", StringUtils.normalize("Sega_Genesis_6-Button-Controllerv2byCharlesMacDonaldpooraussiePD", "zip"));
+        assertEquals("Sega_Mega_DriveGenesi-nControllerTestV10byCharlesMacDonaldPD.zip", StringUtils.normalize("Sega_Mega_DriveGenesi-uttonControllerTestV10byCharlesMacDonaldPD", "zip"));
+
+
     }
 
     @Test
