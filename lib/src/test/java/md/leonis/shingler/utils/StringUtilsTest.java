@@ -134,12 +134,12 @@ class StringUtilsTest {
         assertEquals("SD_Gundam_Gaiden-Knight_GundamMonogatari3-DensetsunoKishiDan.zip", StringUtils.normalize("SD Gundam Gaiden - Knight Gundam Monogatari 3 - Densetsu no Kishi Dan", "zip"));
         assertEquals("Yamamura_Misa_Suspense-Kyouto_Hana_no_MisshitsuSatsujinJiken.zip", StringUtils.normalize("Yamamura Misa Suspense - Kyouto Hana no Misshitsu Satsujin Jiken", "zip"));
 
-        assertEquals("Phantasy_Star-Hordes-f_Nei-Noah_VersionbyKomradeV144PS12Hack.zip", StringUtils.normalize("Phantasy_Star-Hordes_-f_Nei-Noah_Version_by_Komrade_V144PS12Hack", "zip"));
-        assertEquals("Rodrigo_2_em-Mate_O_P-_Papai_Noel-Versao_deNatalTeddyBoyHack.zip", StringUtils.normalize("Rodrigo_2_em-Mate_O_P-_Papai_Noel-Versao_de_Natal_Teddy_Boy_Hack", "zip"));
+        assertEquals("Phantasy_Star-Hordes_of_Nei-NoahVersionbyKomradeV144PS12Hack.zip", StringUtils.normalize("Phantasy Star - Hordes of Nei - Noah Version by Komrade V1.44 (PS 1.2 Hack)", "zip"));
+        assertEquals("Rodrigo_2_em-Mate_O_Papai_Noel-Versao_de_Natal_Teddy_BoyHack.zip", StringUtils.normalize("Rodrigo 2 em - Mate O Papai Noel - Versao de Natal (Teddy Boy Hack)", "zip"));
 
-        assertEquals("DCEvolutionnet_Intro-by_Ventzislav_Tzvetkov_MazeApathyV100PD.zip", StringUtils.normalize("DCEvolutionnet_Intro_-by_Ventzislav_Tzvetkov_Maze_Apathy_V100_PD", "zip"));
-        assertEquals("Sega_Genesis_6-Button-rollerv2byCharlesMacDonaldpooraussiePD.zip", StringUtils.normalize("Sega_Genesis_6-Button-Controllerv2byCharlesMacDonaldpooraussiePD", "zip"));
-        assertEquals("Sega_Mega_DriveGenesi-nControllerTestV10byCharlesMacDonaldPD.zip", StringUtils.normalize("Sega_Mega_DriveGenesi-uttonControllerTestV10byCharlesMacDonaldPD", "zip"));
+        assertEquals("DCEvolutionnet_Intro_by_Ventzislav_Tzvetkov_MazeApathyV100PD.zip", StringUtils.normalize("DCEvolution.net Intro by Ventzislav Tzvetkov, Maze & Apathy V1.00 (PD)", "zip"));
+        assertEquals("Sega_Genesis_6-Button-rollerv2byCharlesMacDonaldpooraussiePD.zip", StringUtils.normalize("Sega Genesis 6-Button Controller v2 by Charles MacDonald & pooraussie (PD)", "zip"));
+        assertEquals("Sega_Mega_DriveGenesi-nControllerTestV10byCharlesMacDonaldPD.zip", StringUtils.normalize("Sega Mega Drive & Genesis 6 Button Controller Test V1.0 by Charles MacDonald (PD)", "zip"));
 
 
     }
