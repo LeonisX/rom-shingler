@@ -739,8 +739,8 @@ public class TiviUtils {
             vals.put("cpu", records.get(k).getCpu().trim());
 
             vals.put("modified", Long.toString(new Date().getTime() / 1000));
-            String sets = vals.entrySet().stream().map(e -> String.format("`%s`='%s'", e.getKey(), escapeQuotes(e.getValue()))).collect(Collectors.joining(", "));
-            updateList.add(String.format("UPDATE `base_%s` SET %s WHERE name='%s';", platform, sets, escapeQuotes(originRecords.get(k).getName())));
+            String sets = vals.entrySet().stream().map(e -> String.format("`%s`='%s'", e.getKey(), e.getValue())).collect(Collectors.joining(", "));
+            updateList.add(String.format("UPDATE `base_%s` SET %s WHERE name='%s';", platform, sets, originRecords.get(k).getName()));
         }
         IOUtils.saveToFile(inputDir.resolve(platform + "_update.sql"), String.join("\n", updateList));
 
@@ -827,7 +827,7 @@ public class TiviUtils {
             LOGGER.warn("Rom is blank for {}", name);
         }
 
-        return String.format(format, platform, platform, modified, modified, sid.trim(), cpu.trim(), escapeQuotes(name.trim()), region.trim(), game, rom);
+        return String.format(format, platform, platform, modified, modified, sid.trim(), cpu.trim(), name.trim(), region.trim(), game, rom);
     }
 
     public static String getSid(String name) {

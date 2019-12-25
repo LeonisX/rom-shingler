@@ -4,9 +4,13 @@
 // SELECT sid, name, '' as cpu, '' as game, '' as rom FROM `base_sg1000` ORDER BY n LIMIT 0, 50000
 
 
-TODO перегенерить всё для NES, залить на сайты, cominf0 - убрать хаки, pd
-SMS (cominf0)
-TODO  sg-1000 перегенерить - непонятно что с roms
+TODO перегенерить всё, delete cominf0 from update/create code
+
+TODO find ', " % " in new names
+
+TODO check - replace ', % when substitue new names (create, update)
+
+TODO unique cpu, name!!!!!!!!!!!
 
 TODO create - act = 'yes'
 
