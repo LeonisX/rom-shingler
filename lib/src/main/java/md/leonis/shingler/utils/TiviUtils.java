@@ -147,6 +147,8 @@ public class TiviUtils {
 
     private static List<CSV.MySqlStructure> readXls(Path path) {
 
+        int r = -1, c = -1;
+
         try {
             FileInputStream excelFile = new FileInputStream(path.toFile());
             Workbook workbook = new XSSFWorkbook(excelFile);
@@ -155,41 +157,50 @@ public class TiviUtils {
             List<CSV.MySqlStructure> records = new ArrayList<>();
 
             for (Row currentRow : datatypeSheet) {
+                r = currentRow.getRowNum();
                 CSV.MySqlStructure record = new CSV.MySqlStructure();
                 record.setName(readValue(currentRow.getCell(1)));
 
-                if (currentRow.getCell(0) != null) {
-                    record.setSid(readValue(currentRow.getCell(0)));
+                c = 0;
+                if (currentRow.getCell(c) != null) {
+                    record.setSid(readValue(currentRow.getCell(c)));
                 } else {
                     LOGGER.warn("Empty SID for {}", record.getName());
                     record.setSid(getSid(record.getName()));
                 }
 
-                if (currentRow.getCell(2) != null) {
-                    String value = readValue(currentRow.getCell(2));
+                c = 2;
+                if (currentRow.getCell(c) != null) {
+                    String value = readValue(currentRow.getCell(c));
                     record.setCpu(value.equals("") ? StringUtils.cpu(record.getName()) : value);
                 } else {
                     record.setCpu(StringUtils.cpu(record.getName()));
                 }
-                if (currentRow.getCell(3) != null) {
-                    record.setGame(readValue(currentRow.getCell(3)));
+                c = 3;
+                if (currentRow.getCell(c) != null) {
+                    record.setGame(readValue(currentRow.getCell(c)));
                 }
-                if (currentRow.getCell(4) != null) {
-                    record.setRom(readValue(currentRow.getCell(4)));
+                c = 4;
+                if (currentRow.getCell(c) != null) {
+                    record.setRom(readValue(currentRow.getCell(c)));
                 }
-                if (currentRow.getCell(5) != null) {
-                    record.setOldName(readValue(currentRow.getCell(5)));
+                c = 5;
+                if (currentRow.getCell(c) != null) {
+                    record.setOldName(readValue(currentRow.getCell(c)));
                 }
                 records.add(record);
             }
             return records;
         } catch (Exception e) {
+            LOGGER.error("[{}, {}]", r, c);
             throw new RuntimeException(e);
         }
     }
 
     private static String readValue(Cell cell) {
-        if (cell.getCellType() == CellType.STRING) {
+        if (cell.getCellType() == CellType.BLANK) {
+            return "";
+        } else if (cell.getCellType() == CellType.STRING) {
             return cell.getStringCellValue();
         } else if (cell.getCellType() == CellType.NUMERIC) {
             return Integer.toString(Double.valueOf(cell.getNumericCellValue()).intValue());
