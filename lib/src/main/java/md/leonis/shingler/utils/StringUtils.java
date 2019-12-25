@@ -8,16 +8,13 @@ import java.util.List;
 
 import static md.leonis.shingler.model.ConfigHolder.platform;
 import static md.leonis.shingler.model.ConfigHolder.platformsByCpu;
-import static org.apache.commons.lang3.StringUtils.repeat;
 
 public class StringUtils {
 
     private static final int MAX_LENGTH = 64;
 
     public static String normalize(String fileName, String ext) {
-        String stub = repeat("|", ext.length() + 1);
-        String result = normalize(fileName + stub);
-        return StringUtils.addExt(result.replace(stub, ""), ext);
+        return normalize(fileName + "." + ext);
     }
 
     public static String normalize(String fileName) {
@@ -63,7 +60,7 @@ public class StringUtils {
         }
 
         // Delete all spaces, except two first, next symbol to upper case
-        name = deleteSpaces(name);
+        name = deleteSpaces(name, maxLength);
 
         if (name.length() <= maxLength) {
             return name + ext;
@@ -86,7 +83,7 @@ public class StringUtils {
         name = name.replace("(", "-");
 
         // Get first 21 characters + "~" + tail.
-        return name.substring(0, 21) + "-" + name.substring(name.length() - 42) + ext;
+        return name.substring(0, 21) + "-" + name.substring(name.length() - maxLength + 22) + ext;
     }
 
     private static String removeSpecialChars(String fileName) {
@@ -99,15 +96,15 @@ public class StringUtils {
         return fileName;
     }
 
-    private static String deleteSpaces(String name) {
-        if (name.length() <= MAX_LENGTH || name.split(" ", -1).length - 1 <= 2) {
+    private static String deleteSpaces(String name, int maxLength) {
+        if (name.length() <= maxLength || name.split(" ", -1).length - 1 <= 2) {
             return name;
         }
         int index = name.lastIndexOf(" ");
         if (index == -1) {
             return name;
         }
-        return deleteSpaces(name.substring(0, index) + name.substring(index + 1));
+        return deleteSpaces(name.substring(0, index) + name.substring(index + 1), maxLength);
     }
 
     public static String deleteSubstr(String substr, String name, int maxLength) {
