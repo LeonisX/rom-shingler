@@ -710,15 +710,15 @@ public class TiviUtils {
             if (isBlank(cpu) && isFinal) {
                 warnings.add("CPU is blank for " + cpu);
             } else {
-                validateCpu(name, warnings, cpus);
+                validateCpu(cpu, warnings, cpus);
             }
 
             if (isBlank(records.get(k).getGame()) && isFinal) {
-                warnings.add("Game is blank for " + records.get(k).getGame());
+                warnings.add("Game is blank for " + name);
             }
 
             if (isBlank(records.get(k).getRom()) && isFinal) {
-                warnings.add("Rom is blank for " + records.get(k).getRom());
+                warnings.add("Rom is blank for " + name);
             }
 
             Map<String, String> vals = new LinkedHashMap<>();
@@ -770,7 +770,7 @@ public class TiviUtils {
         saveRenamedCsv(renamed);
 
         if (!warnings.isEmpty()) {
-            LOGGER.warn("UPDATE warnings:");
+            LOGGER.warn("WARNINGS:");
             warnings.forEach(LOGGER::warn);
         }
 
@@ -783,7 +783,10 @@ public class TiviUtils {
             warnings.add("Unescaped character ' in: " + name);
         }
 
-        if (!getAllIndexes(name, "&").equals(getAllIndexes(name, "&amp;"))) {
+        Set<Integer> amps = getAllIndexes(name, "&amp;");
+        amps.addAll(getAllIndexes(name, "&rsquo;"));
+
+        if (!getAllIndexes(name, "&").equals(amps)) {
             warnings.add("Unescaped character & in: " + name);
         }
 
@@ -861,7 +864,7 @@ public class TiviUtils {
         if (isBlank(cpu) && isFinal) {
             warnings.add("CPU is blank for " + name);
         } else {
-            validateCpu(name, warnings, cpus);
+            validateCpu(cpu, warnings, cpus);
         }
 
         if (isNotBlank(game)) {
