@@ -3,6 +3,8 @@
 // SELECT sid, name, cpu, game, rom FROM `base_nes` ORDER BY n LIMIT 0, 50000
 // SELECT sid, name, '' as cpu, '' as game, '' as rom FROM `base_sg1000` ORDER BY n LIMIT 0, 50000
 
+TODO generate htmls based on excel files
+TODO regenerate html, replace on sites
 
 TODO при повторном проходе необходимо обновлять ссылки. Это очень актуально для больших баз, например NES,
 поскольку группируем по 1000, и в зависимости от количества игр игры, хаки, pd могут менять свою группу.

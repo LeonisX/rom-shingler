@@ -14,12 +14,14 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static java.nio.file.FileVisitResult.CONTINUE;
 import static md.leonis.shingler.model.ConfigHolder.families;
 import static md.leonis.shingler.utils.BinaryUtils.*;
 
@@ -47,6 +49,65 @@ public class IOUtils {
             LOGGER.error("Can't get list of files from dir: {}", folder.toString(), e);
         }
         return fileList;
+    }
+
+    public static class Finder extends SimpleFileVisitor<Path> {
+
+        private final PathMatcher matcher;
+        private int numMatches = 0;
+        private List<Path> results = new ArrayList<>();
+
+        Finder(String pattern) {
+            matcher = FileSystems.getDefault().getPathMatcher("glob:" + pattern);
+        }
+
+        // Compares the glob pattern against
+        // the file or directory name.
+        void find(Path file) {
+            Path name = file.getFileName();
+            if (name != null && matcher.matches(name)) {
+                numMatches++;
+                results.add(file);
+                //System.out.println(file);
+            }
+        }
+
+        // Prints the total number of
+        // matches to standard out.
+        void done() {
+            //System.out.println("Matched: " + numMatches);
+        }
+
+        // Invoke the pattern matching
+        // method on each file.
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+            find(file);
+            return CONTINUE;
+        }
+
+        // Invoke the pattern matching
+        // method on each directory.
+        @Override
+        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+            find(dir);
+            return CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult visitFileFailed(Path file, IOException exc) {
+            System.err.println(exc);
+            return CONTINUE;
+        }
+    }
+
+    public static List<Path> findFiles(Path startingDir, String pattern) throws IOException {
+        //String pattern = "*.zip";
+
+        Finder finder = new Finder(pattern);
+        Files.walkFileTree(startingDir, finder);
+        finder.done();
+        return finder.results;
     }
 
     @Measured

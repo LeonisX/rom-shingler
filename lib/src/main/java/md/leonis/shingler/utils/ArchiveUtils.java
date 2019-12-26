@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -20,7 +21,9 @@ public class ArchiveUtils {
 
     public static void compress7z(String name, List<String> members, int i) {
 
-        LOGGER.info("Compressing: {} [{}]|{}", name, members.size(), (i + 1) * 100.0 / families.size());
+        if (families != null) {
+            LOGGER.info("Compressing: {} [{}]|{}", name, members.size(), (i + 1) * 100.0 / families.size());
+        }
 
         String archiveName = name.endsWith(".7z") ? name : name + ".7z";
         archiveName = outputDir.resolve(platform).resolve(archiveName).toAbsolutePath().toString();
@@ -49,14 +52,18 @@ public class ArchiveUtils {
 
     public static void compressZip(String name, List<String> members, int i) {
 
-        LOGGER.info("Compressing: {} [{}]|{}", name, members.size(), (i + 1) * 100.0 / families.size());
+        if (families != null) {
+            LOGGER.info("Compressing: {} [{}]|{}", name, members.size(), (i + 1) * 100.0 / families.size());
+        }
 
         String archiveName = name.endsWith(".zip") ? name : name + ".zip";
         archiveName = outputDir.resolve(platform).resolve(archiveName).toAbsolutePath().toString();
 
         List<String> args = new ArrayList<>(Arrays.asList(
+                // 7z a -tzip -mx9 -mfb258 -mmt=off <archive_name> [<file_names>...]
+                System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-tzip", "-mx9", "-mfb258", "-mmt=off", '"' + archiveName + '"')
                 // 7z a -tzip -mx9 -mm=LZMA -md1536m -mfb273 -mmt=off <archive_name> [<file_names>...]
-                System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-tzip", "-mx9", "-mm=LZMA", "-md1536m", "-mfb273", "-mmt=off", '"' + archiveName + '"')
+                //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-tzip", "-mx9", "-mm=LZMA", "-md1536m", "-mfb273", "-mmt=off", '"' + archiveName + '"')
 
                 // 7z a -tzip -mx9 -mfb258 -mmt=off <archive_name> [<file_names>...]
                 // 7z a -tzip -mx9 -mm=Deflate64 -mfb257 -mmt=off
@@ -79,6 +86,98 @@ public class ArchiveUtils {
                     args.addAll(members.stream().map(n -> '"' + romsCollection.getRomsPath().resolve(n).toString() + '"').collect(Collectors.toList()));
                 }
 
+                processBuilder.command(args);
+            } else {
+                //TODO finish, test on Linux
+                processBuilder.command("7z", "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", "-mmt=off", "archive.7z", "...");
+            }
+
+            Process proc = processBuilder.start();
+            BufferedReader errBR = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
+            BufferedReader outBR = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+
+            int code = proc.waitFor();
+
+            if (code > 0) {
+                LOGGER.warn("Exit code: {}", code);
+                LOGGER.warn("Out message: {}", errBR.lines().collect(Collectors.joining("\n")));
+                LOGGER.warn("Error message: {}", outBR.lines().collect(Collectors.joining("\n")));
+                System.out.println(args);
+            }
+
+        } catch (Exception ex) {
+            LOGGER.error("Compression error", ex);
+        }
+    }
+
+
+    public static void compressZip(String archiveName, List<String> members) {
+
+        List<String> args = new ArrayList<>(Arrays.asList(
+                // 7z a -tzip -mx9 -mfb258 -mmt=off <archive_name> [<file_names>...]
+                System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-tzip", "-mx9", "-mfb258", "-mmt=off", '"' + archiveName + '"')
+                // 7z a -tzip -mx9 -mm=LZMA -md1536m -mfb273 -mmt=off <archive_name> [<file_names>...]
+                //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-tzip", "-mx9", "-mm=LZMA", "-md1536m", "-mfb273", "-mmt=off", '"' + archiveName + '"')
+
+                // 7z a -tzip -mx9 -mfb258 -mmt=off <archive_name> [<file_names>...]
+                // 7z a -tzip -mx9 -mm=Deflate64 -mfb257 -mmt=off
+        );
+
+        ProcessBuilder processBuilder = new ProcessBuilder();
+        boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
+
+        try {
+            if (isWindows) {
+                if (members.size() > 50) {
+                    File tmp = File.createTempFile("shg", "ar");
+                    IOUtils.saveToFile(tmp.toPath(), members);
+                    args.add("@" + tmp.getAbsolutePath());
+                } else {
+                    args.addAll(members.stream().map(n -> '"' + n + '"').collect(Collectors.toList()));
+                }
+
+                processBuilder.command(args);
+            } else {
+                //TODO finish, test on Linux
+                processBuilder.command("7z", "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", "-mmt=off", "archive.7z", "...");
+            }
+
+            Process proc = processBuilder.start();
+            BufferedReader errBR = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
+            BufferedReader outBR = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+
+            int code = proc.waitFor();
+
+            if (code > 0) {
+                LOGGER.warn("Exit code: {}", code);
+                LOGGER.warn("Out message: {}", errBR.lines().collect(Collectors.joining("\n")));
+                LOGGER.warn("Error message: {}", outBR.lines().collect(Collectors.joining("\n")));
+                System.out.println(args);
+            }
+
+        } catch (Exception ex) {
+            LOGGER.error("Compression error", ex);
+        }
+    }
+
+    public static void extract(Path path, Path outDir) {
+        // 7z e archive.zip -oc:\soft
+
+        List<String> args = new ArrayList<>(Arrays.asList(
+                // 7z a -tzip -mx9 -mfb258 -mmt=off <archive_name> [<file_names>...]
+                System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "e", '"' + path.toAbsolutePath().toString() + '"', "-o\"" + outDir.toAbsolutePath().toString() + '"')
+                // 7z a -tzip -mx9 -mm=LZMA -md1536m -mfb273 -mmt=off <archive_name> [<file_names>...]
+                //System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "a", "-tzip", "-mx9", "-mm=LZMA", "-md1536m", "-mfb273", "-mmt=off", '"' + archiveName + '"')
+
+                // 7z a -tzip -mx9 -mfb258 -mmt=off <archive_name> [<file_names>...]
+                // 7z a -tzip -mx9 -mm=Deflate64 -mfb257 -mmt=off
+        );
+
+        ProcessBuilder processBuilder = new ProcessBuilder();
+        boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
+
+        try {
+            if (isWindows) {
                 processBuilder.command(args);
             } else {
                 //TODO finish, test on Linux
