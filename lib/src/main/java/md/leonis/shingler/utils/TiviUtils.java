@@ -329,7 +329,7 @@ public class TiviUtils {
         IOUtils.saveToFile(inputDir.resolve(platform + "_games_unmapped.txt"), lists.getUnmappedLines());
         IOUtils.saveToFile(inputDir.resolve(platform + "_games_unmapped_families.txt"), lists.getUnmappedFamilies());
         IOUtils.saveToFile(inputDir.resolve(platform + "_games_unmapped_names.txt"), lists.getUnmappedNames().stream().sorted().map(r -> lists.getNormalizedMap().get(r).getName()).collect(Collectors.toList()));
-        IOUtils.saveToFile(inputDir.resolve(platform + "_create.sql"), lists.getCreateLines().stream().sorted().map(r -> formatCreate(getSid(r), r, StringUtils.cpu(r), null, null, false)).collect(Collectors.toList()));
+        //IOUtils.saveToFile(inputDir.resolve(platform + "_create.sql"), lists.getCreateLines().stream().sorted().map(r -> formatCreate(getSid(r), r, StringUtils.cpu(r), null, null, false, warnings)).collect(Collectors.toList()));
         IOUtils.saveToFile(inputDir.resolve(platform + "_htaccess.txt"), lists.getHtAccessLines());
 
         // save as excel
@@ -696,36 +696,45 @@ public class TiviUtils {
         List<CSV.MySqlStructure> records = readXls(xlsUpdatePath());
 
         Set<String> copied = new HashSet<>();
+        Set<String> names = new HashSet<>();
+        Set<String> cpus = new HashSet<>();
 
         List<String> updateList = new ArrayList<>();
         for (int k = 0; k < originRecords.size(); k++) {
 
-            if (isBlank(records.get(k).getCpu()) && isFinal) {
-                warnings.add("CPU is blank for " + records.get(k).getCpu());
+            String name = records.get(k).getName().trim();
+            validateName(name, warnings, names);
+
+            String cpu = records.get(k).getCpu().trim();
+
+            if (isBlank(cpu) && isFinal) {
+                warnings.add("CPU is blank for " + cpu);
+            } else {
+                validateCpu(name, warnings, cpus);
             }
 
-            if (isBlank(records.get(k).getCpu()) && isFinal) {
+            if (isBlank(records.get(k).getGame()) && isFinal) {
                 warnings.add("Game is blank for " + records.get(k).getGame());
             }
 
-            if (isBlank(records.get(k).getCpu()) && isFinal) {
+            if (isBlank(records.get(k).getRom()) && isFinal) {
                 warnings.add("Rom is blank for " + records.get(k).getRom());
             }
 
             Map<String, String> vals = new LinkedHashMap<>();
-            if (!originRecords.get(k).getName().equals(records.get(k).getName())) {
-                vals.put("name", records.get(k).getName().trim());
-                renamed.add(new CSV.RenamedStructure(getSid(records.get(k).getName()), records.get(k).getName(), originRecords.get(k).getName()));
+            if (!originRecords.get(k).getName().trim().equals(name)) {
+                vals.put("name", name);
+                renamed.add(new CSV.RenamedStructure(getSid(name), name, originRecords.get(k).getName()));
             }
             if (!getSid(originRecords.get(k).getName()).equals(getSid(records.get(k).getName()))) {
                 vals.put("sid", getSid(records.get(k).getName()));
             }
-            if (!originRecords.get(k).getGame().equals(records.get(k).getGame())) {
+            if (!originRecords.get(k).getGame().trim().equals(records.get(k).getGame().trim())) {
                 if (isNotBlank(records.get(k).getGame())) {
                     vals.put("game", formatRomPath(records.get(k).getGame().trim()));
                 }
             }
-            if (!originRecords.get(k).getRom().equals(records.get(k).getRom())) {
+            if (!originRecords.get(k).getRom().trim().equals(records.get(k).getRom().trim())) {
                 if (isNotBlank(records.get(k).getRom())) {
                     vals.put("rom", records.get(k).getRom().trim());
                 }
@@ -736,7 +745,7 @@ public class TiviUtils {
                 copyFinal(records.get(k).getRom(), "roms", copied);
             }
 
-            vals.put("cpu", records.get(k).getCpu().trim());
+            vals.put("cpu", cpu);
 
             vals.put("modified", Long.toString(new Date().getTime() / 1000));
             String sets = vals.entrySet().stream().map(e -> String.format("`%s`='%s'", e.getKey(), e.getValue())).collect(Collectors.joining(", "));
@@ -749,7 +758,7 @@ public class TiviUtils {
 
         List<String> createList = new ArrayList<>();
         for (CSV.MySqlStructure record : records) {
-            createList.add(formatCreate(record.getSid(), record.getName(), record.getCpu(), record.getGame(), record.getRom(), isFinal));
+            createList.add(formatCreate(record.getSid(), record.getName().trim(), record.getCpu().trim(), record.getGame().trim(), record.getRom().trim(), isFinal, warnings, names, cpus));
 
             if (isFinal) {
                 copyFinal(record.getGame(), "games", copied);
@@ -768,6 +777,42 @@ public class TiviUtils {
         LOGGER.info("Done");
     }
 
+    private static void validateName(String name, List<String> warnings, Set<String> names) {
+
+        if (name.contains("'")) {
+            warnings.add("Unescaped character ' in: " + name);
+        }
+
+        if (!getAllIndexes(name, "&").equals(getAllIndexes(name, "&amp;"))) {
+            warnings.add("Unescaped character & in: " + name);
+        }
+
+        if (names.contains(name)) {
+            warnings.add("Duplicate name: " + name);
+        } else {
+            names.add(name);
+        }
+    }
+
+    private static void validateCpu(String cpu, List<String> warnings, Set<String> cpus) {
+
+        if (cpus.contains(cpu)) {
+            warnings.add("Duplicate cpu: " + cpu);
+        } else {
+            cpus.add(cpu);
+        }
+    }
+
+    private static Set<Integer> getAllIndexes(String name, String substr) {
+        Set<Integer> result = new HashSet<>();
+        int index = name.indexOf(substr);
+        while (index >= 0) {
+            result.add(index);
+            index = name.indexOf(substr, index + 1);
+        }
+        return result;
+    }
+
     private static void copyFinal(String source, String path, Set<String> copied) {
         if (isIO && org.apache.commons.lang3.StringUtils.isNotBlank(source)) {
             Path sourceFile = outputDir.resolve(platform).resolve(path).resolve(source.trim());
@@ -784,9 +829,9 @@ public class TiviUtils {
         }
     }
 
-    private static String formatCreate(String sid, String name, String cpu, String game, String rom, boolean isFinal) {
+    private static String formatCreate(String sid, String name, String cpu, String game, String rom, boolean isFinal, List<String> warnings, Set<String> names, Set<String> cpus) {
 
-        //TODO n INC: SELECT MAX(n) AS max FROM base_".$catcpu
+        // n INC: SELECT MAX(n) AS max FROM base_".$catcpu
 
         long modified = new Date().getTime() / 1000;
 
@@ -807,27 +852,31 @@ public class TiviUtils {
 
         String region = "";
 
+        validateName(name, warnings, names);
+
         if (isBlank(sid) && isFinal) {
-            LOGGER.warn("SID is blank for {}", name);
+            warnings.add("SID is blank for " + name);
         }
 
         if (isBlank(cpu) && isFinal) {
-            LOGGER.warn("CPU is blank for {}", name);
+            warnings.add("CPU is blank for " + name);
+        } else {
+            validateCpu(name, warnings, cpus);
         }
 
         if (isNotBlank(game)) {
             game = formatRomPath(game).trim();
         } else if (isFinal) {
-            LOGGER.warn("Game is blank for {}", name);
+            warnings.add("Game is blank for " + name);
         }
 
         if (isNotBlank(rom)) {
             rom = rom.trim();
         } else if (isFinal) {
-            LOGGER.warn("Rom is blank for {}", name);
+            warnings.add("Rom is blank for " + name);
         }
 
-        return String.format(format, platform, platform, modified, modified, sid.trim(), cpu.trim(), name.trim(), region.trim(), game, rom);
+        return String.format(format, platform, platform, modified, modified, sid.trim(), cpu, name, region.trim(), game, rom);
     }
 
     public static String getSid(String name) {
