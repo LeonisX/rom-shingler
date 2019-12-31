@@ -1,6 +1,7 @@
 package md.leonis.shingler.model.nes;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.File;
 import java.io.RandomAccessFile;
@@ -17,7 +18,7 @@ public class UnifHeader {
 
     private static final String HEADER = "UNIF";
 
-    private byte[] header = new byte[4];
+    private String header;
     private byte[] chunk = new byte[4];
 
     private byte[] raw = new byte[1024];
@@ -28,13 +29,13 @@ public class UnifHeader {
     private int version;
 
     private boolean isUNIF() {
-        return new String(header, StandardCharsets.UTF_8).equals(HEADER);
+        return header.equals(HEADER);
     }
 
     public UnifHeader(File file) {
         try {
             RandomAccessFile f = new RandomAccessFile(file, "r");
-            f.readFully(header);
+            header = readString(f, 4);
 
             if (!isUNIF()) {
                 throw new RuntimeException("Not UNIF header");
@@ -42,18 +43,25 @@ public class UnifHeader {
 
             version = readLEInt(f);
 
-            f.readFully(new byte[24]);
+            readBytes(f, 24);
 
             boolean read = true;
 
+            /*if (file.getName().equals("Tin Choi Ma Li (Genius Merio Bros) (JMH MTV Corp) (Ch) [U].unf")) {
+                System.out.println(file);
+            }*/
+
             while (read) {
-                Chunk chunk = new Chunk(f);
-                read = !chunk.title.isEmpty();
-                if (chunk.title.equals("MAPR")) {
-                    mapper = chunk.value;
-                }
-                if (chunk.title.equals("NAME")) {
-                    name = chunk.value;
+                Chunk chunk = readChunk(f);
+                if (chunk == null) {
+                    read = false;
+                } else {
+                    if (chunk.title.equals("MAPR")) {
+                        mapper = chunk.value;
+                    }
+                    if (chunk.title.equals("NAME")) {
+                        name = chunk.value;
+                    }
                 }
             }
 
@@ -71,52 +79,89 @@ public class UnifHeader {
         }
     }
 
+    private static String readTag(RandomAccessFile f) {
+        return readString(f, 4);
+    }
+
+    private static String readString(RandomAccessFile f, int length) {
+        return new String(readBytes(f, length), StandardCharsets.UTF_8);
+    }
+
+    private static String readNullTerminatedString(RandomAccessFile f, int length) {
+        byte[] bytes = new byte[length];
+        int i = 0;
+        while (i < length) {
+            bytes[i] = readByte(f);
+            if (bytes[i] == 0) {
+                break;
+            }
+            i++;
+        }
+        return new String(Arrays.copyOfRange(bytes, 0, i), StandardCharsets.UTF_8);
+    }
+
+    private static byte[] readBytes(RandomAccessFile f, int length) {
+        try {
+            byte[] bytes = new byte[length];
+            f.readFully(bytes);
+            return bytes;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static byte readByte(RandomAccessFile f) {
+        try {
+            return f.readByte();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Set<String> VAR_TITLES = new HashSet<>(Arrays.asList("MAPR", "NAME", "WRTR", "READ"));
+    private static Set<String> VAR_TITLESS = new HashSet<>(Arrays.asList("PRG", "CHR"));
+
+    private static Chunk readChunk(RandomAccessFile f) {
+        try {
+            if (f.getFilePointer() + 8 > f.length()) {
+                return null;
+            }
+
+            String tag = readTag(f);
+            int length = readLEInt(f);
+
+            if (f.getFilePointer() + length > f.length()) {
+                return null;
+            }
+
+            Chunk chunk = new Chunk();
+            chunk.setTitle(tag);
+
+            if (VAR_TITLES.contains(tag)) {
+                chunk.setValue(readNullTerminatedString(f, length));
+            } else if (tag.startsWith("PRG")) {
+                readBytes(f, length);
+            } else if (tag.startsWith("CHR")) {
+                readBytes(f, length);
+            } else if (tag.equals("TVCI")) {
+                readBytes(f, 1);
+            } else if (tag.equals("BATR")) {
+                readBytes(f, 1);
+            } else if (tag.equals("MIRR")) {
+                readBytes(f, 1);
+            } else {
+                readBytes(f, length);
+            }
+            return chunk;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Data
+    @NoArgsConstructor
     private static class Chunk {
-
-        private static Set<String> VAR_TITLES = new HashSet<>(Arrays.asList(
-                "MAPR", "NAME", "WRTR", "READ"
-        ));
-
-        private static Set<String> VAR_TITLESS = new HashSet<>(Arrays.asList(
-                "PRG", "CHR"
-        ));
-
-        private static Set<String> BYTE_TITLES = new HashSet<>(Arrays.asList(
-                "TVCI", "CTRL", "BATR", "VROR", "MIRR"
-        ));
-
         String title;
         String value;
-
-        public Chunk(RandomAccessFile f) {
-            try {
-                byte[] bytes = new byte[4];
-                f.readFully(bytes);
-                title = new String(bytes, StandardCharsets.UTF_8);
-
-                if (VAR_TITLES.contains(title) || VAR_TITLESS.contains(title.substring(0, 3))) {
-                    int length = readLEInt(f);
-
-                    bytes = new byte[length - 1];
-                    f.readFully(bytes);
-                    value = new String(bytes, StandardCharsets.UTF_8);
-                    assert (f.readByte() == 0);
-                    f.readByte();
-                } else if (title.startsWith("PCK") || title.startsWith("CCK")) {
-                    f.readFully(new byte[4]);
-                } else if (BYTE_TITLES.contains(title)) {
-                    f.readByte();
-                } else if (title.equals("DINF")) {
-                    f.readFully(new byte[204]);
-                }/* else if (title.equals("TVCI")) {
-                    int length = readLEInt(f);
-                    bytes = new byte[length];
-                    f.readFully(bytes);
-                }*/ else title = "";
-
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
 }

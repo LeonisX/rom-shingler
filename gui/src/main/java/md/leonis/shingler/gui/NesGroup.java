@@ -63,8 +63,8 @@ public class NesGroup {
             }
 
             try {
-                IOUtils.createDirectories(root.toPath().resolve(mapper));
-                Files.copy(file.toPath(), root.toPath().resolve(mapper).resolve(file.getName()), StandardCopyOption.REPLACE_EXISTING);
+                //IOUtils.createDirectories(root.toPath().resolve(mapper));
+                //Files.copy(file.toPath(), root.toPath().resolve(mapper).resolve(file.getName()), StandardCopyOption.REPLACE_EXISTING);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
