@@ -5,6 +5,7 @@ import md.leonis.shingler.model.Platform;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static md.leonis.shingler.model.ConfigHolder.platforms;
@@ -16,7 +17,7 @@ class StringUtilsTest {
 
     static {
         ConfigHolder.platform = "gg";
-        platforms.put("Sega Game Gear", new Platform("Sega Game Gear", "gg", "(.*\\(Hack\\).*|.*\\(Hack .*|.* Hack\\).*)", "(.*\\[[bhot][0-9a-f]].*|.*\\[T[+\\-].*].*|.*\\[hM\\d{2}].*|.*\\[hFFE].*)", ".*\\(PD\\).*", Arrays.asList(".gg", ".sms", ".7z", ".zip")));
+        platforms.put("Sega Game Gear", new Platform("Sega Game Gear", "gg", "(.*\\(Hack\\).*|.*\\(Hack .*|.* Hack\\).*)", "(.*\\[[bhot][0-9a-f]].*|.*\\[T[+\\-].*].*|.*\\[hM\\d{2}].*|.*\\[hFFE].*)", ".*\\(PD\\).*", Arrays.asList(".gg", ".sms", ".7z", ".zip"), Collections.singletonList(0)));
         platforms.values().forEach(p -> platformsByCpu.put(p.getCpu(), p));
     }
 

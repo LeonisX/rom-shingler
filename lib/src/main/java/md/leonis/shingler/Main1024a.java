@@ -18,8 +18,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static md.leonis.shingler.Main1024.serialize;
-import static md.leonis.shingler.model.ConfigHolder.fullFamiliesPath;
-import static md.leonis.shingler.model.ConfigHolder.needToStop;
+import static md.leonis.shingler.model.ConfigHolder.*;
 import static md.leonis.shingler.utils.BinaryUtils.*;
 
 // NES (256 Kb) Up to 8 100% SAVE, Up to 32 SAFE, 64 relative SAFE, 256+ nonSAFE
@@ -108,6 +107,7 @@ public class Main1024a {
 
     public static void generateShinglesNio(RomsCollection collection, Path romsFolder, Path workDir) throws IOException {
 
+        Set<Integer> restrictedShingles = new HashSet<>(platformsByCpu.get(platform).getRestrictedShingles());
         Map<String, GID> files = collection.getGidsMap();
         LOGGER.info("Generating shingles...");
 
@@ -134,13 +134,15 @@ public class Main1024a {
                         break;
                 }
 
-                ShingleUtils.save(shingles, shdFile);
+                if (!restrictedShingles.contains(1)) {
+                    ShingleUtils.save(shingles, shdFile);
+                }
             }
 
             // Generate samples
             for (Integer index : SAMPLES) {
                 Path sampleFile = workDir.resolve("sample-" + index).resolve(bytesToHex(entry.getValue().getSha1()) + ".shg");
-                if (index > 1 && !isCorrect(sampleFile)) {
+                if (index > 1 && !isCorrect(sampleFile) && !restrictedShingles.contains(index)) {
                     if (shingles == null) {
                         shingles = ShingleUtils.load(shdFile);
                     }

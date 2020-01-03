@@ -22,7 +22,7 @@ public class NesGroup {
     public static void main(String[] args) {
 
         ConfigHolder.platform = "nes";
-        ConfigHolder.platforms.put("Nintendo NES", new Platform("Nintendo NES", "nes", "(.*\\(Hack\\).*|.*\\(Hack .*|.* Hack\\).*)", "(.*\\[[bhot][0-9a-f]].*|.*\\[T[+\\-].*].*|.*\\[hM\\d{2}].*|.*\\[hFFE].*)", ".*\\(PD\\).*", Arrays.asList(".nes", ".unf", ".unif", ".fds", ".bin", ".nsf", ".nez", ".7z", ".zip")));
+        ConfigHolder.platforms.put("Nintendo NES", new Platform("Nintendo NES", "nes", "(.*\\(Hack\\).*|.*\\(Hack .*|.* Hack\\).*)", "(.*\\[[bhot][0-9a-f]].*|.*\\[T[+\\-].*].*|.*\\[hM\\d{2}].*|.*\\[hFFE].*)", ".*\\(PD\\).*", Arrays.asList(".nes", ".unf", ".unif", ".fds", ".bin", ".nsf", ".nez", ".7z", ".zip"), Collections.singletonList(0)));
         platforms.values().forEach(p -> platformsByCpu.put(p.getCpu(), p));
 
         List<File> files = IOUtils.listFiles(root);
