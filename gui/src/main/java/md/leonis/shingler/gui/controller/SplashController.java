@@ -33,7 +33,7 @@ public class SplashController {
         platforms.put("Sega SG-1000", new Platform("Sega SG-1000", "sg1000", "(.*\\(Hack\\).*|.*\\(Hack .*|.* Hack\\).*)", "(.*\\[[bhot][0-9a-f]].*|.*\\[T[+\\-].*].*|.*\\[hM\\d{2}].*|.*\\[hFFE].*)", ".*\\(PD\\).*", Arrays.asList(".sg", ".sc", ".sf7", ".mv", ".sms", ".7z", ".zip"), Collections.singletonList(0)));
         platforms.put("Sega Master System", new Platform("Sega Master System", "sms", "(.*\\(Hack\\).*|.*\\(Hack .*|.* Hack\\).*)", "(.*\\[[bhot][0-9a-f]].*|.*\\[T[+\\-].*].*|.*\\[hM\\d{2}].*|.*\\[hFFE].*)", ".*\\(PD\\).*", Arrays.asList(".sg", ".sc", ".sf7", ".mv", ".sms", ".7z", ".zip"), Collections.singletonList(0)));
         platforms.put("Sega Game Gear", new Platform("Sega Game Gear", "gg", "(.*\\(Hack\\).*|.*\\(Hack .*|.* Hack\\).*)", "(.*\\[[bhot][0-9a-f]].*|.*\\[T[+\\-].*].*|.*\\[hM\\d{2}].*|.*\\[hFFE].*)", ".*\\(PD\\).*", Arrays.asList(".gg", ".sms", ".7z", ".zip"), Collections.singletonList(0)));
-        platforms.put("Sega MegaDrive", new Platform("Sega MegaDrive", "megadrive", "(.*\\(Hack\\).*|.*\\(Hack .*|.* Hack\\).*)", "(.*\\[[bhot][0-9a-f]].*|.*\\[T[+\\-].*].*|.*\\[hM\\d{2}].*|.*\\[hFFE].*)", ".*\\(PD\\).*", Arrays.asList(".smd", ".md", ".mdx", ".bin", ".32x"), Arrays.asList(1, 2)));
+        platforms.put("Sega MegaDrive", new Platform("Sega MegaDrive", "megadrive", "(.*\\(Hack\\).*|.*\\(Hack .*|.* Hack\\).*)", "(.*\\[[bhot][0-9a-f]].*|.*\\[T[+\\-].*].*|.*\\[hM\\d{2}].*|.*\\[hFFE].*)", ".*\\(PD\\).*", Arrays.asList(".smd", ".md", ".mdx", ".bin", ".32x", ".7z", ".zip"), Arrays.asList(1, 2)));
         platforms.values().forEach(p -> platformsByCpu.put(p.getCpu(), p));
 
         IOUtils.createDirectories(collectionsDir);

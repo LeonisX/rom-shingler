@@ -5,6 +5,8 @@
 
 TODO actually, CRC32 is int, we can save 50% disk space for shingles. See java.util.zip.CRC32. Just use (int)
 
+TODO shingle-8: define for each platform. 8-16 bit: 8; atari vcs - lower
+
 TODO generate htmls based on excel files
 TODO regenerate html, replace on sites
 

@@ -269,7 +269,7 @@ public class TiviUtils {
 
             if (fileSize < MAX_SIZE) {
 
-                String destArchiveName = StringUtils.normalize(sourceArchiveName);
+                String destArchiveName = StringUtils.normalize(StringUtils.stripExtension(sourceArchiveName), "7z");
                 Path destArchive = destPath.resolve(destArchiveName);
 
                 if (isIO) {
@@ -613,9 +613,9 @@ public class TiviUtils {
         String zipRomName = StringUtils.normalize(StringUtils.replaceExt(sourceRomName, "zip"));
 
         Path sourceRom = romsCollection.getRomsPath().resolve(sourceRomName);
-        String dir = GROUP_MAP.get(groupName.toLowerCase());
+        String dir = GROUP_MAP.get(StringUtils.stripExtension(groupName.toLowerCase()));
         if (dir == null) {
-            dir = StringUtils.normalize(groupName.replace("_", " ")).toLowerCase();
+            dir = StringUtils.normalize(groupName.replace("_", " "));
         }
         dir = String.format("%s_%s%s", platform, dir, num);
 
@@ -677,7 +677,7 @@ public class TiviUtils {
     private static void addGameIfNeed(CSV.MySqlStructure record, Family f, List<String> games) {
 
         if (org.apache.commons.lang3.StringUtils.isBlank(record.getGame())) {
-            String archiveName = StringUtils.normalize(f.getName(), "7z");
+            String archiveName = StringUtils.normalize(StringUtils.stripExtension(f.getName()), "7z");
             String fullArchiveName = games.stream().filter(g -> g.endsWith("/" + archiveName)).findFirst().orElse(null);
             if (null != fullArchiveName) {
                 record.setGame(fullArchiveName);
