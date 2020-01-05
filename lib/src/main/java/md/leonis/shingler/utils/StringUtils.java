@@ -208,7 +208,7 @@ public class StringUtils {
         cpu = cpu.replace("&rsquo;", "'");
         cpu = StringEscapeUtils.unescapeHtml4(cpu); // &amp;, ...
 
-        String separators = " _+";
+        String separators = " _+~";
         String restricted = "'\"().,&!?$@#%^*=/\\[];:|<>{}";
 
         for (char c : separators.toCharArray()) {

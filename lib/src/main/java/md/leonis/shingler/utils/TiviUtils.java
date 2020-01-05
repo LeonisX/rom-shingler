@@ -343,14 +343,14 @@ public class TiviUtils {
     private static void processFamily(TiViLists lists, Family f, String shortRomPath) {
 
         //String romPath = formatRomPath(shortRomPath);
-        String familyName = escapeQuotes(norm2(f.getName()));
+        String familyName = StringUtils.escapeChars(norm2(f.getName()));
         String normalizedFamilyName = StringUtils.normalize(familyName);
         if (!lists.getUnmappedNames().contains(normalizedFamilyName)) {
 
             String syn = lists.getSynonyms().get(normalizedFamilyName);
             if (syn != null && lists.getNormalizedMap().get(syn) != null) {
                 CSV.MySqlStructure record = lists.getNormalizedMap().get(syn);
-                record.setName(f.getName());
+                record.setName(StringUtils.escapeChars(f.getName()));
                 record.setCpu(StringUtils.cpu(f.getName()));
                 record.setGame(shortRomPath);
                 lists.getUnmappedNames().remove(normalizedFamilyName);
@@ -462,14 +462,11 @@ public class TiviUtils {
         return String.format("UPDATE `base_%s` SET game='%s' WHERE name='%s';", platform, romPath, familyName);
     }*/
 
-    private static String escapeQuotes(String family) {
-        return family.replace("&", "&amp;").replace("'", "&rsquo;");
-    }
-
     private static final Map<String, String> GROUP_MAP = new HashMap<>();
 
     static {
         GROUP_MAP.put("public domain", "pd");
+        GROUP_MAP.put("public domain+public domain (slide shows)", "pd");
         GROUP_MAP.put("multicarts collection", "multi");
         GROUP_MAP.put("vt03 collection", "vt03");
         GROUP_MAP.put("wxn collection", "wxn");
@@ -637,7 +634,7 @@ public class TiviUtils {
 
         //String romPath = formatRomPath(shortRomPath);
         String name = n.getCleanName();
-        String normalizedFamilyName = StringUtils.normalize(escapeQuotes(name));
+        String normalizedFamilyName = StringUtils.normalize(StringUtils.escapeChars(name));
         /*if (n.getName().startsWith("R.B")) { // for debug
             List<String> u = lists.getUnmappedNames().stream().filter(us -> us.startsWith("R")).sorted().collect(Collectors.toList());
             System.out.println(u);
@@ -648,7 +645,7 @@ public class TiviUtils {
             String syn = lists.getSynonyms().get(normalizedFamilyName);
             if (syn != null && lists.getNormalizedMap().get(syn) != null) {
                 CSV.MySqlStructure record = lists.getNormalizedMap().get(syn);
-                record.setName(name);
+                record.setName(StringUtils.escapeChars(name));
                 record.setCpu(StringUtils.cpu(name));
                 record.setRom(shortRomPath);
                 lists.getUnmappedNames().remove(normalizedFamilyName);
