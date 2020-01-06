@@ -5,9 +5,6 @@
 
 TODO generate shingles multithread
 
-TODO test wxn, other "separated" zip archives - may be LZMA instead Deflate
-TODO test all ZIPs as deflate compression
-
 TODO actually, CRC32 is int, we can save 50% disk space for shingles. See java.util.zip.CRC32. Just use (int)
 
 TODO shingle-8: define for each platform. 8-16 bit: 8; atari vcs - lower
@@ -61,3 +58,5 @@ TODO new family, ... -> show that need calculate relations!!!
 
 * Disable logging
 * Clear logs
+
+TODO show remaining time
