@@ -1,3 +1,3 @@
 @echo off
-java -Xmx6g -jar rom-shingler.jar
+java -Xmx8g -jar rom-shingler.jar
 pause

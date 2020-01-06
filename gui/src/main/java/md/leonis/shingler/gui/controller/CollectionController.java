@@ -343,7 +343,7 @@ public class CollectionController {
 
         runInBackground(() -> {
             try {
-                Main1024a.generateShinglesNio(romsCollection, romsFolder, workShinglesPath());
+                Main1024a.generateShinglesNioParallel(romsCollection, romsFolder, workShinglesPath());
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

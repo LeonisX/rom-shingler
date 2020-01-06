@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -105,7 +106,7 @@ public class Main1024a {
         }
     }
 
-    public static void generateShinglesNio(RomsCollection collection, Path romsFolder, Path workDir) throws IOException {
+    /*public static void generateShinglesNio(RomsCollection collection, Path romsFolder, Path workDir) throws IOException {
 
         Set<Integer> restrictedShingles = new HashSet<>(platformsByCpu.get(platform).getRestrictedShingles());
         Map<String, GID> files = collection.getGidsMap();
@@ -154,6 +155,80 @@ public class Main1024a {
 
             i++;
         }
+    }*/
+
+    public static void generateShinglesNioParallel(RomsCollection collection, Path romsFolder, Path workDir) throws IOException {
+
+        Set<Integer> restrictedShingles = new HashSet<>(platformsByCpu.get(platform).getRestrictedShingles());
+        Map<String, GID> files = collection.getGidsMap();
+        LOGGER.info("Generating shingles...");
+
+        AtomicInteger counter = new AtomicInteger(-1);
+
+        ExecutorService service = Executors.newFixedThreadPool(8);
+        List<Callable<Integer>> tasks = new ArrayList<>();
+
+        for (Map.Entry<String, GID> entry : files.entrySet()) {
+
+            tasks.add(() -> {
+                try {
+                    int i = counter.getAndIncrement();
+
+                    long[] shingles = null;
+                    Path file = romsFolder.resolve(entry.getKey());
+                    Path shdFile = workDir.resolve("sample-1").resolve(bytesToHex(entry.getValue().getSha1()) + ".shg");
+
+                    if (restrictedShingles.contains(1) || isCorrect(shdFile)) {
+                        LOGGER.debug("Skipping: {}|{}", file.toString(), ((i + 1) * 100.0 / files.size()));
+                    } else {
+                        LOGGER.info("{}|{}", file.toString(), ((i + 1) * 100.0 / files.size()));
+
+                        shingles = generateShingle(collection, romsFolder, file, entry);
+
+                        if (!restrictedShingles.contains(1)) {
+                            ShingleUtils.save(shingles, shdFile);
+                        }
+                    }
+
+                    // Generate samples
+                    for (Integer index : SAMPLES) {
+                        Path sampleFile = workDir.resolve("sample-" + index).resolve(bytesToHex(entry.getValue().getSha1()) + ".shg");
+                        if (index > 1 && !restrictedShingles.contains(index) && !isCorrect(sampleFile)) {
+                            if (shingles == null) {
+                                if (Files.exists(shdFile)) {
+                                    shingles = ShingleUtils.load(shdFile);
+                                } else {
+                                    shingles = generateShingle(collection, romsFolder, file, entry);
+                                }
+                            }
+
+                            // TODO actual some small files (PD) fail (empty) on 256 :(
+                            long[] filteredShingles = filterArrays(shingles, index);
+
+                            if (index > SHINGLE_MAP_THRESHOLD) {
+                                SHINGLE_MAP.get(index).put(file.toString(), filteredShingles);
+                            }
+                            ShingleUtils.save(filteredShingles, sampleFile);
+                        }
+                    }
+                    return 0;
+                } catch (Throwable t) {
+                    LOGGER.error(entry.getKey());
+                    throw new RuntimeException(t);
+                }
+            });
+        }
+
+        try {
+            List<Future<Integer>> results = service.invokeAll(tasks);
+            for (Future<Integer> r : results) {
+                System.out.println(r.get());
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+
+        service.shutdown();
     }
 
     private static long[] generateShingle(RomsCollection collection, Path romsFolder, Path file, Map.Entry<String, GID> entry) throws IOException {
