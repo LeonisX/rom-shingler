@@ -118,21 +118,12 @@ public class Main1024a {
             Path file = romsFolder.resolve(entry.getKey());
             Path shdFile = workDir.resolve("sample-1").resolve(bytesToHex(entry.getValue().getSha1()) + ".shg");
 
-            if (isCorrect(shdFile)) {
+            if (restrictedShingles.contains(1) || isCorrect(shdFile)) {
                 LOGGER.debug("Skipping: {}|{}", file.toString(), ((i + 1) * 100.0 / files.size()));
             } else {
                 LOGGER.info("{}|{}", file.toString(), ((i + 1) * 100.0 / files.size()));
 
-                switch (collection.getType()) {
-                    case PLAIN:
-                        shingles = ShingleUtils.toShingles(IOUtils.loadBytes(file));
-                        break;
-
-                    case MERGED:
-                        Path archiveFile = romsFolder.resolve(entry.getValue().getFamily());
-                        shingles = ShingleUtils.toShingles(IOUtils.loadBytesFromArchive(archiveFile, entry.getKey()));
-                        break;
-                }
+                shingles = generateShingle(collection, romsFolder, file, entry);
 
                 if (!restrictedShingles.contains(1)) {
                     ShingleUtils.save(shingles, shdFile);
@@ -142,9 +133,13 @@ public class Main1024a {
             // Generate samples
             for (Integer index : SAMPLES) {
                 Path sampleFile = workDir.resolve("sample-" + index).resolve(bytesToHex(entry.getValue().getSha1()) + ".shg");
-                if (index > 1 && !isCorrect(sampleFile) && !restrictedShingles.contains(index)) {
+                if (index > 1 && !restrictedShingles.contains(index) && !isCorrect(sampleFile)) {
                     if (shingles == null) {
-                        shingles = ShingleUtils.load(shdFile);
+                        if (Files.exists(shdFile)) {
+                            shingles = ShingleUtils.load(shdFile);
+                        } else {
+                            shingles = generateShingle(collection, romsFolder, file, entry);
+                        }
                     }
 
                     // TODO actual some small files (PD) fail (empty) on 256 :(
@@ -159,6 +154,18 @@ public class Main1024a {
 
             i++;
         }
+    }
+
+    private static long[] generateShingle(RomsCollection collection, Path romsFolder, Path file, Map.Entry<String, GID> entry) throws IOException {
+        switch (collection.getType()) {
+            case PLAIN:
+                return ShingleUtils.toShingles(IOUtils.loadBytes(file));
+
+            case MERGED:
+                Path archiveFile = romsFolder.resolve(entry.getValue().getFamily());
+                return ShingleUtils.toShingles(IOUtils.loadBytesFromArchive(archiveFile, entry.getKey()));
+        }
+        return null;
     }
 
     private static boolean isCorrect(Path path) {
