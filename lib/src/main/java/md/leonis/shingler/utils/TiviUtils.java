@@ -302,6 +302,9 @@ public class TiviUtils {
                     String destArchiveName = StringUtils.normalize(String.format("%s part %s", t, i).replace("_", " "), "7z");
 
                     if (isIO) {
+                        //TODO fix this - hack for SNES ganes - hashcode collizion
+                        chunk = chunk.stream().distinct().collect(Collectors.toList());
+
                         ArchiveUtils.compress7z(destArchiveName, chunk, i++);
 
                         sourceArchive = outputDir.resolve(platform).resolve(destArchiveName);

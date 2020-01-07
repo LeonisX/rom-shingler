@@ -60,3 +60,5 @@ TODO new family, ... -> show that need calculate relations!!!
 TODO show remaining time
 
 TODO repair parallel family calculation
+
+TODO Name hastCode collizions. Need separate unique ID
