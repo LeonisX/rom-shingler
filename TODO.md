@@ -58,3 +58,5 @@ TODO new family, ... -> show that need calculate relations!!!
 * Clear logs
 
 TODO show remaining time
+
+TODO repair parallel family calculation

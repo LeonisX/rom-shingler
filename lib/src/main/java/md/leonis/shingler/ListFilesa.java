@@ -189,6 +189,85 @@ public class ListFilesa {
         }
     }
 
+    /*private static void doCalculateRelations(Family family, double percent, boolean log) {
+
+        family.getRelations().clear();
+        family.getMembers().forEach(m -> m.setJakkardStatus(0));
+        Platform platform = platformsByCpu.get(ConfigHolder.platform);
+
+        AtomicInteger counter = new AtomicInteger(-1);
+
+        ExecutorService service = Executors.newFixedThreadPool(8);
+        List<Callable<Integer>> tasks = new ArrayList<>();
+
+        for (AtomicInteger i = new AtomicInteger(0); i.get() < family.size() - 1; i.getAndIncrement()) {
+
+            tasks.add(() -> {
+                try {
+                    int id = counter.getAndIncrement();
+                    *//*if (needToStop[0]) {
+                        LOGGER.info("Execution was interrupted!");
+                        if (percent == -1) {
+                            needToStop[0] = false;
+                        }
+                        break;
+                    }*//*
+
+                    Name name1 = family.get(id);
+
+                    long[] s1Set = ShingleUtils.loadFromCache(cache, fullShinglesPath().resolve(bytesToHex(byTitle.get(name1.getName()).getSha1()) + ".shg"));
+
+                    for (int j = id + 1; j < family.size(); j++) {
+
+                        Name name2 = family.get(j);
+
+                        long[] s2Set = ShingleUtils.loadFromCache(cache, fullShinglesPath().resolve(bytesToHex(byTitle.get(name2.getName()).getSha1()) + ".shg"));
+
+                        double jakkard = doCalculateJakkard(s1Set, s2Set);
+
+                        if (platform.isGood(name2.getName())) {
+                            synchronized (family.get(id)) {
+                                name1.addJakkardStatus(jakkard);
+                            }
+                        } else {
+                            //LOGGER.info("{} is bad", name2.getName());
+                            synchronized (family.get(id)) {
+                                name1.addJakkardStatus(100);
+                            }
+                        }
+                        synchronized (family.get(j)) {
+                            name2.addJakkardStatus(jakkard);
+                        }
+
+                        Result result = new Result(name1, name2, jakkard);
+                        if (log) {
+                            LOGGER.info("{}->{}: {}|{}", id, j, result, percent == -1 ? (id + 2.0) * 100 / family.size() : percent);
+                        }
+
+                        synchronized (family) {
+                            family.addRelation(result);
+                        }
+                    }
+                    name1.setDone(true);
+                } catch (Throwable t) {
+                    throw new RuntimeException(t);
+                }
+                return 0;
+            });
+        }
+
+        try {
+            List<Future<Integer>> results = service.invokeAll(tasks);
+            for (Future<Integer> r : results) {
+                System.out.println(r.get());
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+
+        service.shutdown();
+    }*/
+
     private static void doCalculateRelations(Family family, double percent, boolean log) {
 
         family.getRelations().clear();
