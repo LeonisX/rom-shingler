@@ -172,7 +172,7 @@ public class StringUtils {
         }
         for (String ext : platformsByCpu.get(platform).getExts()) {
             int lastIndexOf = fileName.lastIndexOf(ext);
-            if (lastIndexOf != -1) {
+            if (lastIndexOf != -1 && lastIndexOf + ext.length() == fileName.length()) {
                 return fileName.substring(0, lastIndexOf);
             }
         }
@@ -182,7 +182,7 @@ public class StringUtils {
     public static String getFileExtension(String fileName) {
         for (String ext : platformsByCpu.get(platform).getExts()) {
             int lastIndexOf = fileName.lastIndexOf(ext);
-            if (lastIndexOf != -1) {
+            if (lastIndexOf != -1 && lastIndexOf + ext.length() == fileName.length()) {
                 return fileName.substring(lastIndexOf);
             }
         }

@@ -17,7 +17,10 @@ class StringUtilsTest {
 
     static {
         ConfigHolder.platform = "gg";
-        platforms.put("Sega Game Gear", new Platform("Sega Game Gear", "gg", "(.*\\(Hack\\).*|.*\\(Hack .*|.* Hack\\).*)", "(.*\\[[bhot][0-9a-f]].*|.*\\[T[+\\-].*].*|.*\\[hM\\d{2}].*|.*\\[hFFE].*)", ".*\\(PD\\).*", Arrays.asList(".gg", ".sms", ".7z", ".zip"), Collections.singletonList(0)));
+        platforms.put("Sega Game Gear", new Platform("Sega Game Gear", "gg",
+                "(.*\\(Hack\\).*|.*\\(Hack .*|.* Hack\\).*)",
+                "(.*\\[[bhot][0-9a-f]].*|.*\\[T[+\\-].*].*|.*\\[hM\\d{2}].*|.*\\[hFFE].*)", ".*\\(PD\\).*",
+                Arrays.asList(".gg", ".sms", ".7z", ".zip"), Collections.singletonList(0)));
         platforms.values().forEach(p -> platformsByCpu.put(p.getCpu(), p));
     }
 
@@ -149,5 +152,12 @@ class StringUtilsTest {
     void replaceFromTheEnd() {
         assertEquals("hot-dance-2000", StringUtils.replaceFromTail("-unl", "", "hot-dance-2000-unl"));
         assertEquals("hot-dance-2000-2", StringUtils.replaceFromTail("-ii", "-2", "hot-dance-2000-ii"));
+    }
+
+    @Test
+    void stripExtension() {
+        assertEquals("Schnurmanator 2011-08-05 SMW1 Hack", StringUtils.stripExtension("Schnurmanator 2011-08-05 SMW1 Hack.zip"));
+        assertEquals("Schnurmanator 2011-08-05 SMW1 Hack.zip2", StringUtils.stripExtension("Schnurmanator 2011-08-05 SMW1 Hack.zip2"));
+        assertEquals("Schnurmanator 2011-08-05.gg SMW1 Hack", StringUtils.stripExtension("Schnurmanator 2011-08-05.gg SMW1 Hack.zip"));
     }
 }

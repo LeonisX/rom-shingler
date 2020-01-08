@@ -682,7 +682,7 @@ public class TiviUtils {
             if (null != fullArchiveName) {
                 record.setGame(fullArchiveName);
             } else {
-                LOGGER.warn("Game isn't found: {}; {}", f, archiveName);
+                LOGGER.warn("Game isn't found: {}; {}", f.getName(), archiveName);
             }
         }
     }
