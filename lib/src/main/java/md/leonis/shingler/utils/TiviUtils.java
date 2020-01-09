@@ -690,6 +690,7 @@ public class TiviUtils {
     public static void createUpdateQueries(boolean isFinal) {
 
         List<String> warnings = new ArrayList<>();
+        List<String> screenWarnings = new ArrayList<>();
         List<CSV.RenamedStructure> renamed = new ArrayList<>();
 
         List<CSV.MySqlStructure> originRecords = readCsv();
@@ -711,6 +712,11 @@ public class TiviUtils {
                 warnings.add("CPU is blank for " + cpu);
             } else {
                 validateCpu(cpu, warnings, cpus);
+            }
+
+            Set<String> sids = new HashSet<>(Arrays.asList(getSid(name), getSid(originRecords.get(k).getName()), records.get(k).getSid()));
+            if (sids.size() != 1) {
+                screenWarnings.add(originRecords.get(k).getName() + " -> " + records.get(k).getSid() + ": " + name);
             }
 
             if (isBlank(records.get(k).getGame()) && isFinal) {
@@ -772,6 +778,11 @@ public class TiviUtils {
         if (!warnings.isEmpty()) {
             LOGGER.warn("WARNINGS:");
             warnings.forEach(LOGGER::warn);
+        }
+
+        if (!screenWarnings.isEmpty()) {
+            LOGGER.warn("SCREENSHOTS NEED TO FIX:");
+            screenWarnings.forEach(LOGGER::warn);
         }
 
         LOGGER.info("Done");
