@@ -224,16 +224,16 @@ public class StringUtils {
         cpu = cpu.replace("--", "-");
         cpu = cpu.replace("--", "-");
 
-        List<String> tails = Arrays.asList("-unl", "-iv", "-v", "-vi", "-vii", "-");
-        List<String> tailsReplacement = Arrays.asList("", "-4", "-5", "-6", "-7", "");
+        List<String> tails = Arrays.asList("-unl", "-ii", "-iii", "-iv", "-v", "-vi", "-vii", "-");
+        List<String> tailsReplacement = Arrays.asList("", "-2", "-3", "-4", "-5", "-6", "-7", "");
 
         for (int i = 0; i < tails.size(); i++) {
             String s = tails.get(i);
             cpu = replaceFromTail(s, tailsReplacement.get(i), cpu);
         }
 
-        cpu = cpu.replace("-iii", "-3");
-        cpu = cpu.replace("-ii", "-2");
+        cpu = cpu.replace("-iii-", "-3-");
+        cpu = cpu.replace("-ii-", "-2-");
 
         return cpu;
     }
