@@ -3,10 +3,6 @@
 // SELECT sid, name, cpu, game, rom FROM `base_nes` ORDER BY n LIMIT 0, 50000
 // SELECT sid, name, '' as cpu, '' as game, '' as rom FROM `base_sg1000` ORDER BY n LIMIT 0, 50000
 
-TODO create lists if absent
-
-TODO don't use CSV files if they are absent. only output warnings
-
 TODO all games with renamed SID - move screenshots
 
 TODO show correct error when shingle not found

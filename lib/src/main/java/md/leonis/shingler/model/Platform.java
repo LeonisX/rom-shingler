@@ -24,7 +24,7 @@ public class Platform {
     }
 
     public boolean nonHack(String name) {
-        return !name.matches(hackMatcher);
+        return !isHack(name);
     }
 
     public boolean isBad(String name) {
@@ -33,6 +33,10 @@ public class Platform {
 
     public boolean isPD(String name) {
         return name.matches(pdMatcher);
+    }
+
+    public boolean nonPD(String name) {
+        return !isPD(name);
     }
 
     public boolean isGood(String name) {

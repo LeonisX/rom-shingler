@@ -56,9 +56,23 @@ public class TiviUtils {
 
         try {
             File file = inputDir.resolve("lists").resolve("base_" + platform + ".csv").toFile(); // Already escaped to &amp;, ...
+            if (!file.exists()) {
+                //createGamesList(file);
+                LOGGER.warn("{} is absent", file);
+                return new ArrayList<>();
+            }
             CsvSchema schema = new CsvMapper().schemaFor(CSV.MySqlStructure.class).withColumnSeparator(';').withoutHeader().withQuoteChar('"');
             MappingIterator<CSV.MySqlStructure> iter = new CsvMapper().readerFor(CSV.MySqlStructure.class).with(schema).readValues(file);
             return iter.readAll().stream().peek(s -> s.setOldName(s.getName())).collect(Collectors.toList());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void saveCsv(List<CSV.MySqlStructure> structure, File file) {
+        try {
+            CsvSchema schema = new CsvMapper().schemaFor(CSV.MySqlStructure.class).withColumnSeparator(';').withoutHeader().withQuoteChar('"');
+            new CsvMapper().writerFor(CSV.MySqlStructure.class).with(schema).writeValues(file).writeAll(structure).close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -75,6 +89,7 @@ public class TiviUtils {
                     r.setOldName(StringUtils.escapeChars(r.getOldName()));
                 }).collect(Collectors.toList());
             } else {
+                LOGGER.warn("{} is absent", file);
                 return new ArrayList<>();
             }
         } catch (IOException e) {
@@ -95,9 +110,21 @@ public class TiviUtils {
     private static List<CSV.AddedStructure> readAddedCsv() {
         try {
             File file = inputDir.resolve(platform + "_added.csv").toFile();
+            if (!file.exists()) {
+                createAddedList(file);
+            }
             CsvSchema schema = new CsvMapper().schemaFor(CSV.AddedStructure.class).withColumnSeparator(';').withoutHeader().withQuoteChar('"');
             MappingIterator<CSV.AddedStructure> iter = new CsvMapper().readerFor(CSV.AddedStructure.class).with(schema).readValues(file);
             return iter.readAll().stream().peek(r -> r.setName(StringUtils.escapeChars(r.getName()))).collect(Collectors.toList());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void saveAddedCsv(List<CSV.AddedStructure> added, File file) {
+        try {
+            CsvSchema schema = new CsvMapper().schemaFor(CSV.AddedStructure.class).withColumnSeparator(';').withoutHeader().withQuoteChar('"');
+            new CsvMapper().writerFor(CSV.AddedStructure.class).with(schema).writeValues(file).writeAll(added).close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -482,6 +509,58 @@ public class TiviUtils {
 
     private static Path getUniquePath() {
         return outputDir.resolve(platform).resolve("roms");
+    }
+
+    private static void createAddedList(File file) {
+
+        LOGGER.warn("Create added CSV list");
+        List<CSV.AddedStructure> addedStructures = new ArrayList<>();
+        //a-z
+        addedStructures.addAll(families.values().stream().flatMap(f -> f.getMembers().stream()
+                .filter(n -> platformsByCpu.get(platform).nonHack(n.getName()) && platformsByCpu.get(platform).nonPD(n.getName()))
+                .collect(Collectors.groupingBy(Name::getCleanName)).keySet().stream()
+                .map(name -> new CSV.AddedStructure(getSid(name), name))
+        ).sorted(Comparator.comparing(CSV.AddedStructure::getName)).collect(Collectors.toList()));
+        //PD
+        addedStructures.addAll(families.values().stream().flatMap(f -> f.getMembers().stream()
+                .filter(n -> platformsByCpu.get(platform).isPD(n.getName()))
+                .collect(Collectors.groupingBy(Name::getPdCleanName)).keySet().stream()
+                .map(name -> new CSV.AddedStructure(getSid(name), name))
+        ).sorted(Comparator.comparing(CSV.AddedStructure::getName)).collect(Collectors.toList()));
+        //hack
+        addedStructures.addAll(families.values().stream().flatMap(f -> f.getMembers().stream()
+                .filter(n -> platformsByCpu.get(platform).isHack(n.getName()))
+                .collect(Collectors.groupingBy(Name::getHackCleanName)).keySet().stream()
+                .map(name -> new CSV.AddedStructure(getSid(name), name))
+        ).sorted(Comparator.comparing(CSV.AddedStructure::getName)).collect(Collectors.toList()));
+        // save
+        saveAddedCsv(addedStructures, file);
+    }
+
+    private static void createGamesList(File file) {
+
+        LOGGER.warn("Create games CSV list");
+        List<CSV.MySqlStructure> structures = new ArrayList<>();
+        //a-z
+        structures.addAll(families.values().stream().flatMap(f -> f.getMembers().stream()
+                .filter(n -> platformsByCpu.get(platform).nonHack(n.getName()) && platformsByCpu.get(platform).nonPD(n.getName()))
+                .collect(Collectors.groupingBy(Name::getCleanName)).keySet().stream()
+                .map(name -> new CSV.MySqlStructure(new CSV.AddedStructure(getSid(name), name)))
+        ).sorted(Comparator.comparing(CSV.MySqlStructure::getName)).collect(Collectors.toList()));
+        //PD
+        structures.addAll(families.values().stream().flatMap(f -> f.getMembers().stream()
+                .filter(n -> platformsByCpu.get(platform).isPD(n.getName()))
+                .collect(Collectors.groupingBy(Name::getPdCleanName)).keySet().stream()
+                .map(name -> new CSV.MySqlStructure(new CSV.AddedStructure(getSid(name), name)))
+        ).sorted(Comparator.comparing(CSV.MySqlStructure::getName)).collect(Collectors.toList()));
+        //hack
+        structures.addAll(families.values().stream().flatMap(f -> f.getMembers().stream()
+                .filter(n -> platformsByCpu.get(platform).isHack(n.getName()))
+                .collect(Collectors.groupingBy(Name::getHackCleanName)).keySet().stream()
+                .map(name -> new CSV.MySqlStructure(new CSV.AddedStructure(getSid(name), name)))
+        ).sorted(Comparator.comparing(CSV.MySqlStructure::getName)).collect(Collectors.toList()));
+        // save
+        saveCsv(structures, file);
     }
 
     //(list+dump+force63)

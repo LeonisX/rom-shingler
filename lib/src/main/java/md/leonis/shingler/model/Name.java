@@ -59,6 +59,16 @@ public class Name implements Serializable {
         return ListFilesa.getCleanName(name);
     }
 
+    @JsonIgnore
+    public String getPdCleanName() {
+        return ListFilesa.getPdCleanName(name);
+    }
+
+    @JsonIgnore
+    public String getHackCleanName() {
+        return ListFilesa.getHackCleanName(name);
+    }
+
     public boolean isDone() {
         return done;
     }

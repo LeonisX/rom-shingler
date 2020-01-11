@@ -467,7 +467,7 @@ public class ListFilesa {
 
     public static String getCleanName(String s) {
 
-        List<String> chunks = StringUtils.toChunks(s);
+        List<String> chunks = StringUtils.toChunks(StringUtils.stripExtension(s));
 
         return chunks.stream().filter(c -> !isChunk(c) || allowedChunk(c)).collect(Collectors.joining(" ")).trim();
 
@@ -482,12 +482,30 @@ public class ListFilesa {
         return s.trim();*/
     }
 
+    public static String getPdCleanName(String s) {
+        List<String> chunks = StringUtils.toChunks(StringUtils.stripExtension(s));
+        return chunks.stream().filter(c -> !isChunk(c) || allowedPdChunk(c)).collect(Collectors.joining(" ")).trim();
+    }
+
+    public static String getHackCleanName(String s) {
+        List<String> chunks = StringUtils.toChunks(StringUtils.stripExtension(s));
+        return chunks.stream().filter(c -> !isChunk(c) || allowedHackChunk(c)).collect(Collectors.joining(" ")).trim();
+    }
+
     private static boolean isChunk(String s) {
-        return (s.startsWith("[") && s.endsWith("]") || s.startsWith("(") && s.endsWith(")"));
+        return (s.startsWith("[") && s.endsWith("]") || (s.startsWith("(") && s.endsWith(")")));
     }
 
     private static boolean allowedChunk(String s) {
         return s.equals("[S]") || s.equals("[C]");
+    }
+
+    private static boolean allowedPdChunk(String s) {
+        return s.equals("(PD)");
+    }
+
+    private static boolean allowedHackChunk(String s) {
+        return s.equals("(Hack)") || s.endsWith(" Hack)") || s.endsWith("(Hack ");
     }
 
 
