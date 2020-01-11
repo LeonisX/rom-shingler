@@ -6,7 +6,6 @@ import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import javafx.util.Pair;
 import lombok.Data;
 import md.leonis.shingler.CSV;
-import md.leonis.shingler.ListFilesa;
 import md.leonis.shingler.model.Family;
 import md.leonis.shingler.model.FamilyType;
 import md.leonis.shingler.model.Name;
@@ -66,15 +65,18 @@ public class TiviUtils {
     }
 
     private static List<CSV.RenamedStructure> readRenamedCsv() {
-
         try {
             File file = inputDir.resolve(platform + "_renamed.csv").toFile();
-            CsvSchema schema = new CsvMapper().schemaFor(CSV.RenamedStructure.class).withColumnSeparator(';').withoutHeader().withQuoteChar('"');
-            MappingIterator<CSV.RenamedStructure> iter = new CsvMapper().readerFor(CSV.RenamedStructure.class).with(schema).readValues(file);
-            return iter.readAll().stream().peek(r -> {
-                r.setNewName(StringUtils.escapeChars(r.getNewName()));
-                r.setOldName(StringUtils.escapeChars(r.getOldName()));
-            }).collect(Collectors.toList());
+            if (file.exists()) {
+                CsvSchema schema = new CsvMapper().schemaFor(CSV.RenamedStructure.class).withColumnSeparator(';').withoutHeader().withQuoteChar('"');
+                MappingIterator<CSV.RenamedStructure> iter = new CsvMapper().readerFor(CSV.RenamedStructure.class).with(schema).readValues(file);
+                return iter.readAll().stream().peek(r -> {
+                    r.setNewName(StringUtils.escapeChars(r.getNewName()));
+                    r.setOldName(StringUtils.escapeChars(r.getOldName()));
+                }).collect(Collectors.toList());
+            } else {
+                return new ArrayList<>();
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -91,7 +93,6 @@ public class TiviUtils {
     }
 
     private static List<CSV.AddedStructure> readAddedCsv() {
-
         try {
             File file = inputDir.resolve(platform + "_added.csv").toFile();
             CsvSchema schema = new CsvMapper().schemaFor(CSV.AddedStructure.class).withColumnSeparator(';').withoutHeader().withQuoteChar('"');
