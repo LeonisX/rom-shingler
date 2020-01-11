@@ -466,7 +466,12 @@ public class ListFilesa {
     }
 
     public static String getCleanName(String s) {
-        int braceIndex = s.indexOf("(");
+
+        List<String> chunks = StringUtils.toChunks(s);
+
+        return chunks.stream().filter(c -> !isChunk(c) || allowedChunk(c)).collect(Collectors.joining(" ")).trim();
+
+        /*int braceIndex = s.indexOf("(");
         if (braceIndex > 0) {
             s = s.substring(0, braceIndex);
         }
@@ -474,8 +479,17 @@ public class ListFilesa {
         if (braceIndex > 0) {
             s = s.substring(0, braceIndex);
         }
-        return s.trim();
+        return s.trim();*/
     }
+
+    private static boolean isChunk(String s) {
+        return (s.startsWith("[") && s.endsWith("]") || s.startsWith("(") && s.endsWith(")"));
+    }
+
+    private static boolean allowedChunk(String s) {
+        return s.equals("[S]") || s.equals("[C]");
+    }
+
 
     public static List<String> listFiles(File file) {
         try (SevenZFile archiveFile = new SevenZFile(file)) {

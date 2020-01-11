@@ -6,6 +6,7 @@ import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import javafx.util.Pair;
 import lombok.Data;
 import md.leonis.shingler.CSV;
+import md.leonis.shingler.ListFilesa;
 import md.leonis.shingler.model.Family;
 import md.leonis.shingler.model.FamilyType;
 import md.leonis.shingler.model.Name;
@@ -469,7 +470,10 @@ public class TiviUtils {
 
     static {
         GROUP_MAP.put("public domain", "pd");
-        GROUP_MAP.put("public domain+public domain (slide shows)", "pd");
+        GROUP_MAP.put("public domain+public domain (slide shows)", "pd_slides");
+        GROUP_MAP.put("public domain (gbs player)", "pd_gbs");
+        GROUP_MAP.put("public domain (books)", "pd_books");
+        GROUP_MAP.put("public domain (infocom games)", "pd_infocom");
         GROUP_MAP.put("multicarts collection", "multi");
         GROUP_MAP.put("vt03 collection", "vt03");
         GROUP_MAP.put("wxn collection", "wxn");

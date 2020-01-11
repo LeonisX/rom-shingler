@@ -47,6 +47,9 @@ public class SplashController {
         platforms.put("Super Nintendo", new Platform("Super Nintendo", "snes", "(.*\\(Hack\\).*|.*\\(Hack .*|.* Hack\\).*)",
                 "(.*\\[[bhot][0-9a-f]].*|.*\\[T[+\\-].*].*|.*\\[hM\\d{2}].*|.*\\[hFFE].*)", ".*\\(PD\\).*",
                 Arrays.asList(".smc", ".fig", ".058", ".078", ".sfc", ".swc", ".048", ".1", ".rom", ".st", ".bs", "bin", ".zzz", ".7z", ".zip"), Arrays.asList(1, 2, 4)));
+        platforms.put("Game Boy", new Platform("Game Boy", "gb", "(.*\\(Hack\\).*|.*\\(Hack .*|.* Hack\\).*)",
+                "(.*\\[[bhot][0-9a-f]].*|.*\\[T[+\\-].*].*|.*\\[hM\\d{2}].*|.*\\[hFFE].*)", ".*\\(PD\\).*",
+                Arrays.asList(".gb", ".sgb", ".gbc", ".cgb", ".boy", ".7z", ".zip"), Collections.singletonList(0)));
 
         platforms.values().forEach(p -> platformsByCpu.put(p.getCpu(), p));
 

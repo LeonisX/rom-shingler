@@ -56,16 +56,7 @@ public class Name implements Serializable {
 
     @JsonIgnore
     public String getCleanName() {
-        String result = name;
-        int braceIndex = result.indexOf("(");
-        if (braceIndex > 0) {
-            result = result.substring(0, braceIndex);
-        }
-        braceIndex = result.indexOf("[");
-        if (braceIndex > 0) {
-            result = result.substring(0, braceIndex);
-        }
-        return result.trim();
+        return ListFilesa.getCleanName(name);
     }
 
     public boolean isDone() {
