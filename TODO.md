@@ -3,9 +3,7 @@
 // SELECT sid, name, cpu, game, rom FROM `base_nes` ORDER BY n LIMIT 0, 50000
 // SELECT sid, name, '' as cpu, '' as game, '' as rom FROM `base_sg1000` ORDER BY n LIMIT 0, 50000
 
-TODO show correct error when shingle is not found
-
-TODO pin some chunks to platforms (BS), [C], [S], ...
+- Show correct error when shingle is not found
 
 TODO actually, CRC32 is int, we can save 50% disk space for shingles. See java.util.zip.CRC32. Just use (int)
 
@@ -65,7 +63,7 @@ TODO repair parallel family calculation
 
 TODO Name hastCode collizions. Need separate unique ID
 
-TODO fix bug SNES - can't find 
+TODO fix bug SNES - can't find:
 2020-01-08 14:38:11,926 WARN  [md.leonis.shingler.utils.TiviUtils:685] Game isn't found: Public Domain+Public Domain (Slide Shows); Public_Domain-Public_Domain_Slide_Shows.7z
 2020-01-08 14:41:07,947 WARN  [md.leonis.shingler.utils.TiviUtils:685] Game isn't found: SMW hacks; SMW_hacks.7z
 They are separated by few parts

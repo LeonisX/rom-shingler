@@ -20,7 +20,7 @@ class StringUtilsTest {
         platforms.put("Sega Game Gear", new Platform("Sega Game Gear", "gg",
                 "(.*\\(Hack\\).*|.*\\(Hack .*|.* Hack\\).*)",
                 "(.*\\[[bhot][0-9a-f]].*|.*\\[T[+\\-].*].*|.*\\[hM\\d{2}].*|.*\\[hFFE].*)", ".*\\(PD\\).*",
-                Arrays.asList(".gg", ".sms", ".7z", ".zip"), Collections.singletonList(0), 8));
+                Arrays.asList(".gg", ".sms", ".7z", ".zip"), Collections.emptyList(), Collections.singletonList(0), 8));
         platforms.values().forEach(p -> platformsByCpu.put(p.getCpu(), p));
     }
 

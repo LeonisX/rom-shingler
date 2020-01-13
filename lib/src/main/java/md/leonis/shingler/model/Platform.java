@@ -17,6 +17,7 @@ public class Platform {
     private String badMatcher;
     private String pdMatcher;
     private List<String> exts;
+    private List<String> requiredChunks;
     private List<Integer> restrictedShingles;
     private int shingleLevel;
 

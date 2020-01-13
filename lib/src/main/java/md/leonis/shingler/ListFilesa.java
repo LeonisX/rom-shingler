@@ -497,15 +497,15 @@ public class ListFilesa {
     }
 
     private static boolean allowedChunk(String s) {
-        return s.equals("[S]") || s.equals("[C]");
+        return platformsByCpu.get(platform).getRequiredChunks().contains(s);
     }
 
     private static boolean allowedPdChunk(String s) {
-        return s.equals("(PD)");
+        return platformsByCpu.get(platform).isPD(s);
     }
 
     private static boolean allowedHackChunk(String s) {
-        return s.equals("(Hack)") || s.endsWith(" Hack)") || s.endsWith("(Hack ");
+        return platformsByCpu.get(platform).isHack(s);
     }
 
 
