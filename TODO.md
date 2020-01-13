@@ -48,6 +48,7 @@ CODE:
 
 - Repair parallel family calculation
 
+- 99,99% when calculate shingles
 
 UI:
 
