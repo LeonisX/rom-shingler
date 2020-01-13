@@ -3,10 +3,6 @@
 // SELECT sid, name, cpu, game, rom FROM `base_nes` ORDER BY n LIMIT 0, 50000
 // SELECT sid, name, '' as cpu, '' as game, '' as rom FROM `base_sg1000` ORDER BY n LIMIT 0, 50000
 
-TODO '&rsquo;96 Zenkoku Koukou Soccer Senshuken', `sid`='&'
-
-TODO all games with renamed SID - move screenshots
-
 TODO show correct error when shingle not found
 
 TODO pin some chunks to platforms (BS), [C], [S], ...

@@ -9,6 +9,7 @@ import md.leonis.shingler.CSV;
 import md.leonis.shingler.model.Family;
 import md.leonis.shingler.model.FamilyType;
 import md.leonis.shingler.model.Name;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.poi.hssf.util.HSSFColor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -978,10 +979,19 @@ public class TiviUtils {
     }
 
     public static String getSid(String name) {
+        name = StringEscapeUtils.unescapeHtml4(name.replace("&rsquo;", "'")); // &amp;, ...
+        String restricted = "'\"().,&!?$@#%^*=/\\[];:|<>{}";
+
+        for (char c : restricted.toCharArray()) {
+            name = name.replace("" + c, "");
+        }
+
         if (isBlank(name)) {
             return "";
         }
+
         String sid = name.toLowerCase().substring(0, 1);
+
         if (platformsByCpu.get(platform).isPD(name)) {
             sid = "pd";
         } else if (platformsByCpu.get(platform).isHack(name)) {
