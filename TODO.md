@@ -3,9 +3,7 @@
 // SELECT sid, name, cpu, game, rom FROM `base_nes` ORDER BY n LIMIT 0, 50000
 // SELECT sid, name, '' as cpu, '' as game, '' as rom FROM `base_sg1000` ORDER BY n LIMIT 0, 50000
 
-- Show correct error when shingle is not found
-
-TODO actually, CRC32 is int, we can save 50% disk space for shingles. See java.util.zip.CRC32. Just use (int)
+- Show correct error when shingle is not found (use Executors)
 
 TODO generate htmls based on excel files
 TODO regenerate html, replace on sites

@@ -15,16 +15,16 @@ public class GID {
 
     private String title;
     private long size;
-    private Long crc32;
+    private Integer crc32;
     private byte[] md5;
     private byte[] sha1;
     //TODO delete if not need
-    private Long crc32wh;
+    private Integer crc32wh;
     private byte[] md5wh;
     private byte[] sha1wh;
     private String family; //TODO family ID
 
-    /*public GID(String title, long size, Long crc32, byte[] md5, byte[] sha1, Long crc32wh, byte[] md5wh, byte[] sha1wh, String family) {
+    /*public GID(String title, long size, Integer crc32, byte[] md5, byte[] sha1, Integer crc32wh, byte[] md5wh, byte[] sha1wh, String family) {
         this.title = title;
         this.size = size;
         this.crc32 = crc32;

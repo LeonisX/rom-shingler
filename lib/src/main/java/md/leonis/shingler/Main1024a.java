@@ -39,10 +39,10 @@ public class Main1024a {
     private static final Map<Integer, File> SAMPLE_DIRS_MAP =
             SAMPLES.stream().collect(Collectors.toMap(Function.identity(), s -> new File(GAMES_DIR + "sample-" + s)));
 
-    private static final Map<Integer, Map<String, long[]>> SHINGLE_MAP =
+    private static final Map<Integer, Map<String, int[]>> SHINGLE_MAP =
             SAMPLES.stream().collect(Collectors.toMap(Function.identity(), HashMap::new));
 
-    static final Cache<String, long[]> cache = new Cache<>(0, 0, 2400);
+    static final Cache<String, int[]> CACHE = new Cache<>(0, 0, 2400);
 
     @SuppressWarnings("all")
     public static void main(String[] args) throws IOException {
@@ -79,9 +79,9 @@ public class Main1024a {
 
             File shdFile = new File(SAMPLE_DIRS_MAP.get(1).getAbsolutePath() + File.separator + file.getName() + ".shg");
 
-            long[] shingles;
+            int[] shingles;
 
-            if (shdFile.exists() && shdFile.length() > 0 && shdFile.length() % 8 == 0) {
+            if (isCorrect(shdFile.toPath())) {
                 LOGGER.debug("Skipping: {}|{}", file.getName(), ((i + 1) * 100.0 / files.size()));
                 shingles = ShingleUtils.load(shdFile);
             } else {
@@ -94,8 +94,8 @@ public class Main1024a {
             SAMPLE_DIRS_MAP.entrySet().forEach(e -> {
                 int index = e.getKey();
                 File sampleFile = new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + file.getName() + ".shg");
-                if (index > 1 && (!sampleFile.exists() || sampleFile.length() == 0 || sampleFile.length() % 8 != 0)) {
-                    long[] filteredShingles = filterArrays(shingles, index);
+                if (index > 1 && isNotCorrect(sampleFile.toPath())) {
+                    int[] filteredShingles = filterArrays(shingles, index);
 
                     if (index > SHINGLE_MAP_THRESHOLD) {
                         SHINGLE_MAP.get(index).put(file.getName(), filteredShingles);
@@ -115,7 +115,7 @@ public class Main1024a {
         int i = 0;
         for (Map.Entry<String, GID> entry : files.entrySet()) {
 
-            long[] shingles = null;
+            int[] shingles = null;
             Path file = romsFolder.resolve(entry.getKey());
             Path shdFile = workDir.resolve("sample-1").resolve(bytesToHex(entry.getValue().getSha1()) + ".shg");
 
@@ -144,7 +144,7 @@ public class Main1024a {
                     }
 
                     // TODO actual some small files (PD) fail (empty) on 256 :(
-                    long[] filteredShingles = filterArrays(shingles, index);
+                    int[] filteredShingles = filterArrays(shingles, index);
 
                     if (index > SHINGLE_MAP_THRESHOLD) {
                         SHINGLE_MAP.get(index).put(file.toString(), filteredShingles);
@@ -157,7 +157,7 @@ public class Main1024a {
         }
     }*/
 
-    public static void generateShinglesNioParallel(RomsCollection collection, Path romsFolder, Path workDir) throws IOException {
+    public static void generateShinglesNioParallel(RomsCollection collection, Path romsFolder, Path workDir) {
 
         Set<Integer> restrictedShingles = new HashSet<>(platformsByCpu.get(platform).getRestrictedShingles());
         Map<String, GID> files = collection.getGidsMap();
@@ -174,7 +174,7 @@ public class Main1024a {
                 try {
                     int i = counter.getAndIncrement();
 
-                    long[] shingles = null;
+                    int[] shingles = null;
                     Path file = romsFolder.resolve(entry.getKey());
                     Path shdFile = workDir.resolve("sample-1").resolve(bytesToHex(entry.getValue().getSha1()) + ".shg");
 
@@ -203,7 +203,7 @@ public class Main1024a {
                             }
 
                             // TODO actual some small files (PD) fail (empty) on 256 :(
-                            long[] filteredShingles = filterArrays(shingles, index);
+                            int[] filteredShingles = filterArrays(shingles, index);
 
                             if (index > SHINGLE_MAP_THRESHOLD) {
                                 SHINGLE_MAP.get(index).put(file.toString(), filteredShingles);
@@ -231,7 +231,7 @@ public class Main1024a {
         service.shutdown();
     }
 
-    private static long[] generateShingle(RomsCollection collection, Path romsFolder, Path file, Map.Entry<String, GID> entry) throws IOException {
+    private static int[] generateShingle(RomsCollection collection, Path romsFolder, Path file, Map.Entry<String, GID> entry) throws IOException {
         switch (collection.getType()) {
             case PLAIN:
                 return ShingleUtils.toShingles(IOUtils.loadBytes(file));
@@ -246,7 +246,16 @@ public class Main1024a {
     private static boolean isCorrect(Path path) {
         try {
             long size = Files.size(path);
-            return Files.exists(path) && size > 0 && size % 8 == 0;
+            return Files.exists(path) && size > 0 && size % 4 == 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private static boolean isNotCorrect(Path path) {
+        try {
+            long size = Files.size(path);
+            return Files.notExists(path) || size == 0 || size % 4 != 0;
         } catch (Exception e) {
             return false;
         }
@@ -260,7 +269,7 @@ public class Main1024a {
             if (index > SHINGLE_MAP_THRESHOLD) {
 
                 File shinglesMapFile = new File("shinglesMap" + index);
-                Map<String, long[]> shinglesMap = new HashMap<>();
+                Map<String, int[]> shinglesMap = new HashMap<>();
 
                 if (shinglesMapFile.exists()) {
                     LOGGER.info(String.format("Getting sample%s from disk...", index));
@@ -278,8 +287,8 @@ public class Main1024a {
 
                             File srcSampleFolder = SAMPLE_DIRS_MAP.get(index);
 
-                            long[] shingles = ShingleUtils.loadFromCache(cache, new File(srcSampleFolder.getAbsolutePath() + File.separator + file.getName() + ".shg"));
-                            long[] filteredShingles = filterArrays(shingles, index);
+                            int[] shingles = ShingleUtils.loadFromCache(CACHE, new File(srcSampleFolder.getAbsolutePath() + File.separator + file.getName() + ".shg"));
+                            int[] filteredShingles = filterArrays(shingles, index);
 
                             shinglesMap.put(file.getName(), filteredShingles);
 
@@ -288,7 +297,7 @@ public class Main1024a {
                             }
                         } else {
                             LOGGER.info(String.format(Locale.US, "Reading: %s|%2.2f%%", file.getName(), ((i + 1) * 100.0 / files.size())));
-                            long[] filteredShingles = ShingleUtils.loadFromCache(cache, sampleFile);
+                            int[] filteredShingles = ShingleUtils.loadFromCache(CACHE, sampleFile);
                             shinglesMap.put(file.getName(), filteredShingles);
                         }
                     }
@@ -370,7 +379,7 @@ public class Main1024a {
                         continue;
                     }
 
-                    long[] s1Set = ShingleUtils.loadFromCache(cache, new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name1.getName() + ".shg"));
+                    int[] s1Set = ShingleUtils.loadFromCache(CACHE, new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name1.getName() + ".shg"));
 
                     for (int j = i + 1; j < family.size(); j++) {
 
@@ -385,10 +394,10 @@ public class Main1024a {
                             continue;
                         }
 
-                        long[] s2Set = ShingleUtils.loadFromCache(cache, new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name2.getName() + ".shg"));
+                        int[] s2Set = ShingleUtils.loadFromCache(CACHE, new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name2.getName() + ".shg"));
 
-                        long[] s1intersect = intersectArrays(s1Set, s2Set);
-                        long[] s1union = unionArrays(s1Set, s2Set);
+                        int[] s1intersect = intersectArrays(s1Set, s2Set);
+                        int[] s1union = unionArrays(s1Set, s2Set);
                         double jakkard = s1intersect.length * 100.0 / s1union.length;
 
                         name1.addJakkardStatus(jakkard);
@@ -425,11 +434,11 @@ public class Main1024a {
 
             Name name1 = family.get(0);
 
-            long[] s1Set;
+            int[] s1Set;
             if (index > SHINGLE_MAP_THRESHOLD) {
                 s1Set = SHINGLE_MAP.get(index).get(name1.getName());
             } else {
-                s1Set = ShingleUtils.loadFromCache(cache, new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name1.getName() + ".shg"));
+                s1Set = ShingleUtils.loadFromCache(CACHE, new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name1.getName() + ".shg"));
             }
 
             for (int j = i + 1; j < familyList.size(); j++) {
@@ -441,15 +450,15 @@ public class Main1024a {
                     continue;
                 }
 
-                long[] s2Set;
+                int[] s2Set;
                 if (index > SHINGLE_MAP_THRESHOLD) {
                     s2Set = SHINGLE_MAP.get(index).get(name2.getName());
                 } else {
-                    s2Set = ShingleUtils.loadFromCache(cache, new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name2.getName() + ".shg"));
+                    s2Set = ShingleUtils.loadFromCache(CACHE, new File(SAMPLE_DIRS_MAP.get(index).getAbsolutePath() + File.separator + name2.getName() + ".shg"));
                 }
 
-                long[] s1intersect = intersectArrays(s1Set, s2Set);
-                long[] s1union = unionArrays(s1Set, s2Set);
+                int[] s1intersect = intersectArrays(s1Set, s2Set);
+                int[] s1union = unionArrays(s1Set, s2Set);
                 double jakkard = s1intersect.length * 100.0 / s1union.length;
 
                 Result result = new Result(name1, name2, jakkard);

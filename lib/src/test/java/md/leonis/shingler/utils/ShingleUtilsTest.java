@@ -12,10 +12,10 @@ class ShingleUtilsTest {
     @Test
     void writeShinglesToFile() {
         File file = new File("tmp");
-        long[] shingles = {1, 1, 1, 1, 2, 2, 3, 4, 4, 4, 5};
+        int[] shingles = {1, 1, 1, 1, 2, 2, 3, 4, 4, 4, 5};
         ShingleUtils.save(shingles, file);
 
-        long[] result = ShingleUtils.load(file);
+        int[] result = ShingleUtils.load(file);
         assertArrayEquals(shingles, result);
     }
 
@@ -24,10 +24,10 @@ class ShingleUtilsTest {
     void writeShinglesToFile2() {
         File file = new File("tmp");
 
-        long[] shingles = {0, 12, 45, 66, 7, 8, 89, 6575, 234343243, 333, 44, 33, 1, 1, 1, 1, 2, 2, 3, 4, 4, 4, 5};
+        int[] shingles = {0, 12, 45, 66, 7, 8, 89, 6575, 234343243, 333, 44, 33, 1, 1, 1, 1, 2, 2, 3, 4, 4, 4, 5};
         ShingleUtils.save(shingles, file);
 
-        long[] result = ShingleUtils.load(file);
+        int[] result = ShingleUtils.load(file);
         assertArrayEquals(shingles, result);
 
         file.deleteOnExit();

@@ -20,11 +20,11 @@ public class BinaryUtils {
         return new String(hexChars);
     }
 
-    public static long crc32(byte[] bytes) {
+    public static int crc32(byte[] bytes) {
 
         CRC32 crc = new CRC32();
         crc.update(bytes);
-        return crc.getValue();
+        return (int) crc.getValue();
     }
 
     public static byte[] md5(byte[] bytes) {
@@ -48,9 +48,9 @@ public class BinaryUtils {
     }
 
     @Measured
-    public static long[] unionArrays(long[] arr1, long[] arr2) {
+    public static int[] unionArrays(int[] arr1, int[] arr2) {
 
-        long[] merge = new long[arr1.length + arr2.length];
+        int[] merge = new int[arr1.length + arr2.length];
         int i = 0, j = 0, k = 0;
         while (i < arr1.length && j < arr2.length) {
             if (arr1[i] < arr2[j]) {
@@ -69,9 +69,9 @@ public class BinaryUtils {
     }
 
     @Measured
-    public static long[] intersectArrays(long[] arr1, long[] arr2) {
+    public static int[] intersectArrays(int[] arr1, int[] arr2) {
 
-        long[] intersect = new long[Math.max(arr1.length, arr2.length)];
+        int[] intersect = new int[Math.max(arr1.length, arr2.length)];
         int i = 0, j = 0, k = 0;
         while (i < arr1.length && j < arr2.length) {
             if (arr1[i] < arr2[j]) {
@@ -86,11 +86,11 @@ public class BinaryUtils {
     }
 
     /*@Measured
-    static long[] intersectArrays0(long[] arr1, long[] arr2) {
+    static int[] intersectArrays0(int[] arr1, int[] arr2) {
 
-        long[] c = new long[Math.max(arr1.length, arr2.length)];
+        int[] c = new int[Math.max(arr1.length, arr2.length)];
         int k = 0;
-        for (long n : arr2) {
+        for (int n : arr2) {
             if (ArrayUtils.contains(arr1, n)) {
                 c[k++] = n;
             }
@@ -100,11 +100,11 @@ public class BinaryUtils {
     }*/
 
     @Measured
-    public static long[] filterArrays(long[] a, int index) {
+    public static int[] filterArrays(int[] a, int index) {
 
-        long[] c = new long[a.length];
+        int[] c = new int[a.length];
         int k = 0;
-        for (long n : a) {
+        for (int n : a) {
             if (n % index == 0) {
                 c[k++] = n;
             }
@@ -113,7 +113,7 @@ public class BinaryUtils {
     }
 
     @Measured
-    static long[] removeDuplicates(long[] arr) { // Only for sorted arrays
+    static int[] removeDuplicates(int[] arr) { // Only for sorted arrays
 
         if (arr.length < 2) {
             return arr;

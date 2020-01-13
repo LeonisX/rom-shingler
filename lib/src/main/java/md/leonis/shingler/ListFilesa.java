@@ -23,7 +23,7 @@ public class ListFilesa {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ListFilesa.class);
 
-    private static final Cache<String, long[]> cache = new Cache<>(0, 0, 2400);
+    private static final Cache<String, int[]> CACHE = new Cache<>(0, 0, 2400);
 
     public static void main(String[] args) {
 
@@ -138,7 +138,7 @@ public class ListFilesa {
 
     public static void calculateRelations() {
 
-        Main1024a.cache.fullCleanup();
+        Main1024a.CACHE.fullCleanup();
 
         byTitle = romsCollection.getGidsMap().values().stream().collect(Collectors.toMap(GID::getTitle, Function.identity()));
 
@@ -177,7 +177,7 @@ public class ListFilesa {
     public static void calculateRelations(Family family, boolean log) {
 
         if (family.getType() == FamilyType.FAMILY) {
-            Main1024a.cache.fullCleanup();
+            Main1024a.CACHE.fullCleanup();
 
             byTitle = romsCollection.getGidsMap().values().stream().collect(Collectors.toMap(GID::getTitle, Function.identity()));
 
@@ -215,13 +215,13 @@ public class ListFilesa {
 
                     Name name1 = family.get(id);
 
-                    long[] s1Set = ShingleUtils.loadFromCache(cache, fullShinglesPath().resolve(bytesToHex(byTitle.get(name1.getName()).getSha1()) + ".shg"));
+                    int[] s1Set = ShingleUtils.loadFromCache(cache, fullShinglesPath().resolve(bytesToHex(byTitle.get(name1.getName()).getSha1()) + ".shg"));
 
                     for (int j = id + 1; j < family.size(); j++) {
 
                         Name name2 = family.get(j);
 
-                        long[] s2Set = ShingleUtils.loadFromCache(cache, fullShinglesPath().resolve(bytesToHex(byTitle.get(name2.getName()).getSha1()) + ".shg"));
+                        int[] s2Set = ShingleUtils.loadFromCache(cache, fullShinglesPath().resolve(bytesToHex(byTitle.get(name2.getName()).getSha1()) + ".shg"));
 
                         double jakkard = doCalculateJakkard(s1Set, s2Set);
 
@@ -286,13 +286,13 @@ public class ListFilesa {
 
             Name name1 = family.get(i);
 
-            long[] s1Set = ShingleUtils.loadFromCache(cache, fullShinglesPath().resolve(bytesToHex(byTitle.get(name1.getName()).getSha1()) + ".shg"));
+            int[] s1Set = ShingleUtils.loadFromCache(CACHE, fullShinglesPath().resolve(bytesToHex(byTitle.get(name1.getName()).getSha1()) + ".shg"));
 
             for (int j = i + 1; j < family.size(); j++) {
 
                 Name name2 = family.get(j);
 
-                long[] s2Set = ShingleUtils.loadFromCache(cache, fullShinglesPath().resolve(bytesToHex(byTitle.get(name2.getName()).getSha1()) + ".shg"));
+                int[] s2Set = ShingleUtils.loadFromCache(CACHE, fullShinglesPath().resolve(bytesToHex(byTitle.get(name2.getName()).getSha1()) + ".shg"));
 
                 double jakkard = doCalculateJakkard(s1Set, s2Set);
 
@@ -315,9 +315,9 @@ public class ListFilesa {
         }
     }
 
-    private static double doCalculateJakkard(long[] s1Set, long[] s2Set) {
-        long[] s1intersect = intersectArrays(s1Set, s2Set);
-        long[] s1union = unionArrays(s1Set, s2Set);
+    private static double doCalculateJakkard(int[] s1Set, int[] s2Set) {
+        int[] s1intersect = intersectArrays(s1Set, s2Set);
+        int[] s1union = unionArrays(s1Set, s2Set);
         return s1intersect.length * 100.0 / s1union.length;
     }
 
@@ -331,18 +331,18 @@ public class ListFilesa {
 
     public static Map<Family, Double> calculateRelations(String name, String ignore, boolean log) {
 
-        Main1024a.cache.fullCleanup();
+        Main1024a.CACHE.fullCleanup();
         byTitle = romsCollection.getGidsMap().values().stream().collect(Collectors.toMap(GID::getTitle, Function.identity()));
 
         AtomicInteger k = new AtomicInteger(0);
-        long[] s1Set = ShingleUtils.loadFromCache(cache, fullShinglesPath().resolve(bytesToHex(byTitle.get(name).getSha1()) + ".shg"));
+        int[] s1Set = ShingleUtils.loadFromCache(CACHE, fullShinglesPath().resolve(bytesToHex(byTitle.get(name).getSha1()) + ".shg"));
 
         return families.values().stream().filter(e -> !e.getName().equals(ignore)).filter(e -> e.getType() == FamilyType.FAMILY).collect(Collectors.toMap(Function.identity(), family -> {
             if (log) {
                 LOGGER.info("Comparing: {} with {}|{}", name, family.getName(), (k.incrementAndGet()) * 100.0 / families.size());
             }
             //TODO here if no shingle file (or NPE) - we don't see this error at all!!!
-            long[] s2Set = ShingleUtils.loadFromCache(cache, fullShinglesPath().resolve(bytesToHex(byTitle.get(family.getMother().getName()).getSha1()) + ".shg"));
+            int[] s2Set = ShingleUtils.loadFromCache(CACHE, fullShinglesPath().resolve(bytesToHex(byTitle.get(family.getMother().getName()).getSha1()) + ".shg"));
 
             return doCalculateJakkard(s1Set, s2Set);
         })).entrySet().stream()

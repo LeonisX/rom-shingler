@@ -54,7 +54,6 @@ public class IOUtils {
     public static class Finder extends SimpleFileVisitor<Path> {
 
         private final PathMatcher matcher;
-        private int numMatches = 0;
         private List<Path> results = new ArrayList<>();
 
         Finder(String pattern) {
@@ -66,7 +65,6 @@ public class IOUtils {
         void find(Path file) {
             Path name = file.getFileName();
             if (name != null && matcher.matches(name)) {
-                numMatches++;
                 results.add(file);
                 //System.out.println(file);
             }
@@ -363,7 +361,7 @@ public class IOUtils {
     public static Stream<GID> loadGIDsFromArchive(Path file) {
         try (SevenZFile archiveFile = new SevenZFile(file.toFile())) {
             return StreamSupport.stream(archiveFile.getEntries().spliterator(), false)
-                    .map(e -> new GID(e.getName(), e.getSize(), e.getCrcValue(), null, null, null, null, null, file.getFileName().toString()));
+                    .map(e -> new GID(e.getName(), e.getSize(), (int) e.getCrcValue(), null, null, null, null, null, file.getFileName().toString()));
         } catch (IOException e) {
             throw new RuntimeException();
         }
@@ -378,7 +376,7 @@ public class IOUtils {
                 byte[] bytes = new byte[(int) entry.getSize()];
                 sevenZFile.read(bytes, 0, bytes.length);
                 byte[] bytestwh = Arrays.copyOfRange(bytes, 16, bytes.length);
-                result.add(new GID(entry.getName(), entry.getSize(), entry.getCrcValue(), md5(bytes), sha1(bytes), crc32(bytestwh), md5(bytestwh), sha1(bytestwh), file.getFileName().toString()));
+                result.add(new GID(entry.getName(), entry.getSize(), (int) entry.getCrcValue(), md5(bytes), sha1(bytes), crc32(bytestwh), md5(bytestwh), sha1(bytestwh), file.getFileName().toString()));
                 entry = sevenZFile.getNextEntry();
             }
         } catch (IOException e) {

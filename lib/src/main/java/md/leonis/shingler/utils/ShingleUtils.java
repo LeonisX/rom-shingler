@@ -20,24 +20,24 @@ public class ShingleUtils {
     private static final int SHINGLE_LENGTH = 8;
 
     @Measured
-    public static long[] toShingles(byte[] bytes) {
-        Set<Long> hashes = new HashSet<>();
+    public static int[] toShingles(byte[] bytes) {
+        Set<Integer> hashes = new HashSet<>();
 
         for (int i = 0; i < bytes.length - SHINGLE_LENGTH + 1; i++) {
             hashes.add(crc32(Arrays.copyOfRange(bytes, i, i + SHINGLE_LENGTH)));
         }
 
-        return hashes.stream().sorted().mapToLong(l -> l).toArray();
+        return hashes.stream().sorted().mapToInt(l -> l).toArray();
     }
 
     @SuppressWarnings("unchecked")
     @Measured
-    public static Map<String, long[]> loadMap(File file) {
+    public static Map<String, int[]> loadMap(File file) {
 
         try {
             FileInputStream fis = new FileInputStream(file);
             ObjectInputStream ois = new ObjectInputStream(fis);
-            Map<String, long[]> shinglesMap = (Map<String, long[]>) ois.readObject();
+            Map<String, int[]> shinglesMap = (Map<String, int[]>) ois.readObject();
 
             ois.close();
             fis.close();
@@ -48,14 +48,14 @@ public class ShingleUtils {
     }
 
     @Measured
-    public static long[] load(File file) {
+    public static int[] load(File file) {
 
         int count = (int) file.length() / 8;
-        long[] shingles = new long[count];
+        int[] shingles = new int[count];
         try (FileChannel fc = FileChannel.open(file.toPath())) {
             MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_ONLY, 0, file.length());
             for (int i = 0; i < count; i++) {
-                shingles[i] = mbb.getLong();
+                shingles[i] = mbb.getInt();
             }
         } catch (IOException ex) {
             throw new RuntimeException(ex);
@@ -64,16 +64,16 @@ public class ShingleUtils {
     }
 
     @Measured
-    public static long[] load(Path file) {
+    public static int[] load(Path file) {
 
         try {
             long size = Files.size(file);
             int count = (int) size / 8;
-            long[] shingles = new long[count];
+            int[] shingles = new int[count];
             try (FileChannel fc = FileChannel.open(file)) {
                 MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_ONLY, 0, size);
                 for (int i = 0; i < count; i++) {
-                    shingles[i] = mbb.getLong();
+                    shingles[i] = mbb.getInt();
                 }
             }
             return shingles;
@@ -83,14 +83,14 @@ public class ShingleUtils {
     }
 
     @Measured
-    public static long[] loadFromCache(Cache<String, long[]> cache, File file) {
+    public static int[] loadFromCache(Cache<String, int[]> cache, File file) {
         String key = file.getAbsolutePath();
-        long[] cachedValue = cache.get(key);
+        int[] cachedValue = cache.get(key);
         if (cachedValue != null) {
             return cachedValue;
         }
 
-        long[] result = ShingleUtils.load(file);
+        int[] result = ShingleUtils.load(file);
         if (getFreeMemory() < 250) {
             System.out.println(String.format("We have only %s Mb of RAM", getFreeMemory()));
             System.out.println("Cleaning Cache...");
@@ -104,14 +104,14 @@ public class ShingleUtils {
     }
 
     @Measured
-    public static long[] loadFromCache(Cache<String, long[]> cache, Path file) {
+    public static int[] loadFromCache(Cache<String, int[]> cache, Path file) {
         String key = file.toAbsolutePath().toString();
-        long[] cachedValue = cache.get(key);
+        int[] cachedValue = cache.get(key);
         if (cachedValue != null) {
             return cachedValue;
         }
 
-        long[] result = ShingleUtils.load(file);
+        int[] result = ShingleUtils.load(file);
         if (getFreeMemory() < 250) {
             System.out.println(String.format("We have only %s Mb of RAM", getFreeMemory()));
             System.out.println("Cleaning Cache...");
@@ -125,13 +125,13 @@ public class ShingleUtils {
     }
 
     @Measured
-    public static void save(long[] shingles, File file) {
+    public static void save(int[] shingles, File file) {
 
         int count = shingles.length;
         try (FileChannel fc = FileChannel.open(file.toPath(), EnumSet.of(StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING))) {
             MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_WRITE, 0, count * 8);
-            for (long shingle : shingles) {
-                mbb.putLong(shingle);
+            for (int shingle : shingles) {
+                mbb.putInt(shingle);
             }
         } catch (IOException ex) {
             throw new RuntimeException(ex);
@@ -139,13 +139,13 @@ public class ShingleUtils {
     }
 
     @Measured
-    public static void save(long[] shingles, Path file) {
+    public static void save(int[] shingles, Path file) {
 
         int count = shingles.length;
         try (FileChannel fc = FileChannel.open(file, EnumSet.of(StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING))) {
             MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_WRITE, 0, count * 8);
-            for (long shingle : shingles) {
-                mbb.putLong(shingle);
+            for (int shingle : shingles) {
+                mbb.putInt(shingle);
             }
         } catch (IOException ex) {
             throw new RuntimeException(ex);
@@ -157,5 +157,4 @@ public class ShingleUtils {
         long presumableFreeMemory = Runtime.getRuntime().maxMemory() - allocatedMemory;
         return presumableFreeMemory / 1024 / 1024;
     }
-
 }
