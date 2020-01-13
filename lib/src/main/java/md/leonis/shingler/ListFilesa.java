@@ -29,7 +29,7 @@ public class ListFilesa {
 
         MeasureMethodTest.premain();
 
-        ConfigHolder.setDenominatorId(3); // 8
+        ConfigHolder.setShinglesLevel(8); // id == 3
         ConfigHolder.platform = "nes";
         ConfigHolder.collection = "_GoodNES 3.23b (test)"; // "GoodNES 3.14"
 

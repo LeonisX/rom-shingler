@@ -14,28 +14,33 @@ import java.util.*;
 // A shared object that stores general application settings
 public class ConfigHolder {
 
-    public static final List<Integer> DENOMINATORS = Arrays.asList(1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024);
+    public static final List<Integer> SHINGLES_LEVELS = Arrays.asList(1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024);
 
-    public static final int defaultDenominator = 3; // 8
+    public static final int defaultShinglesLevel = 8; // id == 3
 
-    private static int denominatorId;
-    private static int denominator;
+    private static int shinglesLevelId;
+    private static int shinglesLevel;
 
     static {
-        setDenominatorId(defaultDenominator);
+        setShinglesLevel(defaultShinglesLevel);
     }
 
-    public static int getDenominatorId() {
-        return denominatorId;
+    public static void setShinglesLevelId(int shinglesLevelId) {
+        ConfigHolder.shinglesLevelId = shinglesLevelId;
+        ConfigHolder.shinglesLevel = SHINGLES_LEVELS.get(shinglesLevelId);
     }
 
-    public static int getDenominator() {
-        return denominator;
+    public static int getShinglesLevelId() {
+        return shinglesLevelId;
     }
 
-    public static void setDenominatorId(int denominatorId) {
-        ConfigHolder.denominatorId = denominatorId;
-        ConfigHolder.denominator = DENOMINATORS.get(denominatorId);
+    public static int getShinglesLevel() {
+        return shinglesLevel;
+    }
+
+    public static void setShinglesLevel(int shinglesLevel) {
+        ConfigHolder.shinglesLevelId = SHINGLES_LEVELS.indexOf(shinglesLevel);
+        ConfigHolder.shinglesLevel = shinglesLevel;
     }
 
     //TODO config
@@ -75,7 +80,7 @@ public class ConfigHolder {
     }
 
     public static Path fullShinglesPath() {
-        return workShinglesPath().resolve("sample-" + denominator);
+        return workShinglesPath().resolve("sample-" + shinglesLevel);
     }
 
     public static Path workCollectionsPath() {
@@ -91,15 +96,15 @@ public class ConfigHolder {
     }
 
     public static Path fullFamiliesPath() {
-        return workFamiliesPath().resolve(collection + "-" + denominator);
+        return workFamiliesPath().resolve(collection + "-" + shinglesLevel);
     }
 
     public static Path fullFamilyRelationsPath() {
-        return workFamiliesPath().resolve(collection + "-relations-" + denominator);
+        return workFamiliesPath().resolve(collection + "-relations-" + shinglesLevel);
     }
 
     public static Path fullTribeRelationsPath() {
-        return workFamiliesPath().resolve(collection + "-tribe-relations-" + denominator);
+        return workFamiliesPath().resolve(collection + "-tribe-relations-" + shinglesLevel);
     }
 
     //TODO bad solution

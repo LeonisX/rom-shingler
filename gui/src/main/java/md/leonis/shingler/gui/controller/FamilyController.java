@@ -143,7 +143,7 @@ public class FamilyController {
     public TreeView<NameView> orphanTreeView;
     public TreeView<NameView> tribeRelationsTreeView;
 
-    public ComboBox<Integer> precisionCheckBox;
+    public ComboBox<Integer> precisionComboBox;
     public TextField jakkardTextField;
     public Button expandAllButton;
     public Button collapseAllButton;
@@ -171,9 +171,9 @@ public class FamilyController {
         TextFormatter formatter = new TextFormatter((UnaryOperator<TextFormatter.Change>) change -> PATTERN.matcher(change.getControlNewText()).matches() ? change : null);
         jakkardTextField.setTextFormatter(formatter);
 
-        precisionCheckBox.setItems(FXCollections.observableArrayList(DENOMINATORS));
-        precisionCheckBox.setCellFactory(precisionCheckBoxCellFactory);
-        precisionCheckBox.getSelectionModel().select(getDenominatorId());
+        precisionComboBox.setItems(FXCollections.observableArrayList(SHINGLES_LEVELS));
+        precisionComboBox.setCellFactory(precisionComboBoxCellFactory);
+        precisionComboBox.getSelectionModel().select(getShinglesLevelId());
 
         controlsHBox.managedProperty().bind(controlsHBox.visibleProperty());
 
@@ -308,7 +308,7 @@ public class FamilyController {
         }
     }
 
-    private Callback<ListView<Integer>, ListCell<Integer>> precisionCheckBoxCellFactory = new Callback<ListView<Integer>, ListCell<Integer>>() {
+    private Callback<ListView<Integer>, ListCell<Integer>> precisionComboBoxCellFactory = new Callback<ListView<Integer>, ListCell<Integer>>() {
 
         @Override
         public ListCell<Integer> call(ListView<Integer> l) {
@@ -545,8 +545,8 @@ public class FamilyController {
         });
     }
 
-    public void precisionCheckBoxAction() {
-        setDenominatorId(precisionCheckBox.getSelectionModel().getSelectedIndex());
+    public void precisionComboBoxAction() {
+        setShinglesLevelId(precisionComboBox.getSelectionModel().getSelectedIndex());
         loadFamilies();
     }
 

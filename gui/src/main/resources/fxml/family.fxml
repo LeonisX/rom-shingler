@@ -173,7 +173,7 @@
                                </HBox>
                                <HBox fx:id="controlsHBox" alignment="CENTER" prefHeight="46.0" prefWidth="732.0" spacing="5.0">
                                    <Label text="Precision:" />
-                                   <ComboBox fx:id="precisionCheckBox" onAction="#precisionCheckBoxAction" prefHeight="25.0" prefWidth="74.0" />
+                                   <ComboBox fx:id="precisionComboBox" onAction="#precisionComboBoxAction" prefHeight="25.0" prefWidth="74.0" />
                                    <Button fx:id="generateFamiliesButton" mnemonicParsing="false" onAction="#generateFamiliesButtonClick" text="Generate families" />
                                    <Button fx:id="calculateRelationsButton" mnemonicParsing="false" onAction="#calculateRelationsButtonClick" text="Calculate relations" />
                                    <Button fx:id="reCalculateRelationsButton" mnemonicParsing="false" onAction="#reCalculateRelationsButtonClick" text="ReCalculate relations" />

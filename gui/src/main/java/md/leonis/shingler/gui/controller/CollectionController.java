@@ -358,6 +358,7 @@ public class CollectionController {
     }
 
     public void manageFamiliesButtonClick() {
+        ConfigHolder.setShinglesLevel(platformsByCpu.get(platform).getShingleLevel());
         stageManager.showPane(FxmlView.FAMILY);
         //stageManager.showNewWindow(FxmlView.FAMILY);
     }

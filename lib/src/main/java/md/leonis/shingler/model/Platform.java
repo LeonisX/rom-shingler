@@ -18,6 +18,7 @@ public class Platform {
     private String pdMatcher;
     private List<String> exts;
     private List<Integer> restrictedShingles;
+    private int shingleLevel;
 
     public boolean isHack(String name) {
         return name.matches(hackMatcher);
