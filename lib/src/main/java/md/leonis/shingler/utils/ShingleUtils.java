@@ -50,7 +50,7 @@ public class ShingleUtils {
     @Measured
     public static int[] load(File file) {
 
-        int count = (int) file.length() / 8;
+        int count = (int) file.length() / 4;
         int[] shingles = new int[count];
         try (FileChannel fc = FileChannel.open(file.toPath())) {
             MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_ONLY, 0, file.length());
@@ -68,7 +68,7 @@ public class ShingleUtils {
 
         try {
             long size = Files.size(file);
-            int count = (int) size / 8;
+            int count = (int) size / 4;
             int[] shingles = new int[count];
             try (FileChannel fc = FileChannel.open(file)) {
                 MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_ONLY, 0, size);
@@ -129,7 +129,7 @@ public class ShingleUtils {
 
         int count = shingles.length;
         try (FileChannel fc = FileChannel.open(file.toPath(), EnumSet.of(StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING))) {
-            MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_WRITE, 0, count * 8);
+            MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_WRITE, 0, count * 4);
             for (int shingle : shingles) {
                 mbb.putInt(shingle);
             }
@@ -143,7 +143,7 @@ public class ShingleUtils {
 
         int count = shingles.length;
         try (FileChannel fc = FileChannel.open(file, EnumSet.of(StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING))) {
-            MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_WRITE, 0, count * 8);
+            MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_WRITE, 0, count * 4);
             for (int shingle : shingles) {
                 mbb.putInt(shingle);
             }
