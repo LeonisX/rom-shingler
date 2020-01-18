@@ -5,6 +5,8 @@
 
 TiVi:
 
+- Don't allow CPU with "_" (validate when generate SQL queries)
+
 - Generate htmls based on excel files
 
 - При повторном проходе необходимо обновлять ссылки. Это очень актуально для больших баз, например NES,
