@@ -50,9 +50,6 @@ public class ConfigHolder {
     public static Path collectionsDir = rootWorkDir.resolve("collections");
     public static Path familiesDir = rootWorkDir.resolve("families");
 
-    public static Path inputDir = Paths.get("D:\\Downloads\\input");
-    public static Path outputDir = Paths.get("D:\\Downloads\\merged-roms");
-
     public static String romsUrl = "http://tv-roms.narod.ru/games/";
     public static String uniqueRomsUrl = "http://cominf0.narod.ru/mame/";
 
@@ -89,6 +86,14 @@ public class ConfigHolder {
 
     public static Path fullCollectionsPath() {
         return workCollectionsPath().resolve(collection);
+    }
+
+    public static Path getInputPath() {
+        return rootWorkDir.resolve("input");
+    }
+
+    public static Path getOutputPath() {
+        return rootWorkDir.resolve("merged-roms");
     }
 
     public static Path workFamiliesPath() {

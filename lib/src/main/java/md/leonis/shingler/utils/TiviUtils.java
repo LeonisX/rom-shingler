@@ -56,7 +56,7 @@ public class TiviUtils {
     private static List<CSV.MySqlStructure> readCsv() {
 
         try {
-            File file = inputDir.resolve("lists").resolve("base_" + platform + ".csv").toFile(); // Already escaped to &amp;, ...
+            File file = getInputPath().resolve("lists").resolve("base_" + platform + ".csv").toFile(); // Already escaped to &amp;, ...
             if (!file.exists()) {
                 //createGamesList(file);
                 LOGGER.warn("{} is absent", file);
@@ -81,7 +81,7 @@ public class TiviUtils {
 
     private static List<CSV.RenamedStructure> readRenamedCsv() {
         try {
-            File file = inputDir.resolve(platform + "_renamed.csv").toFile();
+            File file = getInputPath().resolve(platform + "_renamed.csv").toFile();
             if (file.exists()) {
                 CsvSchema schema = new CsvMapper().schemaFor(CSV.RenamedStructure.class).withColumnSeparator(';').withoutHeader().withQuoteChar('"');
                 MappingIterator<CSV.RenamedStructure> iter = new CsvMapper().readerFor(CSV.RenamedStructure.class).with(schema).readValues(file);
@@ -100,7 +100,7 @@ public class TiviUtils {
 
     private static void saveRenamedCsv(List<CSV.RenamedStructure> renamed) {
         try {
-            File file = inputDir.resolve(platform + "_renamed_final.csv").toFile();
+            File file = getInputPath().resolve(platform + "_renamed_final.csv").toFile();
             CsvSchema schema = new CsvMapper().schemaFor(CSV.RenamedStructure.class).withColumnSeparator(';').withoutHeader().withQuoteChar('"');
             new CsvMapper().writerFor(CSV.RenamedStructure.class).with(schema).writeValues(file).writeAll(renamed).close();
         } catch (IOException e) {
@@ -110,7 +110,7 @@ public class TiviUtils {
 
     private static List<CSV.AddedStructure> readAddedCsv() {
         try {
-            File file = inputDir.resolve(platform + "_added.csv").toFile();
+            File file = getInputPath().resolve(platform + "_added.csv").toFile();
             if (!file.exists()) {
                 createAddedList(file);
             }
@@ -132,11 +132,11 @@ public class TiviUtils {
     }
 
     private static Path xlsUpdatePath() {
-        return inputDir.resolve("base_" + platform + ".xlsx");
+        return getInputPath().resolve("base_" + platform + ".xlsx");
     }
 
     private static Path xlsCreatePath() {
-        return inputDir.resolve("base_" + platform + "_create.xlsx");
+        return getInputPath().resolve("base_" + platform + "_create.xlsx");
     }
 
     private static void writeXls(Path path, List<CSV.MySqlStructure> records) {
@@ -279,7 +279,7 @@ public class TiviUtils {
         tribes.keySet().stream().sorted().forEach(t -> {
 
             String sourceArchiveName = StringUtils.addExt(t, "7z");
-            Path sourceArchive = outputDir.resolve(platform).resolve(sourceArchiveName);
+            Path sourceArchive = getOutputPath().resolve(platform).resolve(sourceArchiveName);
 
             // compress all families to one tribe
             /*if (tribes.get(t).size() > 1) {
@@ -292,7 +292,7 @@ public class TiviUtils {
             int fileSize = (int) IOUtils.fileSize(sourceArchive) / 1024;
 
             String platformGroup = needToSeparate ? String.format("%s%s", platform, (int) Math.ceil(g.getAndIncrement() / DIR_SEPARATE_SIZE)) : platform;
-            Path destPath = outputDir.resolve(platform).resolve("games").resolve(platformGroup);
+            Path destPath = getOutputPath().resolve(platform).resolve("games").resolve(platformGroup);
             if (isIO) {
                 IOUtils.createDirectories(destPath);
             }
@@ -332,12 +332,12 @@ public class TiviUtils {
                     String destArchiveName = StringUtils.normalize(String.format("%s part %s", t, i).replace("_", " "), "7z");
 
                     if (isIO) {
-                        //TODO fix this - hack for SNES ganes - hashcode collizion
+                        //TODO fix this - hack for SNES games - hashcode collizion
                         chunk = chunk.stream().distinct().collect(Collectors.toList());
 
                         ArchiveUtils.compress7z(destArchiveName, chunk, i++);
 
-                        sourceArchive = outputDir.resolve(platform).resolve(destArchiveName);
+                        sourceArchive = getOutputPath().resolve(platform).resolve(destArchiveName);
                         Path destArchive = destPath.resolve(destArchiveName);
                         fileSize = (int) IOUtils.fileSize(sourceArchive) / 1024;
                         IOUtils.copyFile(sourceArchive, destArchive);
@@ -356,14 +356,14 @@ public class TiviUtils {
             }
         });
 
-        IOUtils.saveToFile(inputDir.resolve(platform + "_games.htm"), formatHead() + String.join("\n", lists.getHtmlLines()) + FOOT);
-        IOUtils.saveToFile(inputDir.resolve(platform + "_games.txt"), lists.getTxtLines());
-        //IOUtils.saveToFile(inputDir.resolve(platform + "_games_update.sql"), lists.getUpdateLines());
-        IOUtils.saveToFile(inputDir.resolve(platform + "_games_unmapped.txt"), lists.getUnmappedLines());
-        IOUtils.saveToFile(inputDir.resolve(platform + "_games_unmapped_families.txt"), lists.getUnmappedFamilies());
-        IOUtils.saveToFile(inputDir.resolve(platform + "_games_unmapped_names.txt"), lists.getUnmappedNames().stream().sorted().map(r -> lists.getNormalizedMap().get(r).getName()).collect(Collectors.toList()));
-        //IOUtils.saveToFile(inputDir.resolve(platform + "_create.sql"), lists.getCreateLines().stream().sorted().map(r -> formatCreate(getSid(r), r, StringUtils.cpu(r), null, null, false, warnings)).collect(Collectors.toList()));
-        IOUtils.saveToFile(inputDir.resolve(platform + "_htaccess.txt"), lists.getHtAccessLines());
+        IOUtils.saveToFile(getInputPath().resolve(platform + "_games.htm"), formatHead() + String.join("\n", lists.getHtmlLines()) + FOOT);
+        IOUtils.saveToFile(getInputPath().resolve(platform + "_games.txt"), lists.getTxtLines());
+        //IOUtils.saveToFile(getInputPath().resolve(platform + "_games_update.sql"), lists.getUpdateLines());
+        IOUtils.saveToFile(getInputPath().resolve(platform + "_games_unmapped.txt"), lists.getUnmappedLines());
+        IOUtils.saveToFile(getInputPath().resolve(platform + "_games_unmapped_families.txt"), lists.getUnmappedFamilies());
+        IOUtils.saveToFile(getInputPath().resolve(platform + "_games_unmapped_names.txt"), lists.getUnmappedNames().stream().sorted().map(r -> lists.getNormalizedMap().get(r).getName()).collect(Collectors.toList()));
+        //IOUtils.saveToFile(getInputPath().resolve(platform + "_create.sql"), lists.getCreateLines().stream().sorted().map(r -> formatCreate(getSid(r), r, StringUtils.cpu(r), null, null, false, warnings)).collect(Collectors.toList()));
+        IOUtils.saveToFile(getInputPath().resolve(platform + "_htaccess.txt"), lists.getHtAccessLines());
 
         // save as excel
         IOUtils.backupFile(xlsUpdatePath());
@@ -509,7 +509,7 @@ public class TiviUtils {
     }
 
     private static Path getUniquePath() {
-        return outputDir.resolve(platform).resolve("roms");
+        return getOutputPath().resolve(platform).resolve("roms");
     }
 
     private static void createAddedList(File file) {
@@ -567,7 +567,7 @@ public class TiviUtils {
     //(list+dump+force63)
     public static void getAllUniqueRoms() {
 
-        List<String> games = IOUtils.loadTextFile(inputDir.resolve(platform + "_games.txt"));
+        List<String> games = IOUtils.loadTextFile(getInputPath().resolve(platform + "_games.txt"));
 
         TiViLists lists = new TiViLists();
 
@@ -643,12 +643,12 @@ public class TiviUtils {
         //List<Name> hacks = families.values().stream().flatMap(f -> f.getMembers().stream()).filter(n -> platformsByCpu.get(platform).isHack(n.getName())).sorted(Comparator.comparing(Name::getName)).collect(Collectors.toList());
         //processGroup(lists, new Family("hack", null, null), hacks, i, games);
 
-        IOUtils.saveToFile(inputDir.resolve(platform + "_roms.htm"), formatHead() + String.join("\n", lists.getHtmlLines()) + FOOT);
-        IOUtils.saveToFile(inputDir.resolve(platform + "_roms.txt"), lists.getTxtLines())/*.stream().sorted().collect(Collectors.toList()))*/; // mess with hacks, pd
-        //IOUtils.saveToFile(inputDir.resolve(platform + "_roms_update.sql"), lists.getUpdateLines());
-        IOUtils.saveToFile(inputDir.resolve(platform + "_roms_unmapped.txt"), lists.getUnmappedLines());
-        IOUtils.saveToFile(inputDir.resolve(platform + "_roms_unmapped_families.txt"), lists.getUnmappedFamilies());
-        IOUtils.saveToFile(inputDir.resolve(platform + "_roms_unmapped_names.txt"), lists.getUnmappedNames().stream().sorted().map(r -> lists.getNormalizedMap().get(r).getName()).collect(Collectors.toList()));
+        IOUtils.saveToFile(getInputPath().resolve(platform + "_roms.htm"), formatHead() + String.join("\n", lists.getHtmlLines()) + FOOT);
+        IOUtils.saveToFile(getInputPath().resolve(platform + "_roms.txt"), lists.getTxtLines())/*.stream().sorted().collect(Collectors.toList()))*/; // mess with hacks, pd
+        //IOUtils.saveToFile(getInputPath().resolve(platform + "_roms_update.sql"), lists.getUpdateLines());
+        IOUtils.saveToFile(getInputPath().resolve(platform + "_roms_unmapped.txt"), lists.getUnmappedLines());
+        IOUtils.saveToFile(getInputPath().resolve(platform + "_roms_unmapped_families.txt"), lists.getUnmappedFamilies());
+        IOUtils.saveToFile(getInputPath().resolve(platform + "_roms_unmapped_names.txt"), lists.getUnmappedNames().stream().sorted().map(r -> lists.getNormalizedMap().get(r).getName()).collect(Collectors.toList()));
 
         List<String> fams = new ArrayList<>();
         families.values().stream().collect(Collectors.toMap(Family::getName, f -> f.getMembers().stream().map(Name::getCleanName).distinct().sorted()))
@@ -657,7 +657,7 @@ public class TiviUtils {
             f.getValue().map(r -> "    " + r).forEach(fams::add);
         });
 
-        IOUtils.saveToFile(inputDir.resolve(platform + "_families_to_games.txt"), fams);
+        IOUtils.saveToFile(getInputPath().resolve(platform + "_families_to_games.txt"), fams);
 
         List<Pair<String, String>> pairs = new ArrayList<>();
         families.values().stream().collect(Collectors.toMap(Family::getName, f -> f.getMembers().stream().map(Name::getCleanName).distinct().sorted()))
@@ -667,7 +667,7 @@ public class TiviUtils {
             }
         }));
 
-        IOUtils.saveToFile(inputDir.resolve(platform + "_games_to_families.txt"), pairs.stream().map(p -> p.getKey() + "\t\t" + p.getValue()).sorted().collect(Collectors.toList()));
+        IOUtils.saveToFile(getInputPath().resolve(platform + "_games_to_families.txt"), pairs.stream().map(p -> p.getKey() + "\t\t" + p.getValue()).sorted().collect(Collectors.toList()));
 
         // save as excel
         writeXls(xlsUpdatePath(), lists.getRecords());
@@ -842,7 +842,7 @@ public class TiviUtils {
             String sets = vals.entrySet().stream().map(e -> String.format("`%s`='%s'", e.getKey(), e.getValue())).collect(Collectors.joining(", "));
             updateList.add(String.format("UPDATE `base_%s` SET %s WHERE name='%s';", platform, sets, originRecords.get(k).getName()));
         }
-        IOUtils.saveToFile(inputDir.resolve(platform + "_update.sql"), String.join("\n", updateList));
+        IOUtils.saveToFile(getInputPath().resolve(platform + "_update.sql"), String.join("\n", updateList));
 
         // Added
         records = readXls(xlsCreatePath());
@@ -856,7 +856,7 @@ public class TiviUtils {
                 copyFinal(record.getRom(), "roms", copied);
             }
         }
-        IOUtils.saveToFile(inputDir.resolve(platform + "_create.sql"), String.join("\n", createList));
+        IOUtils.saveToFile(getInputPath().resolve(platform + "_create.sql"), String.join("\n", createList));
 
         saveRenamedCsv(renamed);
 
@@ -914,8 +914,8 @@ public class TiviUtils {
 
     private static void copyFinal(String source, String path, Set<String> copied) {
         if (isIO && org.apache.commons.lang3.StringUtils.isNotBlank(source)) {
-            Path sourceFile = outputDir.resolve(platform).resolve(path).resolve(source.trim());
-            Path destFile = outputDir.resolve(platform + "-final").resolve(path).resolve(source.trim());
+            Path sourceFile = getOutputPath().resolve(platform).resolve(path).resolve(source.trim());
+            Path destFile = getOutputPath().resolve(platform + "-final").resolve(path).resolve(source.trim());
             if (Files.exists(sourceFile)) {
                 if (Files.notExists(destFile.getParent())) {
                     IOUtils.createDirectories(destFile.getParent());

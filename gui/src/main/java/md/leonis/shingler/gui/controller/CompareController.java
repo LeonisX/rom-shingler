@@ -326,9 +326,9 @@ public class CompareController {
                 .filter(e -> e.getValue().size() == e.getValue().stream().filter(v -> StringUtils.isBlank(v.getValue().getTitle())).count())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        IOUtils.saveToFile(inputDir.resolve(platform + "_renamed.csv"), renamed.stream().map(p -> new CSV.RenamedStructure(TiviUtils.getSid(p.getKey()), ListFilesa.getCleanName(p.getKey()), ListFilesa.getCleanName(p.getValue()))).sorted(Comparator.comparing(CSV.RenamedStructure::getNewName)).sorted(Comparator.comparing(r -> sidOrder(r.getSid()))).map(p -> '"' + p.getSid() + "\";\"" + p.getNewName() + "\";\"" + p.getOldName() + '"').distinct().collect(Collectors.toList()));
-        IOUtils.saveToFile(inputDir.resolve(platform + "_added.csv"), added.entrySet().stream().map(p -> new CSV.AddedStructure(TiviUtils.getSid(p.getValue().get(0).getValue().getTitle()), p.getKey())).sorted(Comparator.comparing(CSV.AddedStructure::getName)).sorted(Comparator.comparing(r -> sidOrder(r.getSid()))).map(p -> '"' + p.getSid() + "\";\"" + p.getName() + '"').collect(Collectors.toList()));
-        IOUtils.saveToFile(inputDir.resolve(platform + "_deleted.txt"), deleted.keySet().stream().sorted().collect(Collectors.toList()));
+        IOUtils.saveToFile(getInputPath().resolve(platform + "_renamed.csv"), renamed.stream().map(p -> new CSV.RenamedStructure(TiviUtils.getSid(p.getKey()), ListFilesa.getCleanName(p.getKey()), ListFilesa.getCleanName(p.getValue()))).sorted(Comparator.comparing(CSV.RenamedStructure::getNewName)).sorted(Comparator.comparing(r -> sidOrder(r.getSid()))).map(p -> '"' + p.getSid() + "\";\"" + p.getNewName() + "\";\"" + p.getOldName() + '"').distinct().collect(Collectors.toList()));
+        IOUtils.saveToFile(getInputPath().resolve(platform + "_added.csv"), added.entrySet().stream().map(p -> new CSV.AddedStructure(TiviUtils.getSid(p.getValue().get(0).getValue().getTitle()), p.getKey())).sorted(Comparator.comparing(CSV.AddedStructure::getName)).sorted(Comparator.comparing(r -> sidOrder(r.getSid()))).map(p -> '"' + p.getSid() + "\";\"" + p.getName() + '"').collect(Collectors.toList()));
+        IOUtils.saveToFile(getInputPath().resolve(platform + "_deleted.txt"), deleted.keySet().stream().sorted().collect(Collectors.toList()));
     }
 
     private String sidOrder(String sid) {

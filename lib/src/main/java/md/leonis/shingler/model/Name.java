@@ -6,11 +6,14 @@ import md.leonis.shingler.ListFilesa;
 
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.UUID;
 
 @AllArgsConstructor
 public class Name implements Serializable {
 
     private static final long serialVersionUID = 292207904602980582L;
+
+    private String id = UUID.randomUUID().toString();
 
     private String name;
     private boolean done;
@@ -54,6 +57,14 @@ public class Name implements Serializable {
         this.name = name;
     }
 
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
     @JsonIgnore
     public String getCleanName() {
         return ListFilesa.getCleanName(name);
@@ -94,14 +105,11 @@ public class Name implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Name name = (Name) o;
-        return done == name.done &&
-                index == name.index &&
-                Double.compare(name.jakkardStatus, jakkardStatus) == 0 &&
-                Objects.equals(name.name, this.name);
+        return Objects.equals(id, name.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, done, index, jakkardStatus);
+        return Objects.hash(id);
     }
 }

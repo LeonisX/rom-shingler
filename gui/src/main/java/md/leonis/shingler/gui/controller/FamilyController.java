@@ -134,10 +134,10 @@ public class FamilyController {
     public Button tiviButton3;
     public CheckBox ioCheckBox;
 
-    private TreeItem<NameView> familyRootItem = new TreeItem<>(NameView.EMPTY);
-    private TreeItem<NameView> tribeRelationsRootItem = new TreeItem<>(NameView.EMPTY);
-    private TreeItem<NameView> familyRelationsRootItem = new TreeItem<>(NameView.EMPTY);
-    private TreeItem<NameView> orphanRootItem = new TreeItem<>(NameView.EMPTY);
+    private final TreeItem<NameView> familyRootItem = new TreeItem<>(NameView.EMPTY);
+    private final TreeItem<NameView> tribeRelationsRootItem = new TreeItem<>(NameView.EMPTY);
+    private final TreeItem<NameView> familyRelationsRootItem = new TreeItem<>(NameView.EMPTY);
+    private final TreeItem<NameView> orphanRootItem = new TreeItem<>(NameView.EMPTY);
 
     public TreeView<NameView> familyTreeView;
     public TreeView<NameView> orphanTreeView;
@@ -308,7 +308,7 @@ public class FamilyController {
         }
     }
 
-    private Callback<ListView<Integer>, ListCell<Integer>> precisionComboBoxCellFactory = new Callback<ListView<Integer>, ListCell<Integer>>() {
+    private final Callback<ListView<Integer>, ListCell<Integer>> precisionComboBoxCellFactory = new Callback<ListView<Integer>, ListCell<Integer>>() {
 
         @Override
         public ListCell<Integer> call(ListView<Integer> l) {
@@ -472,9 +472,9 @@ public class FamilyController {
         }
     }
 
-    private static Comparator<TreeItem<NameView>> byTitle = Comparator.comparing((TreeItem<NameView> n) -> n.getValue().getName());
-    private static Comparator<TreeItem<NameView>> byJakkard = Comparator.comparing((TreeItem<NameView> n) -> n.getValue().getJakkardStatus()).reversed();
-    private static Comparator<TreeItem<NameView>> bySize = Comparator.comparing((TreeItem<NameView> n) -> n.getValue().getItems().size()).reversed();
+    private static final Comparator<TreeItem<NameView>> byTitle = Comparator.comparing((TreeItem<NameView> n) -> n.getValue().getName());
+    private static final Comparator<TreeItem<NameView>> byJakkard = Comparator.comparing((TreeItem<NameView> n) -> n.getValue().getJakkardStatus()).reversed();
+    private static final Comparator<TreeItem<NameView>> bySize = Comparator.comparing((TreeItem<NameView> n) -> n.getValue().getItems().size()).reversed();
 
     private Comparator<TreeItem<NameView>> selectComparator(ComboBox<String> combo) {
         switch (combo.getSelectionModel().getSelectedIndex()) {
@@ -1089,6 +1089,8 @@ public class FamilyController {
 
     //TODO do we need this?
     public void mergeRelativesIntoButtonClick() {
+
+        //mergeTribeIntoButtonClick();
         /*if (tribeRelationsTreeView.getSelectionModel().getSelectedItems().size() == 1) {
 
             runInBackground(() -> {
@@ -1239,11 +1241,7 @@ public class FamilyController {
             String showId = (NodeStatus.isMember(lastNameView.getValue().getStatus())) ? "m" : (lastNameView.getValue().getLevel() == 3) ? "f2" : "f";
 
             contextMenu.getItems().forEach(item -> {
-                if (item.getUserData() == null || item.getUserData().equals(showId)) {
-                    item.setVisible(true);
-                } else {
-                    item.setVisible(false);
-                }
+                item.setVisible(item.getUserData() == null || item.getUserData().equals(showId));
             });
 
             contextMenu.show(treeView, event.getScreenX(), event.getScreenY());
@@ -1257,11 +1255,7 @@ public class FamilyController {
             String hideId = lastNameView.getParent().equals(familyRelationsRootItem) ? "m" : "f";
 
             familyRelationsContextMenu.getItems().forEach(item -> {
-                if (item.getUserData() != null && item.getUserData().equals(hideId)) {
-                    item.setVisible(false);
-                } else {
-                    item.setVisible(true);
-                }
+                item.setVisible(item.getUserData() == null || !item.getUserData().equals(hideId));
             });
 
             familyRelationsContextMenu.show(familyRelationsTreeView, event.getScreenX(), event.getScreenY());
@@ -1275,11 +1269,7 @@ public class FamilyController {
             String hideId = lastNameView.getParent().equals(tribeRelationsRootItem) ? "m" : "f";
 
             tribeRelationsContextMenu.getItems().forEach(item -> {
-                if (item.getUserData() != null && item.getUserData().equals(hideId)) {
-                    item.setVisible(false);
-                } else {
-                    item.setVisible(true);
-                }
+                item.setVisible(item.getUserData() == null || !item.getUserData().equals(hideId));
             });
 
             tribeRelationsContextMenu.show(tribeRelationsTreeView, event.getScreenX(), event.getScreenY());

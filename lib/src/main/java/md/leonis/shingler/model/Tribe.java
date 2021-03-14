@@ -11,6 +11,8 @@ import java.util.*;
 @AllArgsConstructor
 public class Tribe {
 
+    private String id = UUID.randomUUID().toString();
+
     private String name;
     private Name father;
     private List<Family> families = new ArrayList<>();
@@ -20,11 +22,11 @@ public class Tribe {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Tribe tribe = (Tribe) o;
-        return Objects.equals(name, tribe.name);
+        return Objects.equals(id, tribe.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name);
+        return Objects.hash(id);
     }
 }

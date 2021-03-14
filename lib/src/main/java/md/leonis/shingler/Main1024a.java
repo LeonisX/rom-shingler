@@ -232,15 +232,13 @@ public class Main1024a {
     }
 
     private static int[] generateShingle(RomsCollection collection, Path romsFolder, Path file, Map.Entry<String, GID> entry) throws IOException {
-        switch (collection.getType()) {
-            case PLAIN:
-                return ShingleUtils.toShingles(IOUtils.loadBytes(file));
 
-            case MERGED:
-                Path archiveFile = romsFolder.resolve(entry.getValue().getFamily());
-                return ShingleUtils.toShingles(IOUtils.loadBytesFromArchive(archiveFile, entry.getKey()));
+        if (collection.getType() == CollectionType.PLAIN) {
+            return ShingleUtils.toShingles(IOUtils.loadBytes(file));
+        } else {
+            Path archiveFile = romsFolder.resolve(entry.getValue().getFamily());
+            return ShingleUtils.toShingles(IOUtils.loadBytesFromArchive(archiveFile, entry.getKey()));
         }
-        return null;
     }
 
     private static boolean isCorrect(Path path) {
@@ -583,7 +581,8 @@ public class Main1024a {
             for (Path path : files) {
                 LOGGER.info("Calculating hash sums for: {}|{}", path.getFileName(), (i * 100.0 / files.size()));
                 byte[] bytes = IOUtils.loadBytes(path);
-                byte[] byteswh = Arrays.copyOfRange(bytes, 16, bytes.length);
+                //TODO use platform rule!!!!
+                byte[] byteswh = IOUtils.getBytesWOHeader(bytes);
                 gidMap.put(path.getFileName().toString(), new GID(path.getFileName().toString(), Files.size(path), crc32(bytes), md5(bytes), sha1(bytes), crc32(byteswh), md5(byteswh), sha1(byteswh), null));
 
                 i++;

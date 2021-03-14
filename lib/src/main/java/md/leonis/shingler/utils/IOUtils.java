@@ -130,6 +130,26 @@ public class IOUtils {
         return Files.readAllBytes(file);
     }
 
+    //TODO other platforms
+    //TODO SMS, GG https://github.com/maxim-zhao/sega8bitheaderreader
+    public static byte[] getBytesWOHeader(byte[] bytes) {
+
+        switch (ConfigHolder.platform) {
+            case "nes":
+                //TODO get all NES length, may be use the same function as for SNES
+                //TODO NES, UNIF
+                return Arrays.copyOfRange(bytes, 16, bytes.length);
+            case "snes":
+                if ((bytes.length % 0x400) == 0x200) {
+                    return Arrays.copyOfRange(bytes, 0x200, bytes.length);
+                } else {
+                    return bytes;
+                }
+        }
+
+        return bytes;
+    }
+
     @SuppressWarnings("unchecked")
     @Measured
     public static Map<String, Family> loadFamilies(File file) {
@@ -375,7 +395,7 @@ public class IOUtils {
             while (entry != null) {
                 byte[] bytes = new byte[(int) entry.getSize()];
                 sevenZFile.read(bytes, 0, bytes.length);
-                byte[] bytestwh = Arrays.copyOfRange(bytes, 16, bytes.length);
+                byte[] bytestwh = IOUtils.getBytesWOHeader(bytes);
                 result.add(new GID(entry.getName(), entry.getSize(), (int) entry.getCrcValue(), md5(bytes), sha1(bytes), crc32(bytestwh), md5(bytestwh), sha1(bytestwh), file.getFileName().toString()));
                 entry = sevenZFile.getNextEntry();
             }

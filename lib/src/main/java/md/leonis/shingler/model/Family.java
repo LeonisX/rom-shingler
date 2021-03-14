@@ -5,9 +5,12 @@ import md.leonis.shingler.utils.Measured;
 import java.io.Serializable;
 import java.util.*;
 
+// TODO Do we need Serializable, Cloneable???
 public class Family implements Serializable, Cloneable {
 
     private static final long serialVersionUID = -3737249230697805286L;
+
+    private String id = UUID.randomUUID().toString();
 
     private String name;
     private String tribe;
@@ -164,6 +167,14 @@ public class Family implements Serializable, Cloneable {
         this.individualRelations = individualRelations;
     }
 
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
     @Measured
     public void addRelation(Result result) {
         relations.add(result);
@@ -209,13 +220,11 @@ public class Family implements Serializable, Cloneable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Family family = (Family) o;
-        return Objects.equals(name, family.name) &&
-                type == family.type;
+        return Objects.equals(id, family.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, type);
+        return Objects.hash(id);
     }
-
 }

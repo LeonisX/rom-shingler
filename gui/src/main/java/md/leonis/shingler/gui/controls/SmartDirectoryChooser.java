@@ -1,5 +1,6 @@
 package md.leonis.shingler.gui.controls;
 
+import com.sun.javafx.tk.TKStage;
 import com.sun.javafx.tk.Toolkit;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -9,6 +10,7 @@ import javafx.scene.control.DialogEvent;
 import javafx.stage.Window;
 
 import java.io.File;
+import java.lang.reflect.Method;
 
 public class SmartDirectoryChooser extends Dialog<File> {
 
@@ -57,7 +59,7 @@ public class SmartDirectoryChooser extends Dialog<File> {
         Event.fireEvent(this, new DialogEvent(this, DialogEvent.DIALOG_SHOWN));
 
         file = Toolkit.getToolkit().showDirectoryChooser(
-                (ownerWindow != null) ? ownerWindow.impl_getPeer() : null,
+                (ownerWindow != null) ? getTKStage(ownerWindow) : null,
                 getTitle(),
                 getInitialDirectory());
 
@@ -66,6 +68,26 @@ public class SmartDirectoryChooser extends Dialog<File> {
         Event.fireEvent(this, new DialogEvent(this, DialogEvent.DIALOG_HIDDEN));
 
         return file;
+    }
+
+    // Workaround for ownerWindow.impl_getPeer()
+    private static TKStage getTKStage(Window window) {
+        try {
+            Method tkStageGetter;
+            try {
+                // java 9
+                tkStageGetter = window.getClass().getSuperclass().getDeclaredMethod("getPeer");
+            } catch (NoSuchMethodException ex) {
+                // java 8
+                tkStageGetter = window.getClass().getMethod("impl_getPeer");
+            }
+            tkStageGetter.setAccessible(true);
+            return  (TKStage) tkStageGetter.invoke(window);
+        } catch (Throwable e) {
+            System.err.println("Error getting TKStage");
+            e.printStackTrace();
+            return null;
+        }
     }
 
     public File getFile() {

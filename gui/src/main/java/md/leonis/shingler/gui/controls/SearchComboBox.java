@@ -18,7 +18,7 @@ class SearchComboBox<T> extends ComboBox<T> {
     private static final int IDLE_INTERVAL_MILLIS = 1000;
 
     private Instant instant = Instant.now();
-    private StringBuilder sb = new StringBuilder();
+    private final StringBuilder sb = new StringBuilder();
 
     public SearchComboBox(Collection<T> choices) {
         this(FXCollections.observableArrayList(choices));
@@ -62,7 +62,7 @@ class SearchComboBox<T> extends ComboBox<T> {
                     boolean found = false;
                     for (int i = 0; i < getItems().size(); i++) {
                         if (event.getCode() != KeyCode.BACK_SPACE && getItems().get(i).toString().toLowerCase().startsWith(sb.toString())) {
-                            ListView listView = getListView();
+                            ListView<?> listView = getListView();
                             listView.getSelectionModel().clearAndSelect(i);
                             scroll();
                             found = true;
@@ -91,12 +91,12 @@ class SearchComboBox<T> extends ComboBox<T> {
     }
 
     private void scroll() {
-        ListView listView = getListView();
+        ListView<?> listView = getListView();
         int selectedIndex = listView.getSelectionModel().getSelectedIndex();
         listView.scrollTo(selectedIndex == 0 ? selectedIndex : selectedIndex - 1);
     }
 
-    private ListView getListView() {
-        return ((ComboBoxListViewSkin) this.getSkin()).getListView();
+    private ListView<?> getListView() {
+        return ((ComboBoxListViewSkin<?>) this.getSkin()).getListView();
     }
 }

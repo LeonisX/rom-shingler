@@ -26,7 +26,7 @@ public class ArchiveUtils {
         }
 
         String archiveName = name.endsWith(".7z") ? name : name + ".7z";
-        archiveName = outputDir.resolve(platform).resolve(archiveName).toAbsolutePath().toString();
+        archiveName = getOutputPath().resolve(platform).resolve(archiveName).toAbsolutePath().toString();
 
         List<String> args = new ArrayList<>(Arrays.asList(
                 // 7z a -mx9 -m0=LZMA -md1536m -mfb273 -ms8g -mmt=off <archive_name> [<file_names>...]
@@ -57,7 +57,7 @@ public class ArchiveUtils {
         }
 
         String archiveName = name.endsWith(".zip") ? name : name + ".zip";
-        archiveName = outputDir.resolve(platform).resolve(archiveName).toAbsolutePath().toString();
+        archiveName = getOutputPath().resolve(platform).resolve(archiveName).toAbsolutePath().toString();
 
         List<String> args = new ArrayList<>(Arrays.asList(
                 // 7z a -tzip -mx9 -mfb258 -mmt=off <archive_name> [<file_names>...]
