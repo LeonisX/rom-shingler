@@ -34,6 +34,8 @@
                                 <CheckBox fx:id="redFamilyCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="RED" />
                                 <CheckBox fx:id="blackFamilyCheckBox" mnemonicParsing="false" onAction="#checkBoxAction" selected="true" text="BLACK" />
                             </HBox>
+                            <Separator orientation="VERTICAL" prefHeight="200.0" />
+                            <Button fx:id="auditButton" mnemonicParsing="false" onAction="#auditButtonClick" text="Audit" />
                             <HBox alignment="CENTER_RIGHT" prefHeight="40.0" prefWidth="789.0" spacing="5.0">
                                 <Label text="Filter orphanes:" />
                                 <TextField fx:id="filterOrphanesTextField" onAction="#filterOrphanesTextFieldAction" />

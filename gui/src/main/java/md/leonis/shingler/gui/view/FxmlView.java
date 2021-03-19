@@ -10,10 +10,10 @@ public enum FxmlView {
     COMPARE("compare.title", "compare"),
     FAMILY("family.title", "family");
 
-    private static String fxmlPath = "/fxml/%s.fxml";
+    private static final String fxmlPath = "/fxml/%s.fxml";
 
-    private String title;
-    private String fxmlFileName;
+    private final String title;
+    private final String fxmlFileName;
 
     FxmlView(String title, String fxmlFileName) {
         this.title = title;
@@ -28,5 +28,4 @@ public enum FxmlView {
     public String getFxmlFile() {
         return String.format(fxmlPath, fxmlFileName);
     }
-
 }

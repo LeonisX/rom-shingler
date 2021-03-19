@@ -39,6 +39,7 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.*;
 import java.util.function.UnaryOperator;
@@ -147,14 +148,15 @@ public class FamilyController {
     public TextField jakkardTextField;
     public Button expandAllButton;
     public Button collapseAllButton;
+    public Button auditButton;
 
     private TreeItem<NameView> lastNameView = null;
 
-    private Map<TreeView<NameView>, String> searchMap = new HashMap<>();
+    private final Map<TreeView<NameView>, String> searchMap = new HashMap<>();
 
-    private Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(2), ev -> searchMap.entrySet().forEach(e -> e.setValue(""))));
+    private final Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(2), ev -> searchMap.entrySet().forEach(e -> e.setValue(""))));
 
-    private Map<String, List<TreeItem<NameView>>> orphanChildren = new HashMap<>();
+    private final Map<String, List<TreeItem<NameView>>> orphanChildren = new HashMap<>();
 
     private String orphanFilter = "";
 
@@ -1254,9 +1256,7 @@ public class FamilyController {
 
             String hideId = lastNameView.getParent().equals(familyRelationsRootItem) ? "m" : "f";
 
-            familyRelationsContextMenu.getItems().forEach(item -> {
-                item.setVisible(item.getUserData() == null || !item.getUserData().equals(hideId));
-            });
+            familyRelationsContextMenu.getItems().forEach(item -> item.setVisible(item.getUserData() == null || !item.getUserData().equals(hideId)));
 
             familyRelationsContextMenu.show(familyRelationsTreeView, event.getScreenX(), event.getScreenY());
         }
@@ -1268,9 +1268,7 @@ public class FamilyController {
 
             String hideId = lastNameView.getParent().equals(tribeRelationsRootItem) ? "m" : "f";
 
-            tribeRelationsContextMenu.getItems().forEach(item -> {
-                item.setVisible(item.getUserData() == null || !item.getUserData().equals(hideId));
-            });
+            tribeRelationsContextMenu.getItems().forEach(item -> item.setVisible(item.getUserData() == null || !item.getUserData().equals(hideId)));
 
             tribeRelationsContextMenu.show(tribeRelationsTreeView, event.getScreenX(), event.getScreenY());
         }
@@ -1482,5 +1480,32 @@ public class FamilyController {
 
     public void ioCheckBoxClick() {
         TiviUtils.isIO = ioCheckBox.isSelected();
+    }
+
+    public void auditButtonClick() {
+
+        //выявлять все семьи, в которых название не совпадает с названием одного из РОМов
+
+        String result = families.values().stream().map(family -> {
+
+            List<String> names = family.getMembers().stream().map(Name::getCleanName).distinct()
+                    .map(n -> n.replace("(BS)", "").trim())
+                    .map(n -> n.startsWith("BS ") ? n.replaceFirst("BS ", "") : n)
+                    .collect(Collectors.toList());
+
+            if (names.contains(ListFilesa.getCleanName(family.getName()))) {
+                return null;
+            } else {
+                if (names.size() > 100) {
+                    names = Collections.singletonList("Too many...");
+                }
+                return family.getName() +  ": " + names;
+            }
+        }).filter(Objects::nonNull).sorted().collect(Collectors.joining("\n"));
+
+        Path path = Paths.get("audit.txt");
+
+        IOUtils.saveToFile(path, result);
+        stageManager.showInformationAlert("Audit report", "ROM name vs family name", path.toAbsolutePath().toString());
     }
 }

@@ -241,6 +241,8 @@ public class TiviUtils {
 
     public static void createCleanedXls() {
 
+        IOUtils.createDirectories(getInputPath());
+
         // import CSV original
         List<CSV.MySqlStructure> records = readCsv();
 

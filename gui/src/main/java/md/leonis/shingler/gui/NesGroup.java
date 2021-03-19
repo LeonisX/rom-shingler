@@ -78,7 +78,7 @@ public class NesGroup {
 
             Set<String> set = map.get(mapper);
             if (set == null) {
-                map.put(mapper, new HashSet<>(Arrays.asList(cleanedName)));
+                map.put(mapper, new HashSet<>(Collections.singletonList(cleanedName)));
             } else {
                 set.add(cleanedName);
             }

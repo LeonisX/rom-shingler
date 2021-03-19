@@ -564,7 +564,7 @@ public class ListFilesa {
         if (name.contains("(Prototype)")) {
             index -= 15;
         }
-        if (name.contains("(Prototype ")) {
+        if (name.contains("(Prototype ")) { //TODO regex
             index -= 15;
         }
         if (name.contains("(Sample)")) {
@@ -572,6 +572,15 @@ public class ListFilesa {
         }
         if (name.contains("(Menu)")) {
             index -= 15;
+        }
+        if (name.contains("(Alpha)")) { //TODO regex
+            index -= 14;
+        }
+        if (name.contains("(Beta)")) { //TODO regex
+            index -= 13;
+        }
+        if (name.contains("(Pre-Release)")) {
+            index -= 12;
         }
         if (name.contains("[t")) {
             index -= 10;

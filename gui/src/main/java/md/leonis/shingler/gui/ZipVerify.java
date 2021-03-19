@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 public class ZipVerify {
 
-    private static final Path ROOT = Paths.get("E:\\merged-roms2");
+    private static final Path ROOT = Paths.get("C:\\Users\\user\\shingler\\merged-roms\\snes\\roms\\snes_Super_Mario_World-Hacks1");
 
     public static void main(String[] args) throws IOException {
 
