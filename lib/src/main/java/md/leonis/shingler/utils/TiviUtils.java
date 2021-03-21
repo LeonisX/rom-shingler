@@ -325,7 +325,9 @@ public class TiviUtils {
                 final int membersCount = members.size() / archivesCount;
                 final AtomicInteger counter = new AtomicInteger();
 
-                final Collection<List<String>> result = members.stream().collect(Collectors.groupingBy(it -> counter.getAndIncrement() / membersCount)).values();
+                final Collection<List<String>> result = (membersCount > 0)
+                        ? members.stream().collect(Collectors.groupingBy(it -> counter.getAndIncrement() / membersCount)).values()
+                        : members.stream().collect(Collectors.groupingBy(it -> counter.getAndIncrement())).values();
 
                 int i = 1;
                 for (List<String> chunk : result) {
