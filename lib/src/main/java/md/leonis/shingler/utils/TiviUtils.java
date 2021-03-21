@@ -299,7 +299,9 @@ public class TiviUtils {
                 IOUtils.createDirectories(destPath);
             }
 
-            if (fileSize < MAX_SIZE) {
+            List<String> members = tribes.get(t).stream().flatMap(f -> f.getMembers().stream()).map(Name::getName).sorted().collect(Collectors.toList());
+
+            if (fileSize < MAX_SIZE || members.size() <= 1) {
 
                 String destArchiveName = StringUtils.normalize(StringUtils.stripExtension(sourceArchiveName), "7z");
                 Path destArchive = destPath.resolve(destArchiveName);
@@ -319,15 +321,13 @@ public class TiviUtils {
             } else {
                 //TODO split  by letters or families, don't tear them
                 LOGGER.info("Splitting {}", t);
-                List<String> members = tribes.get(t).stream().flatMap(f -> f.getMembers().stream()).map(Name::getName).sorted().collect(Collectors.toList());
 
                 final int archivesCount = new Double(Math.ceil(fileSize * 1.0 / MAX_SIZE)).intValue();
                 final int membersCount = members.size() / archivesCount;
                 final AtomicInteger counter = new AtomicInteger();
 
-                final Collection<List<String>> result = (membersCount > 0)
-                        ? members.stream().collect(Collectors.groupingBy(it -> counter.getAndIncrement() / membersCount)).values()
-                        : members.stream().collect(Collectors.groupingBy(it -> counter.getAndIncrement())).values();
+                final Collection<List<String>> result = members.stream()
+                        .collect(Collectors.groupingBy(it -> counter.getAndIncrement() / membersCount)).values();
 
                 int i = 1;
                 for (List<String> chunk : result) {
