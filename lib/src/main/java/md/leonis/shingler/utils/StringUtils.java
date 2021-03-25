@@ -32,6 +32,28 @@ public class StringUtils {
         return StringUtils.force63(result).replace(" ", "_");
     }
 
+
+    /// SNES Columns (Unl) problem
+
+    public static String normalize7z(String fileName, String ext) {
+        return normalize7z(fileName + "." + ext);
+    }
+
+    public static String normalize7z(String fileName) {
+        fileName = fileName.replace(" (SG-1000)", "");
+        fileName = fileName.replace(" (SC-3000)", "");
+        fileName = fileName.replace(" (SF-7000)", "");
+        fileName = fileName.replace(" (MV)", "");
+        fileName = fileName.replace(" (Unreleased)", "");
+        fileName = fileName.replace(" (Prototype)", "");
+        fileName = fileName.replace(" (Sample)", "");
+        fileName = fileName.replace(" (Beta)", "");
+        //fileName = fileName.replace(" (Unl)", "");
+        fileName = fileName.replace(" (Wxn)", "");
+        String result = StringUtils.removeSpecialChars(fileName.replace("_", " ")); // remove special symbols
+        return StringUtils.force63(result).replace(" ", "_");
+    }
+
     static String force63(String fileName) {
 
         String name = fileName.replace(" The ", " ").replace(" The ", " ").replace(" the ", " ").replace(" The ", " ");

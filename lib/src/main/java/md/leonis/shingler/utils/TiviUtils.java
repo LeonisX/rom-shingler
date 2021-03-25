@@ -303,7 +303,7 @@ public class TiviUtils {
 
             if (fileSize < MAX_SIZE || members.size() <= 1) {
 
-                String destArchiveName = StringUtils.normalize(StringUtils.stripExtension(sourceArchiveName), "7z");
+                String destArchiveName = StringUtils.normalize7z(StringUtils.stripExtension(sourceArchiveName), "7z");
                 Path destArchive = destPath.resolve(destArchiveName);
 
                 if (isIO) {
