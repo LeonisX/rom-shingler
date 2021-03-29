@@ -149,6 +149,7 @@ public class FamilyController {
     public Button expandAllButton;
     public Button collapseAllButton;
     public Button auditButton;
+    public Button tiviButton4;
 
     private TreeItem<NameView> lastNameView = null;
 
@@ -1507,5 +1508,9 @@ public class FamilyController {
 
         IOUtils.saveToFile(path, result);
         stageManager.showInformationAlert("Audit report", "ROM name vs family name", path.toAbsolutePath().toString());
+    }
+
+    public void validateRomsClick() {
+        TiviUtils.validateRoms();
     }
 }

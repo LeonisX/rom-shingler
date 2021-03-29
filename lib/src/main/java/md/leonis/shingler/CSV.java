@@ -82,4 +82,24 @@ public class CSV {
         private String sid;
         private String name;
     }
+
+    @Data
+    @NoArgsConstructor
+    @JsonPropertyOrder({"id", "cpu", "name", "game", "rom"})
+    public static class ValidationStructure implements Cloneable {
+
+        private String id;
+        private String cpu;
+        private String name;
+        private String game;
+        private String rom;
+
+        public String getGame() {
+            return game == null ? "" : game.trim();
+        }
+
+        public String getRom() {
+            return rom == null ? "" : rom.trim();
+        }
+    }
 }

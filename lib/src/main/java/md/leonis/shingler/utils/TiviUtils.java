@@ -6,6 +6,7 @@ import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import javafx.util.Pair;
 import lombok.Data;
 import md.leonis.shingler.CSV;
+import md.leonis.shingler.model.ConfigHolder;
 import md.leonis.shingler.model.Family;
 import md.leonis.shingler.model.FamilyType;
 import md.leonis.shingler.model.Name;
@@ -20,6 +21,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -126,6 +128,17 @@ public class TiviUtils {
         try {
             CsvSchema schema = new CsvMapper().schemaFor(CSV.AddedStructure.class).withColumnSeparator(';').withoutHeader().withQuoteChar('"');
             new CsvMapper().writerFor(CSV.AddedStructure.class).with(schema).writeValues(file).writeAll(added).close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static List<CSV.ValidationStructure> readValidationCsv() {
+        try {
+            File file = getInputPath().resolve("base_" + platform + ".csv").toFile();
+            CsvSchema schema = new CsvMapper().schemaFor(CSV.ValidationStructure.class).withColumnSeparator(';').withoutHeader().withQuoteChar('"');
+            MappingIterator<CSV.ValidationStructure> iter = new CsvMapper().readerFor(CSV.ValidationStructure.class).with(schema).readValues(file);
+            return iter.readAll();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -434,6 +447,78 @@ public class TiviUtils {
 
     private static String toRegex(String s) {
         return s.replaceAll("[\\[\\]{}()*+?.,\\\\^$|#\\s]", "\\\\$0");
+    }
+
+    public static void validateRoms() {
+
+        LOGGER.info("Validation is started...");
+
+        // Read CSV
+        List<CSV.ValidationStructure> records = readValidationCsv();
+
+        for (CSV.ValidationStructure r : records) {
+
+            String name = StringEscapeUtils.unescapeHtml4(r.getName());
+
+            // Validate availability
+            if (org.apache.commons.lang3.StringUtils.isBlank(r.getGame())) {
+                LOGGER.warn("!!!" + name + ": Game is absent :(");
+                continue;
+            }
+
+            if (org.apache.commons.lang3.StringUtils.isBlank(r.getRom())) {
+                LOGGER.warn("!!!" + name + ": Rom is absent :(");
+                continue;
+            }
+
+            Path gamePath;
+            Path romPath;
+
+            // Download if need / save
+            // name
+            try {
+                String uri = StringEscapeUtils.unescapeHtml4(r.getGame());
+                gamePath = getOutputPath().resolve(platform).resolve("valid-game").resolve(uri.replace(romsUrl, ""));
+
+                if (!Files.exists(gamePath)) {
+                    IOUtils.createDirectories(gamePath.getParent());
+                    IOUtils.downloadFromUrl(new URL(uri), gamePath);
+                }
+
+            } catch (Exception e) {
+                LOGGER.error("!!!" + name + ": " + e.getMessage());
+                continue;
+            }
+
+            // rom
+            try {
+                String uri = ConfigHolder.uniqueRomsUrl + StringEscapeUtils.unescapeHtml4(r.getRom());
+                romPath = getOutputPath().resolve(platform).resolve("valid-rom").resolve(uri.replace(uniqueRomsUrl, ""));
+
+                if (!Files.exists(romPath)) {
+                    IOUtils.downloadFromUrl(new URL(uri), romPath);
+                }
+
+            } catch (Exception e) {
+                LOGGER.error("!!!" + name + ": " + e.getMessage());
+                continue;
+            }
+
+            // Validate inside
+            List<String> gamesList = ArchiveUtils.listFiles(gamePath);
+            List<String> romsList = ArchiveUtils.listFiles(romPath);
+
+            if (romsList.size() != 1) {
+                LOGGER.warn("!!!" + name + ": wrong roms count: " + romsList.size());
+                continue;
+            }
+
+            if (!gamesList.containsAll(romsList)) {
+                LOGGER.warn("!!!" + name + ": the rom is not in the game archive :(");
+            }
+        }
+
+        LOGGER.info("Validation is finished...");
     }
 
     @Data

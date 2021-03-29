@@ -4,7 +4,10 @@ import org.slf4j.Logger;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,7 +15,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static md.leonis.shingler.model.ConfigHolder.*;
-import static md.leonis.shingler.model.ConfigHolder.romsCollection;
 import static org.slf4j.LoggerFactory.getLogger;
 
 public class ArchiveUtils {
@@ -202,39 +204,55 @@ public class ArchiveUtils {
         }
     }
 
-    public static List<String> list(Path path) {
+    public static List<String> listSlt(Path path) {
 
-        List<String> args = Arrays.asList(System.getenv("ProgramFiles").concat("\\7-Zip\\7z"), "l", "-slt", '"' + path.toAbsolutePath().toString() + '"');
+        String quotedPath = '"' + path.toAbsolutePath().toString() + '"';
+
+        Path tmp = null;
+
+        try {
+            tmp = Files.createTempFile("lst", "");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        List<String> args = Arrays.asList(System.getenv("ProgramFiles").concat("\\7-Zip\\7z.exe"), "l", "-slt", quotedPath);
 
         ProcessBuilder processBuilder = new ProcessBuilder();
         boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
 
         try {
             if (isWindows) {
-                processBuilder.command(args);
+                processBuilder.redirectOutput(ProcessBuilder.Redirect.to(tmp.toFile())).command(args);
             } else {
-                //TODO finish, test on Linux
-                processBuilder.command("7z", "a", "-mx9", "-m0=LZMA", "-md1536m", "-mfb273", "-ms8g", "-mmt=off", "archive.7z", "...");
+                //TODO test on Linux
+                processBuilder.command("7z", "l", "-slt", quotedPath);
             }
 
             Process proc = processBuilder.start();
             BufferedReader errBR = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
-            BufferedReader outBR = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 
             int code = proc.waitFor();
 
+            List<String> output = Files.readAllLines(tmp, Charset.defaultCharset());
+
             if (code > 0) {
                 LOGGER.warn("Exit code: {}", code);
-                LOGGER.warn("Out message: {}", errBR.lines().collect(Collectors.joining("\n")));
-                LOGGER.warn("Error message: {}", outBR.lines().collect(Collectors.joining("\n")));
+                LOGGER.warn("Error message: {}", errBR.lines().collect(Collectors.joining("\n")));
                 System.out.println(args);
                 return null;
             } else {
-                return outBR.lines().collect(Collectors.toList());
+                return output;
             }
 
         } catch (Exception ex) {
             LOGGER.error("List archive error", ex);
+        } finally {
+            try {
+                Files.delete(tmp);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         return null;
     }
@@ -290,4 +308,14 @@ Version = 20
 Volume Index = 0
 Offset = 55724
 */
+
+    public static List<String> listFiles(Path path) {
+
+        List<String> files = listSlt(path).stream().filter(f -> f.startsWith("Path = "))
+                .map(f -> f.replace("Path = ", "")).collect(Collectors.toList());
+
+        files.remove(0);
+
+        return files;
+    }
 }

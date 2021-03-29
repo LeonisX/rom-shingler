@@ -12,6 +12,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -51,10 +54,36 @@ public class IOUtils {
         return fileList;
     }
 
+    public static void downloadFromUrl(URL url, Path path) throws IOException {
+
+        createDirectories(path.getParent());
+
+        ReadableByteChannel channel = null;
+        FileOutputStream fileOutputStream = null;
+
+        try {
+            channel = Channels.newChannel(url.openStream());
+            fileOutputStream = new FileOutputStream(path.toAbsolutePath().toString());
+            fileOutputStream.getChannel().transferFrom(channel, 0, Long.MAX_VALUE);
+
+        } finally {
+            try {
+                if (fileOutputStream != null) {
+                    fileOutputStream.close();
+                }
+                if (channel != null) {
+                    channel.close();
+                }
+            } catch (IOException ioExObj) {
+                System.out.println("Problem Occurred While Closing The Object= " + ioExObj.getMessage());
+            }
+        }
+    }
+
     public static class Finder extends SimpleFileVisitor<Path> {
 
         private final PathMatcher matcher;
-        private List<Path> results = new ArrayList<>();
+        private final List<Path> results = new ArrayList<>();
 
         Finder(String pattern) {
             matcher = FileSystems.getDefault().getPathMatcher("glob:" + pattern);

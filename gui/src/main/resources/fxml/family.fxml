@@ -111,6 +111,7 @@
                      <CheckBox fx:id="ioCheckBox" mnemonicParsing="false" onAction="#ioCheckBoxClick" selected="true" text="IO" />
                             <Button fx:id="tiviButton" mnemonicParsing="false" onAction="#generateTiviStuffClick" text="Generate TiVi stuff" />
                      <Button fx:id="tiviButton2" mnemonicParsing="false" onAction="#generateTiviUQClick" text="Gen update queries" />
+                            <Button fx:id="tiviButton4" mnemonicParsing="false" onAction="#validateRomsClick" text="Validate Roms" />
                         </HBox>
                     </top>
                     <center>

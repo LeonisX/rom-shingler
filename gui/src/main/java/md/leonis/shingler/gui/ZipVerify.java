@@ -19,7 +19,7 @@ public class ZipVerify {
         List<Path> files = IOUtils.findFiles(ROOT, "*.zip");
 
         for (Path path : files) {
-            List<String> results = ArchiveUtils.list(path);
+            List<String> results = ArchiveUtils.listSlt(path);
             //List<String> paths = Objects.requireNonNull(results).stream().filter(p -> p.startsWith("Path = ")).collect(Collectors.toList());
             List<String> methods = Objects.requireNonNull(results).stream().filter(p -> p.startsWith("Method = ")).collect(Collectors.toList());
             long filteredMethods = methods.stream().filter(p -> p.equals("Method = Deflate")).count();

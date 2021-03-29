@@ -60,7 +60,7 @@ Exception in thread "Thread-38" java.nio.file.InvalidPathException: Illegal char
 
 Баг - когда нахожу подходящую семью для игры слева, и она одна в своей семье, то она переходит (вроде как), но семья не удаляется
 
-Баг - orphaned games: -8. Вероятно после пересчёта поменяется
+Баг - orphaned games: -8. Вероятно, после пересчёта поменяется
 
 Семью должен представлять лучший, то есть b, o, h, t только в крайнем случае
 
@@ -143,15 +143,13 @@ UI:
 
 - Find in families
 
-- Red/black for tribes
-
 - When press "manage families" - run in bg + window (please wait)
 
 - Collections list - update on key pressing
 
 - Right click menu for all
 
-- New family, ... -> show that need calculate relations!!!
+- New family, ... -> show that need calculate relations!!! - not need for v2
 
 - Drag-drop
   
