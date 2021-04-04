@@ -56,6 +56,7 @@
                                             <SeparatorMenuItem mnemonicParsing="false" userData="f" />
                                             <MenuItem fx:id="switchFamilyTypeMenuItem" mnemonicParsing="false" onAction="#switchFamilyTypeClick" text="Switch family type" userData="f" />
                                             <MenuItem fx:id="addToThisFamilyMenuItem2" mnemonicParsing="false" onAction="#addToThisFamilyClick2" text="Add to this family" userData="f2" />
+                                            <MenuItem fx:id="addToTribeMenuItem" mnemonicParsing="false" onAction="#addToTribeClick" text="Add to Tribe" userData="f" />
 
                                             <SeparatorMenuItem mnemonicParsing="false" />
                                             <MenuItem fx:id="copyFamilyNameItem" mnemonicParsing="false" onAction="#copyNameButtonClick" text="Copy name to clipboard" />
@@ -122,6 +123,7 @@
                                         <items>
                                             <MenuItem fx:id="renameTribeMenuItem" mnemonicParsing="false" onAction="#renameTribeMenuItemButtonClick" text="Rename tribe" userData="f" />
                                             <MenuItem fx:id="mergeRelativesIntoMenuItem2" mnemonicParsing="false" onAction="#mergeTribeIntoButtonClick" text="Merge into" userData="m" />
+                                            <MenuItem fx:id="addToTribeMenuItem2" mnemonicParsing="false" onAction="#addToTribeButtonClick" text="Add to Tribe" userData="m" />
                                             <SeparatorMenuItem mnemonicParsing="false" userData="m" />
                                             <MenuItem fx:id="openFamilyRelationsDirItem2" mnemonicParsing="false" onAction="#openDirButtonClick" text="Open dir" />
                                             <MenuItem fx:id="runFamilyRelationsItem2" mnemonicParsing="false" onAction="#runListButtonClick" text="Run" />

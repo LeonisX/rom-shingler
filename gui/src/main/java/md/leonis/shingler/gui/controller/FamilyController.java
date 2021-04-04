@@ -30,6 +30,7 @@ import md.leonis.shingler.model.*;
 import md.leonis.shingler.utils.ArchiveUtils;
 import md.leonis.shingler.utils.IOUtils;
 import md.leonis.shingler.utils.TiviUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
@@ -45,6 +46,7 @@ import java.util.*;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static md.leonis.shingler.gui.view.StageManager.runInBackground;
 import static md.leonis.shingler.model.ConfigHolder.*;
@@ -150,6 +152,8 @@ public class FamilyController {
     public Button collapseAllButton;
     public Button auditButton;
     public Button tiviButton4;
+    public MenuItem addToTribeMenuItem;
+    public MenuItem addToTribeMenuItem2;
 
     private TreeItem<NameView> lastNameView = null;
 
@@ -241,7 +245,8 @@ public class FamilyController {
         familyRelationsTreeView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         familyRelationsTreeView.setCellFactory(treeViewCellFactory());
 
-        Arrays.asList("Title", "Jakkard", "Size").forEach(c -> {
+        //TODO desc
+        Arrays.asList("Title", "Jakkard", "Size", "Tribe").forEach(c -> {
             orderRomsComboBox.getItems().add(c);
             orderFamiliesComboBox.getItems().add(c);
             orderTribesComboBox.getItems().add(c);
@@ -478,6 +483,19 @@ public class FamilyController {
     private static final Comparator<TreeItem<NameView>> byTitle = Comparator.comparing((TreeItem<NameView> n) -> n.getValue().getName());
     private static final Comparator<TreeItem<NameView>> byJakkard = Comparator.comparing((TreeItem<NameView> n) -> n.getValue().getJakkardStatus()).reversed();
     private static final Comparator<TreeItem<NameView>> bySize = Comparator.comparing((TreeItem<NameView> n) -> n.getValue().getItems().size()).reversed();
+    private static final Comparator<TreeItem<NameView>> byTribe = Comparator.comparing((TreeItem<NameView> n) -> getOrderTribeName(n.getValue()));
+
+    private static String getOrderTribeName(NameView nameView) {
+
+        Family family = families.get(nameView.getFamilyName());
+
+        if (null == family) {
+            return "\uFFFF\uFFFF";
+        } else {
+            String tribe = family.getTribe();
+            return StringUtils.isBlank(tribe) || tribe.equals(family.getName()) ? "\uFFFF" + family.getName() : tribe;
+        }
+    }
 
     private Comparator<TreeItem<NameView>> selectComparator(ComboBox<String> combo) {
         switch (combo.getSelectionModel().getSelectedIndex()) {
@@ -485,8 +503,10 @@ public class FamilyController {
                 return byTitle;
             case 1:
                 return byJakkard;
-            default:
+            case 2:
                 return bySize;
+            default:
+                return byTribe;
         }
     }
 
@@ -564,7 +584,12 @@ public class FamilyController {
                     public void updateItem(NameView item, boolean empty) {
                         super.updateItem(item, empty);
                         if (!isEmpty() && !(null == item)) {
-                            setText(item.toString());
+                            Family family = families.get(item.getFamilyName());
+                            if (null != family && !family.getTribe().equals(family.getName())) {
+                                setText(item.toString() + " [" + family.getTribe() + "]");
+                            } else {
+                                setText(item.toString());
+                            }
                             setTextFill(isRed(item) ? Color.RED : Color.BLACK);
                             familyTreeView.refresh();
                         } else {
@@ -1067,27 +1092,39 @@ public class FamilyController {
 
                 // move
                 List<Family> donors = tribes.get(donorTribe);
-                donors.forEach(f -> f.setTribe(acceptorTribe));
+                addFamiliesToTribe(donorTribe, donors, acceptorTribe);
 
-                tribes.get(acceptorTribe).addAll(donors);
-
-                // delete empty tribe
-                if (!acceptorTribe.equals(donorTribe)) {
-                    tribes.remove(donorTribe);
-                }
-
-                // clean self relations
-                tribes.get(acceptorTribe).forEach(f -> {
-                    LOGGER.info("Update family relations for {}", f.getName());
-                    tribes.get(acceptorTribe).forEach(c -> familyRelations.get(f).remove(c));
-                });
-
-                familyRelations.forEach((key, value) -> donors.forEach(value::remove));
-
-                familiesModified.setValue(true);
-                familyRelationsModified.setValue(true);
             }, this::showFamilies);
         }
+    }
+
+    private void addFamiliesToTribe(String donorTribe, List<Family> donors, String acceptorTribe) {
+
+        donors.forEach(f -> f.setTribe(acceptorTribe));
+
+        List<Family> families = tribes.get(acceptorTribe);
+
+        if (null == families) { // Return to native tribe
+            tribes.put(acceptorTribe, new ArrayList<>());
+        } else {
+            tribes.get(acceptorTribe).addAll(donors);
+        }
+
+        // delete empty tribe
+        if (!acceptorTribe.equals(donorTribe)) {
+            tribes.remove(donorTribe);
+        }
+
+        // clean self relations
+        tribes.get(acceptorTribe).forEach(f -> {
+            LOGGER.info("Update family relations for {}", f.getName());
+            tribes.get(acceptorTribe).forEach(c -> familyRelations.get(f).remove(c));
+        });
+
+        familyRelations.forEach((key, value) -> donors.forEach(value::remove));
+
+        familiesModified.setValue(true);
+        familyRelationsModified.setValue(true);
     }
 
     //TODO do we need this?
@@ -1512,5 +1549,63 @@ public class FamilyController {
 
     public void validateRomsClick() {
         TiviUtils.validateRoms();
+    }
+
+    public void addToTribeClick() {
+
+        List<Name> selectedNames = familyTreeView.getSelectionModel().getSelectedItems().stream()
+                .filter(t -> t.getValue().getLevel() == 1)
+                .map(t -> t.getValue().toName())
+                .collect(Collectors.toList());
+
+        List<String> familyNames = selectedNames.stream().map(Name::getName).sorted().collect(Collectors.toList());
+
+        Stream<String> tribeNames = tribes.keySet().stream();
+        List<String> choices = Stream.concat(tribeNames, familyNames.stream()).sorted().collect(Collectors.toList());
+        SmartChoiceDialog<String> dialog = stageManager.getChoiceDialog("Choice Dialog", "Look, a Choice Dialog", "Select tribe:", choices.get(0), choices);
+
+        dialog.showAndWait().ifPresent(acceptorTribe ->
+                runInBackground(() -> {
+
+                    List<Family> selectedFamilies = familyNames.stream().map(n -> families.get(n)).collect(Collectors.toList());
+
+                    // move all members
+                    selectedFamilies.forEach(f -> {
+                        String donorTribe = f.getTribe();
+                        List<Family> donors = Collections.singletonList(f);
+                        addFamiliesToTribe(donorTribe, donors, acceptorTribe);
+                    });
+
+                }, this::showFamilies)
+        );
+    }
+
+    //TODO test
+    public void addToTribeButtonClick() {
+
+        if (tribeRelationsTreeView.getSelectionModel().getSelectedItems().size() == 1) {
+
+            runInBackground(() -> {
+
+                List<String> choices = tribes.keySet().stream().sorted().collect(Collectors.toList());
+                SmartChoiceDialog<String> dialog = stageManager.getChoiceDialog("Choice Dialog", "Look, a Choice Dialog", "Select tribe:", choices.get(0), choices);
+
+                dialog.showAndWait().ifPresent(acceptorTribe ->
+                        runInBackground(() -> {
+
+                            String donorTribe = tribeRelationsTreeView.getSelectionModel().getSelectedItems().get(0).getValue().getName();
+
+                            // move
+                            List<Family> donors = tribes.get(donorTribe);
+                            addFamiliesToTribe(donorTribe, donors, acceptorTribe);
+
+                            // move all members
+                            addFamiliesToTribe(donorTribe, donors, acceptorTribe);
+
+                        }, this::showFamilies)
+                );
+            }, this::showFamilies);
+        }
+
     }
 }
