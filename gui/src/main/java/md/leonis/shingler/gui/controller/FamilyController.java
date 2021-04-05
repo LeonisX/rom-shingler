@@ -418,7 +418,7 @@ public class FamilyController {
                 tribesRelationsView = new LinkedHashMap<>();
 
                 tribes.forEach((key, values) -> {
-                    if (values.get(0).getType() == FamilyType.FAMILY) {
+                    if (values != null && values.get(0).getType() == FamilyType.FAMILY) {
                         NameView tribe = new NameView(key, (values.isEmpty() ? 0 : values.get(0).getJakkardStatus(0)), 1);
 
                         Map<String, NameView> map = new HashMap<>();

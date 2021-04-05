@@ -62,6 +62,7 @@ public class TiviUtils {
             if (!file.exists()) {
                 //createGamesList(file);
                 LOGGER.warn("{} is absent", file);
+                LOGGER.warn("Please, export table as CSV from MySQL DB, next delete in Excel all fields, except \"sid\", \"name\", \"cpu\", \"game\", \"rom\"");
                 return new ArrayList<>();
             }
             CsvSchema schema = new CsvMapper().schemaFor(CSV.MySqlStructure.class).withColumnSeparator(';').withoutHeader().withQuoteChar('"');
