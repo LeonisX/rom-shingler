@@ -1111,7 +1111,9 @@ public class FamilyController {
         }
 
         // delete empty tribe
-        if (!acceptorTribe.equals(donorTribe)) {
+        List<Family> donorTribeFamilies = tribes.get(donorTribe);
+        donorTribeFamilies.removeAll(donors);
+        if (donorTribeFamilies.isEmpty()) {
             tribes.remove(donorTribe);
         }
 
@@ -1561,7 +1563,7 @@ public class FamilyController {
         List<String> familyNames = selectedNames.stream().map(Name::getName).sorted().collect(Collectors.toList());
 
         Stream<String> tribeNames = tribes.keySet().stream();
-        List<String> choices = Stream.concat(tribeNames, familyNames.stream()).sorted().collect(Collectors.toList());
+        List<String> choices = Stream.concat(tribeNames, familyNames.stream()).sorted().distinct().collect(Collectors.toList());
         SmartChoiceDialog<String> dialog = stageManager.getChoiceDialog("Choice Dialog", "Look, a Choice Dialog", "Select tribe:", choices.get(0), choices);
 
         dialog.showAndWait().ifPresent(acceptorTribe ->
@@ -1595,10 +1597,7 @@ public class FamilyController {
 
                             String donorTribe = tribeRelationsTreeView.getSelectionModel().getSelectedItems().get(0).getValue().getName();
 
-                            // move
                             List<Family> donors = tribes.get(donorTribe);
-                            addFamiliesToTribe(donorTribe, donors, acceptorTribe);
-
                             // move all members
                             addFamiliesToTribe(donorTribe, donors, acceptorTribe);
 
