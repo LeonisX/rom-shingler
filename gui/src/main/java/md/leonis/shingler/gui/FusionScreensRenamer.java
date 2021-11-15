@@ -6,9 +6,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-public class EmuliciousScreensRenamer {
+import static md.leonis.shingler.gui.EmuliciousScreensRenamer.*;
 
-    private static final Path PATH = Paths.get("D:\\Emulsex\\Emulicious-with-Java\\screenshots");
+public class FusionScreensRenamer {
+
+    private static final Path PATH = Paths.get("D:\\Emulsex\\Fusion_364rus\\Screens");
 
     private static final Path NEW_PATH = PATH.resolve("renamed");
 
@@ -68,54 +70,7 @@ public class EmuliciousScreensRenamer {
         Files.write(NEW_PATH.resolve("list.txt"), serverPaths);
     }
 
-    public static String normalize(String fileName) {
-
-        if (fileName.startsWith("The ")) {
-            fileName = fileName.replaceFirst("The ", "");
-        }
-
-        fileName = fileName
-                .replace(" - ", "_")
-                .replace("-", "_")
-                .replace("'", "")
-                .replace(",", "")
-                .replace(".", "")
-                .replace("(", "")
-                .replace(")", "")
-                .replace("[", "")
-                .replace("]", "")
-                .replace("\"", "")
-                .replace(" & ", "_")
-                .replace("!", "")
-                .replace(" The ", " ")
-                .trim()
-                .replace(" ", "_")
-                .replace("__", "_");
-
-        if (!fileName.matches("^[a-zA-Z0-9_]+$")) {
-            System.out.println(fileName);
-            throw new RuntimeException("Illegal file name: " + fileName);
-        }
-
-        return fileName;
-    }
-
     public static String removeIndex(String fileName) {
-        return fileName.replaceFirst("-[0-9]+$", "");
-    }
-
-    public static String getName(String fileName) {
-        return fileName.substring(0, fileName.length() - getExt(fileName).length()).trim();
-    }
-
-    public static String getExt(String fileName) {
-
-        int lastPos = fileName.lastIndexOf(".");
-
-        if (lastPos == -1) {
-            return "";
-        }
-
-        return fileName.substring(lastPos);
+        return fileName.substring(0, fileName.length() - 3);
     }
 }
