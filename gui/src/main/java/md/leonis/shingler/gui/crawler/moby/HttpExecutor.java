@@ -111,7 +111,13 @@ public class HttpExecutor {
             HttpHost targetHost = new HttpHost(chunks[0], chunks[1]);
 
             if (null != pubicKey) {
-                httpUriRequestBase.addHeader(new BasicHeader("x-mbx-apikey", pubicKey));
+                httpUriRequestBase.addHeader(new BasicHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0"));
+                httpUriRequestBase.addHeader(new BasicHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"));
+                httpUriRequestBase.addHeader(new BasicHeader("Accept-Language", "en-US;q=0.8,ru-RU,ru;q=0.5,en;q=0.3"));
+                httpUriRequestBase.addHeader(new BasicHeader("Accept-Encoding", "gzip, deflate, br"));
+                httpUriRequestBase.addHeader(new BasicHeader("Referer", "https://www.google.com/")); //TODO
+                httpUriRequestBase.addHeader(new BasicHeader("Connection", "keep-alive"));
+                httpUriRequestBase.addHeader(new BasicHeader("Cache-Control", "max-age=0"));
             }
 
             //Prepare the CloseableHttpClient
