@@ -26,6 +26,15 @@ public class MobyEntry {
     private List<String> gameGroup = new ArrayList<>();
 
     private Map<String, List<String>> trivia = new LinkedHashMap<>();
+    private Map<String, List<String>> credits = new LinkedHashMap<>();
+
+    private Map<String, String> screens = new LinkedHashMap<>();
+
+    private List<UserReview> userReviews = new ArrayList<>();
+    private Map<String, String> notes = new LinkedHashMap<>();
+    private List<Review> reviews = new ArrayList<>();
+
+    private List<Covers> covers = new ArrayList<>();
 
     private boolean hasCredits;
     private boolean hasScreenshots;
@@ -258,5 +267,53 @@ public class MobyEntry {
 
     public void setTrivia(Map<String, List<String>> trivia) {
         this.trivia = trivia;
+    }
+
+    public Map<String, List<String>> getCredits() {
+        return credits;
+    }
+
+    public void setCredits(Map<String, List<String>> credits) {
+        this.credits = credits;
+    }
+
+    public Map<String, String> getScreens() {
+        return screens;
+    }
+
+    public void setScreens(Map<String, String> screens) {
+        this.screens = screens;
+    }
+
+    public List<UserReview> getUserReviews() {
+        return userReviews;
+    }
+
+    public void setUserReviews(List<UserReview> userReviews) {
+        this.userReviews = userReviews;
+    }
+
+    public Map<String, String> getNotes() {
+        return notes;
+    }
+
+    public void setNotes(Map<String, String> notes) {
+        this.notes = notes;
+    }
+
+    public List<Review> getReviews() {
+        return reviews;
+    }
+
+    public void setReviews(List<Review> reviews) {
+        this.reviews = reviews;
+    }
+
+    public List<Covers> getCovers() {
+        return covers;
+    }
+
+    public void setCovers(List<Covers> covers) {
+        this.covers = covers;
     }
 }

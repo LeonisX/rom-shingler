@@ -102,6 +102,8 @@ public class HttpExecutor {
         return doResponse(host, uri, pubicKey, getProxy(), new HttpPost(uri));
     }
 
+    //TODO save raw html + date, next time read offline
+    //TODO process exceptions -> retry list
     private HttpResponse doResponse(String host, String uri, String pubicKey, Proxy proxy, HttpUriRequestBase httpUriRequestBase) throws Exception {
 
         try {
