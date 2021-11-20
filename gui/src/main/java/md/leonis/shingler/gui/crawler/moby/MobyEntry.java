@@ -12,20 +12,23 @@ public class MobyEntry {
 
     private List<String> publishers = new ArrayList<>();
     private List<String> developers = new ArrayList<>();
-    private List<String> releases = new ArrayList<>();
+    private List<String> dates = new ArrayList<>();
     private List<String> alsoFor = new ArrayList<>();
 
+    private List<String> esbrRatings = new ArrayList<>();
     private List<String> genres = new ArrayList<>();
     private List<String> perspectives = new ArrayList<>();
     private List<String> visuals = new ArrayList<>();
+    private List<String> pacings = new ArrayList<>();
     private List<String> gameplays = new ArrayList<>();
+    private List<String> interfaces = new ArrayList<>();
     private List<String> settings = new ArrayList<>();
+    private List<String> miscs = new ArrayList<>();
 
     private List<String> description = new ArrayList<>();
     private List<String> alternateTitles = new ArrayList<>();
     private List<String> gameGroup = new ArrayList<>();
 
-    private Map<String, List<String>> trivia = new LinkedHashMap<>();
     private Map<String, List<String>> credits = new LinkedHashMap<>();
 
     private Map<String, String> screens = new LinkedHashMap<>();
@@ -35,6 +38,20 @@ public class MobyEntry {
     private List<Review> reviews = new ArrayList<>();
 
     private List<Covers> covers = new ArrayList<>();
+
+    private List<Promo> promos = new ArrayList<>();
+
+    List<Map<String, String>> releases = new ArrayList<>();
+
+    private Map<String, List<String>> trivia = new LinkedHashMap<>();
+
+    private Map<String, Map<String, List<String>>> hints = new LinkedHashMap<>();
+
+    private Map<String, List<String>> specs = new LinkedHashMap<>();
+
+    Map<String, String> adBlurbs = new LinkedHashMap<>();
+
+    Map<String, List<String>> ratingSystems = new LinkedHashMap<>();
 
     private boolean hasCredits;
     private boolean hasScreenshots;
@@ -181,12 +198,12 @@ public class MobyEntry {
         this.developers = developers;
     }
 
-    public List<String> getReleases() {
-        return releases;
+    public List<String> getDates() {
+        return dates;
     }
 
-    public void setReleases(List<String> releases) {
-        this.releases = releases;
+    public void setDates(List<String> dates) {
+        this.dates = dates;
     }
 
     public List<String> getAlsoFor() {
@@ -315,5 +332,85 @@ public class MobyEntry {
 
     public void setCovers(List<Covers> covers) {
         this.covers = covers;
+    }
+
+    public List<Promo> getPromos() {
+        return promos;
+    }
+
+    public void setPromos(List<Promo> promos) {
+        this.promos = promos;
+    }
+
+    public List<Map<String, String>> getReleases() {
+        return releases;
+    }
+
+    public void setReleases(List<Map<String, String>> releases) {
+        this.releases = releases;
+    }
+
+    public Map<String, Map<String, List<String>>> getHints() {
+        return hints;
+    }
+
+    public void setHints(Map<String, Map<String, List<String>>> hints) {
+        this.hints = hints;
+    }
+
+    public Map<String, List<String>> getSpecs() {
+        return specs;
+    }
+
+    public void setSpecs(Map<String, List<String>> specs) {
+        this.specs = specs;
+    }
+
+    public Map<String, String> getAdBlurbs() {
+        return adBlurbs;
+    }
+
+    public void setAdBlurbs(Map<String, String> adBlurbs) {
+        this.adBlurbs = adBlurbs;
+    }
+
+    public List<String> getPacings() {
+        return pacings;
+    }
+
+    public void setPacings(List<String> pacings) {
+        this.pacings = pacings;
+    }
+
+    public List<String> getEsbrRatings() {
+        return esbrRatings;
+    }
+
+    public void setEsbrRatings(List<String> esbrRatings) {
+        this.esbrRatings = esbrRatings;
+    }
+
+    public List<String> getMiscs() {
+        return miscs;
+    }
+
+    public void setMiscs(List<String> miscs) {
+        this.miscs = miscs;
+    }
+
+    public Map<String, List<String>> getRatingSystems() {
+        return ratingSystems;
+    }
+
+    public void setRatingSystems(Map<String, List<String>> ratingSystems) {
+        this.ratingSystems = ratingSystems;
+    }
+
+    public List<String> getInterfaces() {
+        return interfaces;
+    }
+
+    public void setInterfaces(List<String> interfaces) {
+        this.interfaces = interfaces;
     }
 }

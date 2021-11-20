@@ -21,7 +21,12 @@ import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -30,6 +35,8 @@ public class HttpExecutor {
     private static final Logger LOGGER = getLogger(HttpExecutor.class);
 
     private static final List<Proxy> DIRECT_LIST = Collections.singletonList(new Proxy(1, null, null, 0, null, null));
+
+    private static final Path HTML_CACHE = Paths.get("./cache");
 
     private static final Random RANDOM = new Random();
 
@@ -108,6 +115,20 @@ public class HttpExecutor {
 
         try {
             LOGGER.info(host + uri);
+            
+            Path path = getPath(HTML_CACHE, host + uri);
+
+            if (Files.exists(path)) { // TODO if read from cache
+                if (Files.isDirectory(path)) {
+                    path = path.resolve("default.htm");
+                }
+                if (Files.exists(path)) {
+                    LOGGER.info("Use cached file: " + path.toAbsolutePath().toString());
+                    return new HttpResponse(new String(Files.readAllBytes(path)), 200, new Header[0]);
+                }
+            }
+            
+            //TODO read from cache
 
             String[] chunks = host.split("://");
             HttpHost targetHost = new HttpHost(chunks[0], chunks[1]);
@@ -152,6 +173,22 @@ public class HttpExecutor {
 
             updateProxy(proxy, httpResponse);
 
+            if (httpResponse.getCode() != 200) {
+                throw new RuntimeException(httpResponse.getCode() + ": " + httpResponse.getBody());
+            }
+
+            System.out.println("trying to save: " + path);
+            Path dir = path.getParent();
+            //при записи проверять и если есть такой файл, то копировать в дефолт.
+            if (Files.isRegularFile(dir)) {
+                Files.move(dir, dir.getParent().resolve("defaultTmp.htm"));
+                Files.createDirectories(dir);
+                Files.move(dir.getParent().resolve("defaultTmp.htm"), dir.resolve("default.htm"));
+            }
+
+            Files.createDirectories(dir);
+            Files.write(path, httpResponse.getBody().getBytes());
+            
             return httpResponse;
         } catch (Exception e) {
 
@@ -160,6 +197,16 @@ public class HttpExecutor {
             LOGGER.error("REST request exception. Proxy host: " + proxy.getHost(), e);
             throw e;
         }
+    }
+
+    private Path getPath(Path path, String uri) {
+
+        if (uri.startsWith("http://")) {
+            uri = uri.replace("http://", "");
+        }
+        uri = uri.replace("://", "@");
+
+        return path.toAbsolutePath().resolve(uri).normalize();
     }
 
     private void updateProxy(Proxy proxy, HttpResponse response) {

@@ -2,22 +2,22 @@ package md.leonis.shingler.gui.crawler.moby;
 
 public class UserReview {
 
-    private String note;
+    private String rate;
     private String userId;
     private String summary;
 
-    public UserReview(String note, String userId, String summary) {
-        this.note = note;
+    public UserReview(String rate, String userId, String summary) {
+        this.rate = rate;
         this.userId = userId;
         this.summary = summary;
     }
 
-    public String getNote() {
-        return note;
+    public String getRate() {
+        return rate;
     }
 
-    public void setNote(String note) {
-        this.note = note;
+    public void setRate(String rate) {
+        this.rate = rate;
     }
 
     public String getUserId() {

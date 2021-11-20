@@ -11,6 +11,7 @@ import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
+//TODO history
 public class MobyCrawler {
 
     public static final String PLATFORMS = "https://www.mobygames.com/browse/games/full,1/";
@@ -24,14 +25,15 @@ public class MobyCrawler {
     //Нужно уметь мэппить
     public static final String GAME_REVIEWS = "https://www.mobygames.com/game/%s/%s/mobyrank";
     public static final String GAME_COVER_ART = "https://www.mobygames.com/game/%s/%s/cover-art";
-    public static final String GAME_PROMO = "https://www.mobygames.com/game/%s/%s/promo";
+    public static final String GAME_PROMO_ART = "https://www.mobygames.com/game/%s/%s/promo";
+    public static final String GAME_PROMO_ART_IMAGE = "https://www.mobygames.com/game/%s/%s/promo/promoImageId,%s";
     public static final String GAME_RELEASES = "https://www.mobygames.com/game/%s/%s/release-info";
     public static final String GAME_TRIVIA = "https://www.mobygames.com/game/%s/%s/trivia";
     public static final String GAME_HINTS = "https://www.mobygames.com/game/%s/%s/hints";
-    public static final String GAME_TECH_INFO = "https://www.mobygames.com/game/%s/%s/techinfo";
+    public static final String GAME_HINTS_PAGE = "https://www.mobygames.com/game/%s/%s/hints/hintId,%s";
+    public static final String GAME_SPECS = "https://www.mobygames.com/game/%s/%s/techinfo";
     public static final String GAME_ADS = "https://www.mobygames.com/game/%s/%s/adblurbs";
     public static final String GAME_RATING_SYSTEMS = "https://www.mobygames.com/game/%s/%s/rating-systems";
-    public static final String GAME_BUY_TRADE = "https://www.mobygames.com/game/%s/%s/buy-trade";
 
     //TODO sources (журналы, сайты, откуда брались обзоры и ревью.
     // ><a href="https://www.mobygames.com/mobyrank/source/sourceId,998/">Tilt </a> (Dec, 1987)</div>
@@ -49,6 +51,7 @@ public class MobyCrawler {
     public static Map<String, String> developers = new HashMap<>();
     public static Map<String, String> sources = new HashMap<>();
     public static Map<String, String> users = new HashMap<>();
+    public static Map<String, String> attributes = new HashMap<>();
 
     public static void main(String[] args) throws Exception {
 
@@ -104,32 +107,36 @@ public class MobyCrawler {
         } catch (Exception e) {
 
         }
+        try {
+            attributes = new ObjectMapper().readValue(new File("attributes.json"), new TypeReference<Map<String, String>>() {
+            });
+        } catch (Exception e) {
 
-        //parseGameMain("nes", "1942arcade");
-        //parseGameMain("nes", "super-mario-bros-2");
+        }
 
-        //parseGameCredits("nes", "super-mario-bros-2");
-        //System.out.println("------------------------");
-        //parseGameCredits("nes", "1942arcade");
-        //System.out.println("------------------------");
-        //parseGameCredits("fm-7", "1942arcade");
+        //MobyEntry mobyEntry = new MobyEntry("nes", "1942arcade");
+        //MobyEntry mobyEntry = new MobyEntry("snes", "contra-iii-the-alien-wars");
+        //MobyEntry mobyEntry = new MobyEntry("snes", "killer-instinct");
+        //MobyEntry mobyEntry = new MobyEntry("nes", "super-mario-bros-2");
+        //MobyEntry mobyEntry = new MobyEntry("nes", "super-mario-bros");
+        MobyEntry mobyEntry = new MobyEntry("iphone", "1942arcade");
+        //MobyEntry mobyEntry = new MobyEntry("rca-studio-ii", "concentration-match");
 
-        //TODO только если активны (есть)
-        //parseGameScreenshots("nes", "super-mario-bros-2");
-
-        //TODO только если активны (есть)
-        //parseGameReviews("nes", "1942arcade");
-
-        //TODO только если активны (есть)
-        //parseGameCoverArt("nes", "1942arcade");
-
-        MobyEntry mobyEntry = new MobyEntry("nes", "1942arcade");
-
-        //parseGameMain(mobyEntry);
-        //parseGameCredits(mobyEntry);
-        //parseGameScreenshots(mobyEntry);
-        //parseGameReviews(mobyEntry);
+        parseGameMain(mobyEntry);
+        parseGameCredits(mobyEntry);
+        parseGameScreenshots(mobyEntry);
+        parseGameReviews(mobyEntry);
         parseGameCoverArt(mobyEntry);
+        parseGamePromoArt(mobyEntry);
+        parseGamePromoArt(mobyEntry);
+        parseGameReleases(mobyEntry);
+        parseGameTrivia(mobyEntry);
+        parseGameHints(mobyEntry);
+        parseGameSpecs(mobyEntry);
+        parseGameAds(mobyEntry);
+        parseGameRatings(mobyEntry);
+
+        Map<String, List<String>> ratingSystems = mobyEntry.getRatingSystems();
 
         new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(new File("companies.json"), companies);
         new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(new File("sheets.json"), sheets);
@@ -137,6 +144,7 @@ public class MobyCrawler {
         new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(new File("developers.json"), developers);
         new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(new File("sources.json"), sources);
         new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(new File("users.json"), users);
+        new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(new File("attributes.json"), attributes);
     }
 
     private static void parseGameMain(MobyEntry entry) throws Exception {
@@ -198,82 +206,139 @@ public class MobyCrawler {
         // Second column
         Element coreGameRelease = getById(coreGameInfo, "coreGameRelease");
 
+        //TODO replace in all string fields &nbsp; with spaces!!!!
         Elements divs = getDivs(coreGameRelease);
-        assert divs.size() == 8;
-        assert divs.get(1).text().equals("Published by");
-        assert divs.get(3).text().equals("Developed by");
-        assert divs.get(5).text().equals("Released");
-        assert divs.get(9).text().equals("Also For");
-
-        //TODO read all a's, parse
-        // <a href="https://www.mobygames.com/company/capcom-usa-inc">Capcom&nbsp;U.S.A.,&nbsp;Inc.</a>
-        getAs(divs.get(2)).forEach(a -> {
-            String chunk = getLastChunk(a);
-            entry.getPublishers().add(chunk);
-            companies.put(chunk, a.text());
-        });
-        // <a href="https://www.mobygames.com/company/capcom-co-ltd">Capcom&nbsp;Co.,&nbsp;Ltd.</a>
-        getAs(divs.get(4)).forEach(a -> {
-            String chunk = getLastChunk(a);
-            entry.getDevelopers().add(chunk);
-            companies.put(chunk, a.text());
-        });
-        //TODO may be use Releases tab instead this info
-        // <a href="https://www.mobygames.com/game/%s/%s/release-info">Nov, 1986</a>
-        getAs(divs.get(6)).forEach(a -> entry.getReleases().add(a.text()));
-        // <a href="https://www.mobygames.com/game/cpc/1942arcade">Amstrad CPC</a>
-        // ,
-        // <a href="https://www.mobygames.com/game/android/1942arcade">Android</a>
-        // ,
-        // ...
-        // |
-        // <a href="https://www.mobygames.com/game/1942arcade">Combined&nbsp;View</a>
-        List<A> alsoFor = getAs(divs.get(8));
-        alsoFor.subList(0, alsoFor.size() - 1).forEach(a -> entry.getAlsoFor().add(getPreLastChunk(a.href())));
+        for (int i = 1; i < divs.size(); i += 2) {
+            Element title = divs.get(i);
+            switch (title.text()) {
+                case "Published by":
+                    // <a href="https://www.mobygames.com/company/capcom-usa-inc">Capcom&nbsp;U.S.A.,&nbsp;Inc.</a>
+                    getAs(divs.get(i + 1)).forEach(a -> {
+                        String chunk = getLastChunk(a);
+                        entry.getPublishers().add(chunk);
+                        companies.put(chunk, a.text());
+                    });
+                    break;
+                case "Developed by":
+                    // <a href="https://www.mobygames.com/company/capcom-co-ltd">Capcom&nbsp;Co.,&nbsp;Ltd.</a>
+                    getAs(divs.get(i + 1)).forEach(a -> {
+                        String chunk = getLastChunk(a);
+                        entry.getDevelopers().add(chunk);
+                        companies.put(chunk, a.text());
+                    });
+                    break;
+                case "Released":
+                    // <a href="https://www.mobygames.com/game/%s/%s/release-info">Nov, 1986</a>
+                    getAs(divs.get(i + 1)).forEach(a -> entry.getDates().add(a.text()));
+                    break;
+                case "Also For":
+                    // <a href="https://www.mobygames.com/game/cpc/1942arcade">Amstrad CPC</a>
+                    // ,
+                    // <a href="https://www.mobygames.com/game/android/1942arcade">Android</a>
+                    // ,
+                    // ...
+                    // |
+                    // <a href="https://www.mobygames.com/game/1942arcade">Combined&nbsp;View</a>
+                    List<A> alsoFor = getAs(divs.get(i + 1));
+                    alsoFor.subList(0, alsoFor.size() - 1).forEach(a -> entry.getAlsoFor().add(getPreLastChunk(a.href())));
+                    break;
+                case "Platform":
+                    // Do nothing, we know the platform
+                    break;
+                default:
+                    throw new RuntimeException(title.text());
+            }
+        }
 
         // Third column
         Element coreGameGenre = getById(coreGameInfo, "coreGameGenre");
-        divs = getDivs(coreGameGenre);
-        assert divs.size() == 10;
-        assert divs.get(2).text().equals("Genre");
-        assert divs.get(4).text().equals("Perspective");
-        assert divs.get(6).text().equals("Visual");
-        assert divs.get(8).text().equals("Gameplay");
-        assert divs.get(10).text().equals("Setting");
 
-        //TODO read all a's, parse
-        // <a href="https://www.mobygames.com/genre/sheet/action/">Action</a>
-        getAs(divs.get(3)).forEach(a -> {
-            String sheet = getLastChunk(a);
-            entry.getGenres().add(sheet);
-            sheets.put(sheet, a.text());
-        });
-        //TODO replace in all string fields &nbsp; with spaces!!!!
-        // <a href="https://www.mobygames.com/genre/sheet/top-down/">Top-down</a>
-        getAs(divs.get(5)).forEach(a -> {
-            String sheet = getLastChunk(a);
-            entry.getPerspectives().add(sheet);
-            sheets.put(sheet, a.text());
-        });
-        // <a href="https://www.mobygames.com/genre/sheet/2d-scrolling/">2D&nbsp;scrolling</a>
-        getAs(divs.get(7)).forEach(a -> {
-            String sheet = getLastChunk(a);
-            entry.getVisuals().add(sheet);
-            sheets.put(sheet, a.text());
-        });
-        // <a href="https://www.mobygames.com/genre/sheet/arcade_/">Arcade</a>,
-        // <a href="https://www.mobygames.com/genre/sheet/shooter/">Shooter</a>
-        getAs(divs.get(9)).forEach(a -> {
-            String sheet = getLastChunk(a);
-            entry.getGameplays().add(sheet);
-            sheets.put(sheet, a.text());
-        });
-        // <a href="https://www.mobygames.com/genre/sheet/world-war-ii/">World&nbsp;War&nbsp;II</a>
-        getAs(divs.get(11)).forEach(a -> {
-            String sheet = getLastChunk(a);
-            entry.getSettings().add(sheet);
-            sheets.put(sheet, a.text());
-        });
+        divs = getDivs(coreGameGenre);
+        int start = 2;
+        Element divv = divs.get(1);
+        if (divv.attr("style").equals("float: right;")) {
+            start++;
+        }
+        for (int i = start; i < divs.size(); i += 2) {
+            Element title = divs.get(i);
+            switch (title.text()) {
+                case "ESRB Rating":
+                    // <a href="https://www.mobygames.com/attribute/sheet/attributeId,91/">Kids to Adults</a>
+                    getAs(divs.get(i + 1)).forEach(a -> {
+                        String id = getLastChunk(a).split(",")[1];
+                        entry.getEsbrRatings().add(id);
+                        attributes.put(id, a.text());
+                    });
+                    break;
+                case "Genre":
+                    // <a href="https://www.mobygames.com/genre/sheet/action/">Action</a>
+                    getAs(divs.get(i + 1)).forEach(a -> {
+                        String sheet = getLastChunk(a);
+                        entry.getGenres().add(sheet);
+                        sheets.put(sheet, a.text());
+                    });
+                    break;
+                case "Perspective":
+                    // <a href="https://www.mobygames.com/genre/sheet/top-down/">Top-down</a>
+                    getAs(divs.get(i + 1)).forEach(a -> {
+                        String sheet = getLastChunk(a);
+                        entry.getPerspectives().add(sheet);
+                        sheets.put(sheet, a.text());
+                    });
+                    break;
+                case "Visual":
+                    // <a href="https://www.mobygames.com/genre/sheet/2d-scrolling/">2D&nbsp;scrolling</a>
+                    getAs(divs.get(i + 1)).forEach(a -> {
+                        String sheet = getLastChunk(a);
+                        entry.getVisuals().add(sheet);
+                        sheets.put(sheet, a.text());
+                    });
+                    break;
+                case "Pacing":
+                    // <a href="https://www.mobygames.com/genre/sheet/turn-based/">Turn-based</a>
+                    getAs(divs.get(i + 1)).forEach(a -> {
+                        String sheet = getLastChunk(a);
+                        entry.getPacings().add(sheet);
+                        sheets.put(sheet, a.text());
+                    });
+                    break;
+                case "Gameplay":
+                    // <a href="https://www.mobygames.com/genre/sheet/arcade_/">Arcade</a>,
+                    // <a href="https://www.mobygames.com/genre/sheet/shooter/">Shooter</a>
+                    getAs(divs.get(i + 1)).forEach(a -> {
+                        String sheet = getLastChunk(a);
+                        entry.getGameplays().add(sheet);
+                        sheets.put(sheet, a.text());
+                    });
+                    break;
+                case "Interface":
+                    // <a href="https://www.mobygames.com/genre/sheet/direct_control/">Direct&nbsp;control</a>
+                    getAs(divs.get(i + 1)).forEach(a -> {
+                        String sheet = getLastChunk(a);
+                        entry.getInterfaces().add(sheet);
+                        sheets.put(sheet, a.text());
+                    });
+                    break;
+                case "Setting":
+                    // <a href="https://www.mobygames.com/genre/sheet/world-war-ii/">World&nbsp;War&nbsp;II</a>
+                    getAs(divs.get(i + 1)).forEach(a -> {
+                        String sheet = getLastChunk(a);
+                        entry.getSettings().add(sheet);
+                        sheets.put(sheet, a.text());
+                    });
+                    break;
+                case "Misc":
+                    // <a href="https://www.mobygames.com/genre/sheet/regional-differences/">Regional&nbsp;differences</a>
+                    getAs(divs.get(i + 1)).forEach(a -> {
+                        String sheet = getLastChunk(a);
+                        entry.getMiscs().add(sheet);
+                        sheets.put(sheet, a.text());
+                    });
+                    break;
+                default:
+                    throw new RuntimeException(title.text());
+            }
+        }
 
         // Description
         Element h2description = select(divColMd8, "h2:contains(Description)");
@@ -306,46 +371,20 @@ public class MobyCrawler {
 
 
         // Part of the Following Groups
-        lis = selectNextUl(divColMd8, "h2:contains(Part of the Following Groups)");
+        lis = selectNextUl(divColMd8, "h2:contains(Part of the Following Group)");
         lis.forEach(li -> {
             A a = getA(li.child(0));
             // https://www.mobygames.com/game-group/mario-games
             gameGroups.put(getLastChunk(a), a.text());
             entry.getGameGroup().add(getLastChunk(a));
         });
-
-        // Trivia
-        Node el = select(divColMd8, "h2:contains(Trivia)");
-        String key = null;
-        List<String> values = new ArrayList<>();
-        while (true) {
-            el = getNextNode(el);
-            assert el != null;
-            if (el instanceof TextNode) {
-                if (!((TextNode) el).text().trim().isEmpty()) {
-                    values.add(((TextNode) el).text());
-                }
-            } else {
-                Element ell = (Element) el;
-                if (ell.tagName().equals("h3")) {
-                    if (key != null) {
-                        entry.getTrivia().put(key, values);
-                    }
-                    key = ell.text();
-                    values = new ArrayList<>();
-                } else if (ell.tagName().equals("small")) {
-                    break;
-                } else if (ell.className().equals("sideBarLinks")) {
-                    break;
-                } else {
-                    values.add(ell.outerHtml());
-                }
-            }
-        }
-        entry.getTrivia().put(key, values);
     }
 
     private static void parseGameCredits(MobyEntry entry) throws Exception {
+
+        /*if (!entry.hasCredits()) {
+            return;
+        }*/
 
         HttpExecutor.HttpResponse response = executor.getResponse(String.format(GAME_CREDITS, entry.platformId(), entry.gameId()));
         Element container = getContainer(response);
@@ -398,18 +437,16 @@ public class MobyCrawler {
 
     private static void parseGameScreenshots(MobyEntry entry) throws Exception {
 
+        //TODO return
+        /*if (!entry.hasScreenshots()) {
+            return;
+        }*/
+
         HttpExecutor.HttpResponse response = executor.getResponse(String.format(GAME_SCREENSHOTS, entry.platformId(), entry.gameId()));
         Element container = getContainer(response);
         Element divColMd12 = getByClass(container, "col-md-12");
-        // Проверим что система верна
-        // <ul class="nav nav-pills" style="margin-bottom: 15px;"><li><a href="https://www.mobygames.com/game/1942arcade/screenshots">All</a></li> <li class="active"><a href="https://www.mobygames.com/game/nes/1942arcade/screenshots">NES</a></li>
-        Element ulNav = select(divColMd12, "ul.nav-pills");
-        Element li = select(ulNav, "li.active");
-        A at = getA(li);
-        assert at.text().equals(games.get(entry.gameId()));
 
-        Element h2 = getNext(ulNav);
-        assert h2.text().equals("User Screenshots");
+        Element h2 = select(divColMd12, "h2:contains(User Screenshots)");
         Element h3 = getNext(h2);
         assert h3.text().equals(games.get(entry.gameId()) + " version");
         Element divRow = getNext(h3);
@@ -445,6 +482,11 @@ public class MobyCrawler {
 
     private static void parseGameReviews(MobyEntry entry) throws Exception {
 
+        //TODO return
+        /*if (!entry.hasReviews()) {
+            return;
+        }*/
+
         HttpExecutor.HttpResponse response = executor.getResponse(String.format(GAME_REVIEWS, entry.platformId(), entry.gameId()));
         Element container = getContainer(response);
         Element divColMd8 = getByClass(container, "col-md-8");
@@ -468,7 +510,13 @@ public class MobyCrawler {
                 String reviewerLink = a.href();
                 String reviewerId = getLastChunk(reviewerLink).split(",")[1];
                 String reviewer = a.text();
-                String note = getByTag(tds.get(2), "img").attr("alt").replace(" Stars", "");
+                Element spanOrEm = tds.get(2).child(0);
+                String note;
+                if (spanOrEm.tagName().equals("em")) {
+                    note = spanOrEm.text(); // unrated
+                } else {
+                    note = getByTag(spanOrEm, "img").attr("alt").replace(" Stars", "");
+                }
 
                 users.put(reviewerId, reviewer);
                 entry.getUserReviews().add(new UserReview(note, reviewerId, summary));
@@ -487,8 +535,8 @@ public class MobyCrawler {
 
         // Table либо нет ревью
         Element divFloatholder = getNext(h2Title);
-        Element table2 = getTable(divFloatholder);
-        if (table2.tagName().equals("table")) {
+        if (!divFloatholder.children().isEmpty()) {
+            Element table2 = divFloatholder.child(0);
             Elements trs = getTrs(table2);
             trs.subList(1, trs.size() - 1).forEach(tr -> {
                 Elements tds = getTds(tr);
@@ -548,19 +596,28 @@ public class MobyCrawler {
 
     private static void parseGameCoverArt(MobyEntry entry) throws Exception {
 
+        //TODO return
+        /*if (!entry.hasCoverArt()) {
+            return;
+        }*/
+
         HttpExecutor.HttpResponse response = executor.getResponse(String.format(GAME_COVER_ART, entry.platformId(), entry.gameId()));
         Element container = getContainer(response);
 
+        Element navTabs = getByClass(container, "nav nav-tabs");
+        Element current = getNext(navTabs);
+        if (current.className().equals("nav nav-pills")) {
+            current = getNext(current);
+        }
         // в цикле читать дивы:
         // coverHeading
         // row
         // sideBarLinks
-        Element current = getByClass(container, "nav nav-pills");
         Covers covers = new Covers();
 
         do {
             current = getNext(current);
-            if (!current.className().equals("coverHeading")) {
+            if (current == null || !current.className().equals("coverHeading")) {
                 break;
             }
             Element h2 = current.child(0);
@@ -606,6 +663,381 @@ public class MobyCrawler {
             current = getNext(current);
             assert current.className().equals("sideBarLinks");
         } while (true);
+    }
+
+    private static void parseGamePromoArt(MobyEntry entry) throws Exception {
+
+        //TODO return
+        /*if (!entry.hasPromoArt()) {
+            return;
+        }*/
+
+        HttpExecutor.HttpResponse response = executor.getResponse(String.format(GAME_PROMO_ART, entry.platformId(), entry.gameId()));
+        Element container = getContainer(response);
+
+        // в цикле читать дивы:
+        // coverHeading
+        // row
+        // sideBarLinks
+        Element current = getByClass(container, "col-md-12 col-lg-12");
+        Elements sections = getAllByTag(container, "section");
+        //TODO
+        Covers covers = new Covers();
+
+        // грабить здесь всё, кроме нижнего описания, его брать отсюда:
+        // https://www.mobygames.com/game/snes/contra-iii-the-alien-wars/promo/promoImageId,92195/
+        //короче, операция получения доп инфо в обоих случаях это просто добор инфы.
+        // подумать как это сделать грамотно.
+        for (Element section : sections) {// <h2><a href="https://www.mobygames.com/game/snes/contra-iii-the-alien-wars/promo/groupId,52916/">Magazine Advertisements</a></h2>
+            Element h2 = getH2(section);
+            A a = getA(h2);
+            String promoId = getLastChunk(a).split(",")[1];
+            String promoGroup = a.text();
+            // todo need to parse text, html in future
+            String promoSource = (getNext(h2).tagName().equals("p")) ? getNext(h2).html() : "";  // Promo source
+            //TODO
+            Promo promo = new Promo(promoId, promoGroup, promoSource);
+
+            // ul.thumbnailGallery
+            Elements lis = selectUl(section, "ul.thumbnailGallery");
+
+            //  li - эти в цикле
+            //    figure
+            for (Element li : lis) {
+                Element figure = getByTag(li, "figure");
+                //      a - <a href="https://www.mobygames.com/game/snes/contra-iii-the-alien-wars/promo/promoImageId,92195/">
+                //       img - screenshot <img alt="Contra III: The Alien Wars Screenshot" src="/images/promo/s/92195-contra-iii-the-alien-wars-screenshot.jpg">
+                a = getA(figure);
+                String promoImageId = getLastChunk(a).split(",")[1];
+                String promoImageName = getLastChunk(a.child(0).attr("src"));
+                //      figcaption
+                //        span - imageTypeName
+                //        [br]
+                //        текст - описание источника. Может быть линк со ссылкой на источник
+                //        <a href="https://www.mobygames.com/mobyrank/source/sourceId,106/">VideoGame...</a>
+                // todo поскольку нижнее описание не всегда хранит всю инфу по журналам,
+                // todo необходимо переходить по ссылке и брать инфу там.
+                // todo оставить это на потом, не слишком критично в данный момент
+                Element figcaption = getByTag(figure, "figcaption");
+                Element span = figcaption.child(0);
+                String imageTypeName = span.text();
+                List<String> sourceDescr = new ArrayList<>();
+                Node node = span.nextSibling();
+                while (node != null) {
+                    if (node instanceof TextNode) {
+                        sourceDescr.add(((TextNode) node).text());
+                    } else {
+                        sourceDescr.add(node.outerHtml());
+                    }
+                    node = getNextNode(node);
+                }
+
+                PromoImage promoImage = new PromoImage(promoImageId, promoImageName, imageTypeName, sourceDescr);
+
+                parseGamePromoArtImage(entry, promo, promoImage);
+
+                promo.getImages().add(promoImage);
+            }
+            entry.getPromos().add(promo);
+        }
+    }
+
+    private static void parseGamePromoArtImage(MobyEntry entry, Promo promo, PromoImage promoImage) throws Exception {
+
+        HttpExecutor.HttpResponse response = executor.getResponse(String.format(GAME_PROMO_ART_IMAGE, entry.platformId(), entry.gameId(), promoImage.getId()));
+        Element container = getContainer(response);
+
+        Element figure = select(container, "figure.promoImage");
+        //      a - <a href="https://www.mobygames.com/images/promo/original/1465483400-3500966055.jpg"><img alt="1942 Screenshot" src="/images/promo/l/4391-1942-screenshot.jpg" width="321" height="242" border="0"></a>
+        //       img - screenshot <img alt="1942 Screenshot" src="/images/promo/l/4391-1942-screenshot.jpg" width="321" height="242" border="0">
+        A a = getA(figure);
+        String promoImageOriginal = getLastChunk(a);
+        promoImage.setOriginal(promoImageOriginal);
+        //      figcaption
+        //        <p>
+        //        <p>
+        Element figcaption = getByTag(figure, "figcaption");
+        for (int i = 1; i < figcaption.childNodeSize(); i++) {
+            Node node = figcaption.childNode(i);
+            if (node instanceof TextNode) {
+                String text = ((TextNode) node).text();
+                if (!promoImage.getSourceDescr().contains(text)) {
+                    promoImage.getSourceDescr().add(text);
+                }
+            } else {
+                String text1 = node.outerHtml();
+                String text2 = ((Element) node).html();
+                if (!promoImage.getSourceDescr().contains(text1) && !promoImage.getSourceDescr().contains(text2)) {
+                    promoImage.getSourceDescr().add(text1);
+                }
+            }
+        }
+    }
+
+    private static void parseGameReleases(MobyEntry entry) throws Exception {
+
+        /*if (!entry.hasReleases()) {
+            return;
+        }*/
+
+        HttpExecutor.HttpResponse response = executor.getResponse(String.format(GAME_RELEASES, entry.platformId(), entry.gameId()));
+        Element container = getContainer(response);
+        Element divColMd8 = getByClass(container, "col-md-8");
+        // Все метаданные по игре + обложка
+        Element coreGameInfo = getById(divColMd8, "floatholder coreGameInfo");
+
+        Element br = getNext(coreGameInfo);
+        Element p = getNext(br);
+        assert p.text().equals("Release dates, publisher and developer information for this game listed by platform:");
+
+        Element h2Title = getNext(p);
+        assert h2Title.text().equals(platforms.get(entry.platformId()));
+
+        // читать по очереди, пока див.
+        List<Map<String, String>> releases = new ArrayList<>();
+        Element current = getNext(h2Title);
+        boolean first = true;
+        Map<String, String> release = new LinkedHashMap<>();
+        while (current.tagName().equals("div")) {
+            if (current.className().equals("floatholder")) {
+                if (!first) {
+                    releases.add(release);
+                    release = new LinkedHashMap<>();
+                    first = true;
+                }
+                Element divFl = current.child(0); // <div style="width: 10em;" class="fl">Published by</div>
+                // TODO
+                String key = divFl.text();
+                Element a = getNext(divFl); //<a href="https://www.mobygames.com/company/capcom-co-ltd">Capcom Co., Ltd.</a>
+                // TODO
+                String companyId = getLastChunk(a.attr("href"));
+                String companyName = a.text();
+                companies.put(companyId, companyName);
+                release.put(key, companyId);
+            } else {
+                first = false;
+                for (Element child : current.children()) {// <div class="floatholder relInfo">
+                    //<div class="relInfoTitle">Country</div><div class="relInfoDetails"><span><img alt="Japan flag" src="/images/i/36/42/21792.gif" width="18" height="12" border="0"> Japan</span></div></div>
+                    Element relInfoTitle = child.child(0);
+                    String key = relInfoTitle.text();
+                    Element relInfoDetails = child.child(1);
+                    String value = relInfoDetails.html();
+                    release.put(key, value);
+                }
+            }
+            current = getNext(current);
+        }
+        releases.add(release);
+        entry.setReleases(releases);
+    }
+
+    // Одинаковое значение для всех платформ!!!
+    private static void parseGameTrivia(MobyEntry entry) throws Exception {
+
+        HttpExecutor.HttpResponse response = executor.getResponse(String.format(GAME_TRIVIA, entry.platformId(), entry.gameId()));
+        Element container = getContainer(response);
+        Element divColMd8 = getByClass(container, "col-md-8 col-lg-8");
+
+        // Trivia
+        Node el = select(divColMd8, "h2:contains(Trivia)");
+        if (el == null) {
+            return;
+        }
+        String key = null;
+        List<String> values = new ArrayList<>();
+        while (true) {
+            el = getNextNode(el);
+            if (el instanceof TextNode) {
+                if (!((TextNode) el).text().trim().isEmpty()) {
+                    values.add(((TextNode) el).text());
+                }
+            } else {
+                Element ell = (Element) el;
+                if (ell.tagName().equals("h3")) {
+                    if (key != null) {
+                        entry.getTrivia().put(key, values);
+                    }
+                    key = ell.text();
+                    values = new ArrayList<>();
+                } else if (ell.tagName().equals("div") && ell.className().equals("right")) {
+                    break;
+                } else if (ell.tagName().equals("small")) {
+                    break;
+                } else if (ell.className().equals("sideBarLinks")) {
+                    break;
+                } else {
+                    values.add(ell.outerHtml());
+                }
+            }
+        }
+        entry.getTrivia().put(key, values);
+    }
+
+    private static void parseGameHints(MobyEntry entry) throws Exception {
+
+        /*if (!entry.hasHints()) {
+            return;
+        }*/
+
+        HttpExecutor.HttpResponse response = executor.getResponse(String.format(GAME_HINTS, entry.platformId(), entry.gameId()));
+        Element table = select(getContainer(response), "table[summary]");
+
+        if (table == null) {
+            return;
+        }
+
+        Elements trs = getTrs(table);
+
+        Map<String, Map<String, List<String>>> allHints = new LinkedHashMap<>();
+        Map<String, List<String>> hint = new LinkedHashMap<>();
+        String key = "";
+        boolean isGroup = true;
+
+        for (Element tr : trs) {
+            if (tr.className().equals("color3")) {
+                if (!isGroup) {
+                    allHints.put(key, hint);
+                    hint = new LinkedHashMap<>();
+                }
+                isGroup = true;
+                key = tr.child(0).child(0).text().split(" - ")[0]; // <td colspan="5"><b>General Hints/Tips - SNES</b></td>
+            } else {
+                isGroup = false;
+                // <a href="https://www.mobygames.com/game/snes/killer-instinct/hints/hintId,1409/">Continue</a>
+                A a = getA(tr.child(1));
+                String hintId = getLastChunk(a.href()).split(",")[1];
+                String title = a.text();
+                //TODO parse, get lines
+                List<String> lines = parseGameHintsPage(entry, hintId);
+                hint.put(title, lines);
+            }
+        }
+        allHints.put(key, hint);
+        entry.setHints(allHints);
+    }
+
+    private static List<String> parseGameHintsPage(MobyEntry entry, String hintId) throws Exception {
+
+        HttpExecutor.HttpResponse response = executor.getResponse(String.format(GAME_HINTS_PAGE, entry.platformId(), entry.gameId(), hintId));
+        Element table = select(getContainer(response), "table[summary]");
+
+        if (table == null) {
+            throw new RuntimeException("No hints???");
+        }
+
+        Elements trs = getTrs(table);
+
+        List<String> lines = new ArrayList<>();
+
+        // <tr><td colspan="2" class="sbR sbL sbB"><p>Just when you...</p></td></tr>
+        for (int i = 0; i < trs.get(1).childNodeSize(); i++) {
+
+            Node node = trs.get(1).childNode(i);
+            if (node instanceof TextNode) {
+                lines.add(((TextNode) node).text());
+            } else {
+                lines.add(((Element) node).html());
+            }
+        }
+
+        return lines;
+    }
+
+    // Одинаковое значение для всех платформ!!!
+    private static void parseGameAds(MobyEntry entry) throws Exception {
+
+        HttpExecutor.HttpResponse response = executor.getResponse(String.format(GAME_ADS, entry.platformId(), entry.gameId()));
+        Element container = getContainer(response);
+        Element divColMd8 = getByClass(container, "col-md-8 col-lg-8");
+
+        // Advertising Blurbs
+        Element current = select(divColMd8, "h2:contains(Advertising Blurbs)");
+        while (true) {
+            current = getNext(current);
+            if (current == null) {
+                break;
+            }
+            // Back of Plastic Case - C64 (AU):
+            // www.nintendo.com - Wii U (US):
+            // Back of Box (Canada):
+            // Back of Box - SNES (UK):
+            String title = current.text();
+            current = getNext(current);
+            List<String> list = current.childNodes().stream().map(node -> {
+                if (node instanceof TextNode) {
+                    return ((TextNode) node).text().trim();
+                } else {
+                    return node.outerHtml();
+                }
+            }).filter(s -> s.length() >= 2).collect(Collectors.toList());
+            list.remove(list.size() - 1);
+            String html = String.join("\n", list);
+            entry.getAdBlurbs().put(title, html);
+        }
+    }
+
+    private static void parseGameSpecs(MobyEntry entry) throws Exception {
+
+        /*if (!entry.hasSpecs()) {
+            return;
+        }*/
+
+        HttpExecutor.HttpResponse response = executor.getResponse(String.format(GAME_SPECS, entry.platformId(), entry.gameId()));
+        Element table = select(getContainer(response), "table.techInfo");
+
+        Elements trs = getTrs(table);
+
+        if (!trs.get(1).hasAttr("valign")) {
+            return;
+        }
+
+        for (int i = 1; i < trs.size(); i++) {
+            Element tr = trs.get(i);
+            String key = tr.child(0).text();
+            List<String> values = tr.child(1).childNodes().stream().map(node -> {
+                if (node instanceof TextNode) {
+                    return ((TextNode) node).text();
+                } else if (((Element) node).tagName().equals("a")) {
+                    return ((Element) node).text();
+                } else {
+                    return "";
+                }
+            }).filter(s -> s.length() > 2).collect(Collectors.toList());
+            entry.getSpecs().put(key, values);
+        }
+    }
+
+
+    private static void parseGameRatings(MobyEntry entry) throws Exception {
+
+        /*if (!entry.hasSpecs()) {
+            return;
+        }*/
+
+        HttpExecutor.HttpResponse response = executor.getResponse(String.format(GAME_RATING_SYSTEMS, entry.platformId(), entry.gameId()));
+        Element container = getContainer(response);
+        Element divColMd8 = getByClass(container, "col-md-8 col-lg-8");
+
+        Element table = select(divColMd8, "table[summary*=Descriptor]");
+
+        Elements trs = getTrs(table);
+
+        for (Element tr : trs) {
+            String key = tr.child(0).text();
+            List<A> as = getAs(tr.child(2));
+            if (as.isEmpty()) {
+                entry.getRatingSystems().put(key, Collections.singletonList(tr.child(2).text()));
+            } else {
+                // <a href="https://www.mobygames.com/attribute/sheet/attributeId,91/">Kids to Adults</a>
+                // <td><img alt="Teen" src="/images/i/15/32/3375282.jpeg" width="15" height="20" border="0">&nbsp;<a href="https://www.mobygames.com/attribute/sheet/attributeId,92/">Teen</a> (Descriptors: <a href="https://www.mobygames.com/attribute/sheet/attributeId,692/">Animated Blood and Gore</a>, <a href="https://www.mobygames.com/attribute/sheet/attributeId,690/">Animated Violence</a>) </td>
+                List<String> values = as.stream().map(a -> {
+                    String id = getLastChunk(a).split(",")[1];
+                    attributes.put(id, a.text());
+                    return id;
+                }).collect(Collectors.toList());
+                entry.getRatingSystems().put(key, values);
+            }
+        }
     }
 
     private static Map<String, String> parseGamesListToc(String systemId) throws Exception {
