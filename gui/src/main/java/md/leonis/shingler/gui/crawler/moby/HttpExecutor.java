@@ -4,7 +4,6 @@ import org.apache.hc.client5.http.auth.AuthScope;
 import org.apache.hc.client5.http.auth.CredentialsStore;
 import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
-import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
@@ -86,36 +85,21 @@ public class HttpExecutor {
     }
 
 
-    // Http requests execution
-    //TODO test
-    public HttpResponse getResponse(String fullUri) throws Exception {
+    public HttpResponse getPage(String fullUri, String referrer) throws Exception {
         URL url = new URL(fullUri);
-        return getResponse(url.getProtocol() + "://" + url.getHost(), url.getPath(), getProxy());
+        return getPage(url.getProtocol() + "://" + url.getHost(), url.getPath(), referrer, getProxy());
     }
 
-    public HttpResponse getResponse(String host, String uri) throws Exception {
-        return getResponse(host, uri, getProxy());
+    public HttpResponse getPage(String host, String uri, String referrer, Proxy proxy) throws Exception {
+        return doGetPage(host, uri, referrer, proxy, new HttpGet(uri));
     }
 
-    public HttpResponse getResponse(String host, String uri, Proxy proxy) throws Exception {
-        return doResponse(host, uri, null, proxy, new HttpGet(uri));
-    }
-
-    public HttpResponse getResponse(String host, String uri, String pubicKey) throws Exception {
-        return doResponse(host, uri, pubicKey, getProxy(), new HttpGet(uri));
-    }
-
-    public HttpResponse postResponse(String host, String uri, String pubicKey) throws Exception {
-        return doResponse(host, uri, pubicKey, getProxy(), new HttpPost(uri));
-    }
-
-    //TODO save raw html + date, next time read offline
     //TODO process exceptions -> retry list
-    private HttpResponse doResponse(String host, String uri, String pubicKey, Proxy proxy, HttpUriRequestBase httpUriRequestBase) throws Exception {
+    private HttpResponse doGetPage(String host, String uri, String referrer, Proxy proxy, HttpUriRequestBase httpUriRequestBase) throws Exception {
 
         try {
             LOGGER.info(host + uri);
-            
+
             Path path = getPath(HTML_CACHE, host + uri);
 
             if (Files.exists(path)) { // TODO if read from cache
@@ -127,21 +111,19 @@ public class HttpExecutor {
                     return new HttpResponse(new String(Files.readAllBytes(path)), 200, new Header[0]);
                 }
             }
-            
-            //TODO read from cache
 
             String[] chunks = host.split("://");
             HttpHost targetHost = new HttpHost(chunks[0], chunks[1]);
 
-            if (null != pubicKey) {
-                httpUriRequestBase.addHeader(new BasicHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0"));
-                httpUriRequestBase.addHeader(new BasicHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"));
-                httpUriRequestBase.addHeader(new BasicHeader("Accept-Language", "en-US;q=0.8,ru-RU,ru;q=0.5,en;q=0.3"));
-                httpUriRequestBase.addHeader(new BasicHeader("Accept-Encoding", "gzip, deflate, br"));
-                httpUriRequestBase.addHeader(new BasicHeader("Referer", "https://www.google.com/")); //TODO
-                httpUriRequestBase.addHeader(new BasicHeader("Connection", "keep-alive"));
-                httpUriRequestBase.addHeader(new BasicHeader("Cache-Control", "max-age=0"));
-            }
+            referrer = (referrer == null) ? "https://www.google.com/" : referrer;
+
+            httpUriRequestBase.addHeader(new BasicHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0"));
+            httpUriRequestBase.addHeader(new BasicHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"));
+            httpUriRequestBase.addHeader(new BasicHeader("Accept-Language", "en-US;q=0.8,ru-RU,ru;q=0.5,en;q=0.3"));
+            //httpUriRequestBase.addHeader(new BasicHeader("Accept-Encoding", "gzip, deflate, br"));
+            httpUriRequestBase.addHeader(new BasicHeader("Referer", referrer));
+            httpUriRequestBase.addHeader(new BasicHeader("Connection", "keep-alive"));
+            httpUriRequestBase.addHeader(new BasicHeader("Cache-Control", "max-age=0"));
 
             //Prepare the CloseableHttpClient
             CloseableHttpClient closeableHttpClient;
@@ -188,8 +170,94 @@ public class HttpExecutor {
 
             Files.createDirectories(dir);
             Files.write(path, httpResponse.getBody().getBytes());
-            
+            System.out.println("saved: " + path);
+
             return httpResponse;
+        } catch (Exception e) {
+
+            proxy.setStatus(Proxy.ProxyStatus.UNAVAILABLE);
+            proxy.setRetryAfterSec(60);
+            LOGGER.error("REST request exception. Proxy host: " + proxy.getHost(), e);
+            throw e;
+        }
+    }
+
+    public void saveFile(String fullUri, String referrer) throws Exception {
+        URL url = new URL(fullUri);
+        saveFile(url.getProtocol() + "://" + url.getHost(), url.getPath(), referrer, getProxy());
+    }
+
+    public void saveFile(String host, String uri, String referrer, Proxy proxy) throws Exception {
+        doSaveFile(host, uri, referrer, proxy, new HttpGet(uri));
+    }
+
+    //TODO process exceptions -> retry list
+    private void doSaveFile(String host, String uri, String referrer, Proxy proxy, HttpUriRequestBase httpUriRequestBase) throws Exception {
+
+        try {
+            //LOGGER.info(host + uri);
+
+            Path path = getPath(HTML_CACHE, host + uri);
+
+            if (Files.exists(path)) { // TODO if read from cache
+                //LOGGER.info("Use cached file: " + path.toAbsolutePath().toString());
+                return;
+            }
+
+            String[] chunks = host.split("://");
+            HttpHost targetHost = new HttpHost(chunks[0], chunks[1]);
+
+            referrer = (referrer == null) ? "https://www.google.com/" : referrer;
+
+            httpUriRequestBase.addHeader(new BasicHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0"));
+            httpUriRequestBase.addHeader(new BasicHeader("Host", host.replace("http://", "").replace("https://", "")));
+            httpUriRequestBase.addHeader(new BasicHeader("Accept", "image/avif,image/webp,*/*"));
+            httpUriRequestBase.addHeader(new BasicHeader("Accept-Language", "en-US;q=0.8,ru-RU,ru;q=0.5,en;q=0.3"));
+            //httpUriRequestBase.addHeader(new BasicHeader("Accept-Encoding", "gzip, deflate, br"));
+            httpUriRequestBase.addHeader(new BasicHeader("Referer", referrer));
+            httpUriRequestBase.addHeader(new BasicHeader("Connection", "keep-alive"));
+            httpUriRequestBase.addHeader(new BasicHeader("Cache-Control", "max-age=0"));
+
+            //Prepare the CloseableHttpClient
+            CloseableHttpClient closeableHttpClient;
+
+            if (null != proxy.getHost()) {
+                HttpHost proxyHost = new HttpHost(proxy.getScheme(), proxy.getHost(), proxy.getPort());
+                httpUriRequestBase.setConfig(RequestConfig.custom().setProxy(proxyHost).build());
+
+                CredentialsStore credentialsProvider = new BasicCredentialsProvider();
+                credentialsProvider.setCredentials(new AuthScope(proxy.getHost(), proxy.getPort()),
+                        new UsernamePasswordCredentials(proxy.getUserName(), proxy.getPasswordArray()));
+
+                RequestConfig config = RequestConfig.custom()
+                        // Determines the timeout until a new connection is fully established. This may also include transport security negotiation exchanges such as SSL or TLS protocol negotiation).
+                        .setConnectTimeout(Timeout.ofSeconds(5)).build();
+
+                closeableHttpClient = HttpClients.custom().setDefaultCredentialsProvider(credentialsProvider).setDefaultRequestConfig(config).build();
+            } else {
+                closeableHttpClient = HttpClients.createDefault();
+            }
+
+            //Get the result
+            CloseableHttpResponse closeableHttpResponse = closeableHttpClient.execute(targetHost, httpUriRequestBase);
+            HttpResponse httpResponse = new HttpResponse("", closeableHttpResponse.getCode(), closeableHttpResponse.getHeaders());
+
+            byte[] bytes = EntityUtils.toByteArray(closeableHttpResponse.getEntity());
+            //LOGGER.info(httpResponse.getCode() + ": " + httpResponse.getBody());
+
+            EntityUtils.consume(closeableHttpResponse.getEntity());
+
+            updateProxy(proxy, httpResponse);
+
+            if (httpResponse.getCode() != 200) {
+                throw new RuntimeException(httpResponse.getCode() + ": " + host + uri);
+            }
+
+            //System.out.println("trying to save: " + path);
+            Path dir = path.getParent();
+            Files.createDirectories(dir);
+            Files.write(path, bytes);
+
         } catch (Exception e) {
 
             proxy.setStatus(Proxy.ProxyStatus.UNAVAILABLE);

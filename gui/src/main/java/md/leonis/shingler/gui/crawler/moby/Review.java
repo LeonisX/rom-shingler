@@ -2,24 +2,24 @@ package md.leonis.shingler.gui.crawler.moby;
 
 public class Review {
 
-    private int score;
+    private Integer score;
     private String sourceId;
     private String date;
     private String review;
     private String sourceUrl;
 
-    public Review(int score, String sourceId, String date, String review) {
+    public Review(Integer score, String sourceId, String date, String review) {
         this.score = score;
         this.sourceId = sourceId;
         this.date = date;
         this.review = review;
     }
 
-    public int getScore() {
+    public Integer getScore() {
         return score;
     }
 
-    public void setScore(int score) {
+    public void setScore(Integer score) {
         this.score = score;
     }
 

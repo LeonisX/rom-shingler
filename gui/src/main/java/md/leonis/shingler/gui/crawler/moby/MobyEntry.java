@@ -13,6 +13,7 @@ public class MobyEntry {
     private List<String> publishers = new ArrayList<>();
     private List<String> developers = new ArrayList<>();
     private List<String> dates = new ArrayList<>();
+    private List<String> officialSites = new ArrayList<>();
     private List<String> alsoFor = new ArrayList<>();
 
     private List<String> esbrRatings = new ArrayList<>();
@@ -20,9 +21,16 @@ public class MobyEntry {
     private List<String> perspectives = new ArrayList<>();
     private List<String> visuals = new ArrayList<>();
     private List<String> pacings = new ArrayList<>();
+    private List<String> arts = new ArrayList<>();
     private List<String> gameplays = new ArrayList<>();
+    private List<String> educationals = new ArrayList<>();
     private List<String> interfaces = new ArrayList<>();
+    private List<String> vehiculars = new ArrayList<>();
     private List<String> settings = new ArrayList<>();
+    private List<String> sports = new ArrayList<>();
+    private List<String> narratives = new ArrayList<>();
+    private List<String> specialEditions = new ArrayList<>();
+    private List<String> addons = new ArrayList<>();
     private List<String> miscs = new ArrayList<>();
 
     private List<String> description = new ArrayList<>();
@@ -412,5 +420,69 @@ public class MobyEntry {
 
     public void setInterfaces(List<String> interfaces) {
         this.interfaces = interfaces;
+    }
+
+    public List<String> getSports() {
+        return sports;
+    }
+
+    public void setSports(List<String> sports) {
+        this.sports = sports;
+    }
+
+    public List<String> getArts() {
+        return arts;
+    }
+
+    public void setArts(List<String> arts) {
+        this.arts = arts;
+    }
+
+    public List<String> getNarratives() {
+        return narratives;
+    }
+
+    public void setNarratives(List<String> narratives) {
+        this.narratives = narratives;
+    }
+
+    public List<String> getVehiculars() {
+        return vehiculars;
+    }
+
+    public void setVehiculars(List<String> vehiculars) {
+        this.vehiculars = vehiculars;
+    }
+
+    public List<String> getEducationals() {
+        return educationals;
+    }
+
+    public void setEducationals(List<String> educationals) {
+        this.educationals = educationals;
+    }
+
+    public List<String> getOfficialSites() {
+        return officialSites;
+    }
+
+    public void setOfficialSites(List<String> officialSites) {
+        this.officialSites = officialSites;
+    }
+
+    public List<String> getSpecialEditions() {
+        return specialEditions;
+    }
+
+    public void setSpecialEditions(List<String> specialEditions) {
+        this.specialEditions = specialEditions;
+    }
+
+    public List<String> getAddons() {
+        return addons;
+    }
+
+    public void setAddons(List<String> addons) {
+        this.addons = addons;
     }
 }
