@@ -14,9 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 //TODO читать историю
@@ -32,6 +30,8 @@ import java.util.stream.Collectors;
 
 //TODO сохранять результаты
 public class MobyCrawler {
+
+    private static final String HOST = "https://www.mobygames.com";
 
     public static final String GAME_MAIN_REFERRER = "https://www.mobygames.com/search/quick?q=%s";
 
@@ -81,6 +81,8 @@ public class MobyCrawler {
         boolean cancelled = false;
         boolean canStop = false;
         boolean inWork = false;
+        volatile Exception exception = null;
+        volatile boolean finished = false;
 
         @Override
         public void run() {
@@ -104,13 +106,15 @@ public class MobyCrawler {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    exception = e;
+                    cancelled = true;
                 }
             }
+            finished = true;
         }
 
         public void stop() {
-            cancelled = false;
+            cancelled = true;
         }
     }
 
@@ -133,23 +137,21 @@ public class MobyCrawler {
 
         List<MobyEntry> mobyEntries = new ArrayList<>();
 
-        //TODO fix this
         //два контрибьютора + не закрытые теги.
-        MobyEntry entry = new MobyEntry(platformId, "world-games");
-        parseGameMain(entry);
-        parseGameAds(entry); // todo this!!!!
-        System.out.println(entry);
+        MobyEntry entry = new MobyEntry(platformId, "10-yard-fight_");
+        /*parseGameMain(entry);
+        parseGameCoverArt(entry);
+        System.out.println(entry);*/
 
-        HttpProcessor httpProcessor1 = new HttpProcessor();
-        HttpProcessor httpProcessor2 = new HttpProcessor();
-        HttpProcessor httpProcessor3 = new HttpProcessor();
-        HttpProcessor httpProcessor4 = new HttpProcessor();
+        List<HttpProcessor> processors = new ArrayList<>();
+        processors.add(new HttpProcessor());
+        processors.add(new HttpProcessor());
+        processors.add(new HttpProcessor());
+        processors.add(new HttpProcessor());
+
 
         ExecutorService service = Executors.newCachedThreadPool();
-        service.execute(httpProcessor1);
-        service.execute(httpProcessor2);
-        service.execute(httpProcessor3);
-        service.execute(httpProcessor4);
+        processors.forEach(service::execute);
 
         int i = 0;
         for (String gameId : games.keySet()) {
@@ -165,7 +167,6 @@ public class MobyCrawler {
                 parseGameReviews(mobyEntry);
                 parseGameCoverArt(mobyEntry);
                 parseGamePromoArt(mobyEntry);
-                parseGamePromoArt(mobyEntry);
                 parseGameReleases(mobyEntry);
                 parseGameTrivia(mobyEntry);
                 parseGameHints(mobyEntry);
@@ -174,6 +175,14 @@ public class MobyCrawler {
                 parseGameRatings(mobyEntry);
 
                 mobyEntries.add(mobyEntry);
+            }
+
+            Exception exception = processors.stream().filter(p -> p.exception != null).findFirst().map(p -> p.exception).orElse(null);
+            if (exception != null) {
+                processors.forEach(p -> p.cancelled = true);
+                service.awaitTermination(3, TimeUnit.SECONDS);
+                service.shutdown();
+                throw new RuntimeException(exception);
             }
 
             if (++i == 10) {
@@ -187,10 +196,19 @@ public class MobyCrawler {
         save();
         save(String.format("moby-entry-%s.json", platformId), mobyEntries);
 
-        httpProcessor1.canStop = true;
-        httpProcessor2.canStop = true;
-        httpProcessor3.canStop = true;
-        httpProcessor4.canStop = true;
+        processors.forEach(p -> p.canStop = true);
+
+        while (processors.stream().filter(p -> p.finished).count() < processors.size()) {
+            Exception exception = processors.stream().filter(p -> p.exception != null).findFirst().map(p -> p.exception).orElse(null);
+            if (exception != null) {
+                processors.forEach(p -> p.cancelled = true);
+                service.awaitTermination(3, TimeUnit.SECONDS);
+                service.shutdown();
+                throw new RuntimeException(exception);
+            }
+
+            Thread.sleep(200);
+        }
     }
 
     private static void save() throws IOException {
@@ -526,7 +544,7 @@ public class MobyCrawler {
             Element p = getNext(h2Title);
             assert p.tagName().equals("p");
             assert p.text().startsWith("here are no credits for the");
-            System.out.println(p.text());
+            //System.out.println(p.text());
         } else {
             throw new RuntimeException(h2Title.outerHtml());
         }
@@ -565,7 +583,7 @@ public class MobyCrawler {
             String style = a.attr("style");
             style = style.substring(0, style.length() - 2);
             style = style.replace("background-image:url(", "");
-            style = "https://www.mobygames.com" + style;
+            style = HOST + style;
             //System.out.println(style);
             //System.out.println(style.replace("/images/shots/s/", "/images/shots/l/"));
             httpQueue.add(new AbstractMap.SimpleEntry<>(style, thisLink));
@@ -703,9 +721,9 @@ public class MobyCrawler {
 
         Element navTabs = getByClass(container, "nav nav-tabs");
         Element current = getNext(navTabs);
-        if (current.className().equals("nav nav-pills")) {
+        /*if (current.className().equals("nav nav-pills")) {
             current = getNext(current);
-        }
+        }*/
         // в цикле читать дивы:
         // coverHeading
         // row
@@ -748,8 +766,8 @@ public class MobyCrawler {
                 //style = "https://www.mobygames.com" + style;
                 //System.out.println(style);
                 //System.out.println(style.replace("/images/covers/s/", "/images/covers/l/"));
-                httpQueue.add(new AbstractMap.SimpleEntry<>(style, thisLink));
-                httpQueue.add(new AbstractMap.SimpleEntry<>(style.replace("/images/covers/s/", "/images/covers/l/"), thisLink));
+                httpQueue.add(new AbstractMap.SimpleEntry<>(HOST + style, thisLink));
+                httpQueue.add(new AbstractMap.SimpleEntry<>(HOST + style.replace("/images/covers/s/", "/images/covers/l/"), thisLink));
 
                 Element divS = select(div, "div.thumbnail-cover-caption");
                 Element p = getByTag(divS, "p");
@@ -807,7 +825,8 @@ public class MobyCrawler {
                 //       img - screenshot <img alt="Contra III: The Alien Wars Screenshot" src="/images/promo/s/92195-contra-iii-the-alien-wars-screenshot.jpg">
                 a = getA(figure);
                 String promoImageId = getLastChunk(a).split(",")[1];
-                String promoImageName = getLastChunk(a.child(0).attr("src"));
+                String promoImage = HOST + a.child(0).attr("src");
+                String promoImageName = getLastChunk(promoImage);
                 //      figcaption
                 //        span - imageTypeName
                 //        [br]
@@ -830,14 +849,14 @@ public class MobyCrawler {
                     node = getNextNode(node);
                 }
 
-                httpQueue.add(new AbstractMap.SimpleEntry<>(promoImageName, thisLink));
-                httpQueue.add(new AbstractMap.SimpleEntry<>(promoImageName.replace("/images/promo/s/", "/promo/covers/l/"), thisLink));
+                httpQueue.add(new AbstractMap.SimpleEntry<>(promoImage, thisLink));
+                httpQueue.add(new AbstractMap.SimpleEntry<>(promoImage.replace("/images/promo/s/", "/images/promo/l/"), thisLink));
 
-                PromoImage promoImage = new PromoImage(promoImageId, promoImageName, imageTypeName, sourceDescr);
+                PromoImage pi = new PromoImage(promoImageId, promoImageName, imageTypeName, sourceDescr);
 
-                parseGamePromoArtImage(entry, promoImage);
+                parseGamePromoArtImage(entry, pi);
 
-                promo.getImages().add(promoImage);
+                promo.getImages().add(pi);
             }
             entry.getPromos().add(promo);
         }
