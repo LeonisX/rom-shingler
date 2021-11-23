@@ -24,6 +24,21 @@ import java.util.stream.Collectors;
 //TODO перечитать всё до этого (валидация офф)
 //остановился на сеге (валидация он)
 
+// A
+// A, A, A
+// t
+// A (t)
+// t, t
+// t, t, A (t)
+// t, t (t)
+// A (t), A (t)
+// A (t), t, A (t [t]), t [t]
+// A (t (t) )  Rieko Kodama (Phoenix Rie [フェニックスりえ])
+// t [t]
+// t [t], A (t)
+// t, t, A (T (t) ), A (T (t) )
+
+
 
 //TODO читать историю
 // https://www.mobygames.com/stats/recent_entries

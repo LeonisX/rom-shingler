@@ -4,3 +4,4 @@ rom-shingler.iml
 /result.csv
 
 *.iml
+/cache/
