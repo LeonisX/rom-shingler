@@ -107,7 +107,7 @@ public class HttpExecutor {
                     path = path.resolve("default.htm");
                 }
                 if (Files.exists(path)) {
-                    LOGGER.info("Use cached file: " + path.toAbsolutePath().toString());
+                    LOGGER.info("Use cached page: " + path.toAbsolutePath().toString());
                     return new HttpResponse(new String(Files.readAllBytes(path)), 200, new Header[0]);
                 }
             }
@@ -184,7 +184,11 @@ public class HttpExecutor {
 
     public void saveFile(String fullUri, String referrer) throws Exception {
         URL url = new URL(fullUri);
-        saveFile(url.getProtocol() + "://" + url.getHost(), url.getPath(), referrer, getProxy());
+        try {
+            saveFile(url.getProtocol() + "://" + url.getHost(), url.getPath(), referrer, getProxy());
+        } catch (Exception e) {
+            throw e;
+        }
     }
 
     public void saveFile(String host, String uri, String referrer, Proxy proxy) throws Exception {
@@ -195,13 +199,22 @@ public class HttpExecutor {
     private void doSaveFile(String host, String uri, String referrer, Proxy proxy, HttpUriRequestBase httpUriRequestBase) throws Exception {
 
         try {
-            //LOGGER.info(host + uri);
+            LOGGER.info(host + uri);
 
             Path path = getPath(HTML_CACHE, host + uri);
 
             if (Files.exists(path)) { // TODO if read from cache
-                //LOGGER.info("Use cached file: " + path.toAbsolutePath().toString());
-                return;
+
+                //TODO remove this validation, use in the specific validation task only
+                //validate
+                /*if (!ImagesTest.isValidImage(path)) {
+                    LOGGER.info("BrokenImage: " + path.toAbsolutePath().toString());
+                    Files.delete(path);
+                    //throw new RuntimeException("Invalid image: " + path);
+                } else {*/
+                    LOGGER.info("Already cached: " + path.toAbsolutePath().toString());
+                    return;
+                //}
             }
 
             String[] chunks = host.split("://");
@@ -244,6 +257,10 @@ public class HttpExecutor {
 
             byte[] bytes = EntityUtils.toByteArray(closeableHttpResponse.getEntity());
             //LOGGER.info(httpResponse.getCode() + ": " + httpResponse.getBody());
+            //validate
+            if (!ImagesTest.isValidImage(host + uri, bytes)) {
+                throw new RuntimeException("Invalid image: " + host + uri);
+            }
 
             EntityUtils.consume(closeableHttpResponse.getEntity());
 

@@ -1,5 +1,6 @@
 package md.leonis.shingler.gui.crawler.moby;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -7,7 +8,7 @@ import java.util.Map;
 public class Covers {
 
     private Map<String, List<String>> props = new LinkedHashMap<>();
-    private Map<String, String> images = new LinkedHashMap<>();
+    private List<MobyArtImage> images = new ArrayList<>();
 
     public Covers() {
     }
@@ -20,11 +21,11 @@ public class Covers {
         this.props = props;
     }
 
-    public Map<String, String> getImages() {
+    public List<MobyArtImage> getImages() {
         return images;
     }
 
-    public void setImages(Map<String, String> images) {
+    public void setImages(List<MobyArtImage> images) {
         this.images = images;
     }
 }

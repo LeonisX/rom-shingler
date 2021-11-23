@@ -5,14 +5,15 @@ import java.util.List;
 public class PromoImage {
 
     private String id;
-    private String name;
+    private String small;
+    private String large;
     private String original;
     private String typeName;
     private List<String> sourceDescr;
 
-    public PromoImage(String id, String name, String typeName, List<String> sourceDescr) {
+    public PromoImage(String id, String small, String typeName, List<String> sourceDescr) {
         this.id = id;
-        this.name = name;
+        this.small = small;
         this.typeName = typeName;
         this.sourceDescr = sourceDescr;
     }
@@ -25,12 +26,12 @@ public class PromoImage {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public String getSmall() {
+        return small;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setSmall(String small) {
+        this.small = small;
     }
 
     public String getTypeName() {
@@ -55,5 +56,13 @@ public class PromoImage {
 
     public void setOriginal(String original) {
         this.original = original;
+    }
+
+    public String getLarge() {
+        return large;
+    }
+
+    public void setLarge(String large) {
+        this.large = large;
     }
 }

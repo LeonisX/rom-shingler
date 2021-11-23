@@ -39,7 +39,7 @@ public class MobyEntry {
 
     private Map<String, List<String>> credits = new LinkedHashMap<>();
 
-    private Map<String, String> screens = new LinkedHashMap<>();
+    private List<MobyImage> screens = new ArrayList<>();
 
     private List<UserReview> userReviews = new ArrayList<>();
     private Map<String, String> notes = new LinkedHashMap<>();
@@ -302,11 +302,11 @@ public class MobyEntry {
         this.credits = credits;
     }
 
-    public Map<String, String> getScreens() {
+    public List<MobyImage> getScreens() {
         return screens;
     }
 
-    public void setScreens(Map<String, String> screens) {
+    public void setScreens(List<MobyImage> screens) {
         this.screens = screens;
     }
 
