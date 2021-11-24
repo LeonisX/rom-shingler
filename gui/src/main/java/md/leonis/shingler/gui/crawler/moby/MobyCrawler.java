@@ -2,7 +2,9 @@ package md.leonis.shingler.gui.crawler.moby;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import md.leonis.shingler.gui.crawler.moby.model.*;
 import md.leonis.shingler.utils.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -23,21 +25,6 @@ import java.util.stream.Collectors;
 //id, name, creditsName
 //TODO перечитать всё до этого (валидация офф)
 //остановился на сеге (валидация он)
-
-// A
-// A, A, A
-// t
-// A (t)
-// t, t
-// t, t, A (t)
-// t, t (t)
-// A (t), A (t)
-// A (t), t, A (t [t]), t [t]
-// A (t (t) )  Rieko Kodama (Phoenix Rie [フェニックスりえ])
-// t [t]
-// t [t], A (t)
-// t, t, A (T (t) ), A (T (t) )
-
 
 
 //TODO читать историю
@@ -568,17 +555,8 @@ public class MobyCrawler {
                 Elements tds = getTds(tr);
                 if (tds.size() == 2) {
                     assert tr.hasClass("crln");
-
                     String role = tds.get(0).text();
-                    List<A> as = getAs(tds.get(1));
-                    assert as.size() >= 1;
-
-                    List<String> ids = as.stream().map(a -> {
-                        // <a href="https://www.mobygames.com/developer/sheet/view/developerId,45166/">Ayako Mori</a>
-                        String developerId = getLastChunk(a).split(",")[1];
-                        developers.put(developerId, a.text());
-                        return developerId;
-                    }).collect(Collectors.toList());
+                    List<Credits> ids = parseCredits(tds.get(1));
                     entry.getCredits().put(role, ids);
                 }
             });
@@ -1439,6 +1417,11 @@ public class MobyCrawler {
             super(a.tag(), a.baseUri(), a.attributes());
             this.href = a.attr("href");
             this.addChildren(a.childNodes().toArray(new Node[0]));
+            this.setParentNode(Objects.requireNonNull(a.parentNode()));
+        }
+
+        public A(Node a) {
+            this((Element) a);
         }
 
         public String href() {
@@ -1529,5 +1512,51 @@ public class MobyCrawler {
     private static String getPreLastChunk(String url) {
         String[] chunks = url.split("/");
         return chunks[chunks.length - 2];
+    }
+
+    static List<Credits> parseCredits(Element td) {
+
+        Map<String, String> idNames = new LinkedHashMap<>();
+        // <a href="https://www.mobygames.com/developer/sheet/view/developerId,45166/">Ayako Mori</a>
+        String text = td.childNodes().stream().map(node -> {
+
+            if (node instanceof TextNode) {
+                return ((TextNode) node).text();
+            } else {
+                A a = new A(node);
+                String id = getLastChunk(a).split(",")[1];
+                idNames.put(id, a.text().trim());
+                return id;
+            }
+        }).collect(Collectors.joining());
+
+        developers.putAll(idNames);
+
+        List<String> devs = Arrays.stream(text.split(",")).map(String::trim).collect(Collectors.toList());
+
+        return devs.stream().map(idOrName -> {
+
+            List<String> str = Arrays.stream(idOrName.replaceAll("[\\[\\]()]", "!|").split("!\\|"))
+                    .map(String::trim).filter(StringUtils::isNotBlank).collect(Collectors.toList());
+
+            switch (str.size()) {
+                case 1: return createCredit(idNames, idOrName, null, null);
+                case 2: return createCredit(idNames, str.get(0), str.get(1), null);
+                case 3: return createCredit(idNames, str.get(0), str.get(1), str.get(2));
+                default: {
+                    throw new RuntimeException("Wrong credits: " + text);
+                }
+            }
+        }).collect(Collectors.toList());
+    }
+
+    //TODO сложные объекты по-любому потребуют ручной обработки
+    private static Credits createCredit(Map<String, String> idNames, String id, String origName, String group) {
+        String name = idNames.get(id); // Kunio Aoi
+        if (name == null) {
+            return new Credits(null, id, origName, group);
+        } else {
+            return new Credits(id, name, origName, group);
+        }
     }
 }

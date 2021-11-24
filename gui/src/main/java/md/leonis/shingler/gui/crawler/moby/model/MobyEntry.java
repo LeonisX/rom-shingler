@@ -1,4 +1,4 @@
-package md.leonis.shingler.gui.crawler.moby;
+package md.leonis.shingler.gui.crawler.moby.model;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -37,7 +37,7 @@ public class MobyEntry {
     private List<String> alternateTitles = new ArrayList<>();
     private List<String> gameGroup = new ArrayList<>();
 
-    private Map<String, List<String>> credits = new LinkedHashMap<>();
+    private Map<String, List<Credits>> credits = new LinkedHashMap<>();
 
     private List<MobyImage> screens = new ArrayList<>();
 
@@ -294,11 +294,11 @@ public class MobyEntry {
         this.trivia = trivia;
     }
 
-    public Map<String, List<String>> getCredits() {
+    public Map<String, List<Credits>> getCredits() {
         return credits;
     }
 
-    public void setCredits(Map<String, List<String>> credits) {
+    public void setCredits(Map<String, List<Credits>> credits) {
         this.credits = credits;
     }
 

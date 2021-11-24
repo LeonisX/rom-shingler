@@ -7,7 +7,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
 
-public class ImagesTest {
+public class ImagesValidator {
 
     public static String dir = "C:\\Users\\user\\Documents\\";
 

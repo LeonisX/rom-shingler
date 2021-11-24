@@ -1,4 +1,4 @@
-package md.leonis.shingler.gui.crawler.moby;
+package md.leonis.shingler.gui.crawler.moby.model;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

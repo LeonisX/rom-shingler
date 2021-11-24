@@ -258,7 +258,7 @@ public class HttpExecutor {
             byte[] bytes = EntityUtils.toByteArray(closeableHttpResponse.getEntity());
             //LOGGER.info(httpResponse.getCode() + ": " + httpResponse.getBody());
             //validate
-            if (!ImagesTest.isValidImage(host + uri, bytes)) {
+            if (!ImagesValidator.isValidImage(host + uri, bytes)) {
                 throw new RuntimeException("Invalid image: " + host + uri);
             }
 
