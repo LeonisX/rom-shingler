@@ -20,12 +20,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
-//TODO поменять алгоритм чтения кредитов
-//https://www.mobygames.com/game/genesis/hybrid-front/credits
-//id, name, creditsName
-//TODO перечитать всё до этого (валидация офф)
-//остановился на сеге (валидация он)
-
+//TODO разобраться с битой картинкой, если что, то перечитывать раз, потом писать как есть.
 
 //TODO читать историю
 // https://www.mobygames.com/stats/recent_entries
@@ -144,25 +139,29 @@ public class MobyCrawler {
         new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(new File("platforms.json"), platforms);
         */
 
-        String platformId = "genesis";
-
-        Map<String, String> games = parseGamesListToc(platformId);
-
-        save(String.format("games-%s.json", platformId), games);
-
         preload();
 
-        List<MobyEntry> mobyEntries = new ArrayList<>();
 
         //два контрибьютора + не закрытые теги.
-        MobyEntry entry = new MobyEntry(platformId, "1942arcade");
-        parseGameScreenshots(entry);
+        MobyEntry entry = new MobyEntry("nes", "10-yard-fight_");
+        parseGameMain(entry);
+        parseGameCredits(entry);
+        /*parseGameScreenshots(entry);
+        parseGameReviews(entry);
         parseGameCoverArt(entry);
         parseGamePromoArt(entry);
+        parseGameReleases(entry);
+        parseGameTrivia(entry);
+        parseGameHints(entry);
+        parseGameSpecs(entry);
+        parseGameAds(entry);
+        parseGameRatings(entry);*/
 
         System.out.println(entry);
 
         //Thread.sleep(300000);
+
+
 
         List<HttpProcessor> processors = new ArrayList<>();
         processors.add(new HttpProcessor());
@@ -173,46 +172,62 @@ public class MobyCrawler {
         ExecutorService service = Executors.newCachedThreadPool();
         processors.forEach(service::execute);
 
-        int i = 0;
-        for (String gameId : games.keySet()) {
-            MobyEntry mobyEntry = new MobyEntry(platformId, gameId);
+        // "genesis", "snes", "gameboy", "gameboy-color", "gameboy-advance", "game-com"
 
-            try {
-                parseGameMain(mobyEntry);
-                // если ошибочная игра - не парсить.
-                if (mobyEntry.gameId().isEmpty()) {
-                    System.out.println("Ignore this game");
-                } else {
-                    parseGameCredits(mobyEntry);
-                    parseGameScreenshots(mobyEntry);
-                    parseGameReviews(mobyEntry);
-                    parseGameCoverArt(mobyEntry);
-                    parseGamePromoArt(mobyEntry);
-                    parseGameReleases(mobyEntry);
-                    parseGameTrivia(mobyEntry);
-                    parseGameHints(mobyEntry);
-                    parseGameSpecs(mobyEntry);
-                    parseGameAds(mobyEntry);
-                    parseGameRatings(mobyEntry);
+        HttpExecutor.validate = false;
 
-                    mobyEntries.add(mobyEntry);
+        //String[] platforms = new String[]{"nes", "sg-1000", "sega-master-system", "game-gear", "sega-32x"};
+
+        String[] platforms = new String[]{"genesis", "snes", "gameboy", "gameboy-color", "gameboy-advance", "game-com"};
+
+        for (String platformId : platforms) {
+
+            Map<String, String> games = parseGamesListToc(platformId);
+            save(String.format("games-%s.json", platformId), games);
+
+            List<MobyEntry> mobyEntries = new ArrayList<>();
+
+            int i = 0;
+            for (String gameId : games.keySet()) {
+                MobyEntry mobyEntry = new MobyEntry(platformId, gameId);
+
+                try {
+                    parseGameMain(mobyEntry);
+                    // если ошибочная игра - не парсить.
+                    if (mobyEntry.gameId().isEmpty()) {
+                        System.out.println("Ignore this game");
+                    } else {
+                        parseGameCredits(mobyEntry);
+                        parseGameScreenshots(mobyEntry);
+                        parseGameReviews(mobyEntry);
+                        parseGameCoverArt(mobyEntry);
+                        parseGamePromoArt(mobyEntry);
+                        parseGameReleases(mobyEntry);
+                        parseGameTrivia(mobyEntry);
+                        parseGameHints(mobyEntry);
+                        parseGameSpecs(mobyEntry);
+                        parseGameAds(mobyEntry);
+                        parseGameRatings(mobyEntry);
+
+                        mobyEntries.add(mobyEntry);
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
                 }
-            } catch (Exception e) {
-                throw e;
+
+                stopAllProcessorsOnError(service, processors);
+
+                if (++i == 50) {
+                    save();
+                    save(String.format("moby-entry-%s.json", platformId), mobyEntries);
+                    // TODO save position, return to position later
+                    i = 0;
+                }
             }
 
-            stopAllProcessorsOnError(service, processors);
-
-            if (++i == 10) {
-                save();
-                save(String.format("moby-entry-%s.json", platformId), mobyEntries);
-                // TODO save position, return to position later
-                i = 0;
-            }
+            save();
+            save(String.format("moby-entry-%s.json", platformId), mobyEntries);
         }
-
-        save();
-        save(String.format("moby-entry-%s.json", platformId), mobyEntries);
 
         processors.forEach(p -> p.canStop = true);
 
@@ -548,18 +563,38 @@ public class MobyCrawler {
             Element table = getTable(div);
             assert table.attr("summary").equals("List of Credits");
 
-            Elements trs = getTrs(table);
-            assert getH2(trs.get(0)).text().equals("Credits");
+            Map<String, List<Credits>> credits = new LinkedHashMap<>();
+            String group = null;
 
-            trs.forEach(tr -> {
+            Elements trs = getTrs(table);
+            for (Element tr : trs) {
                 Elements tds = getTds(tr);
-                if (tds.size() == 2) {
+                if (tds.size() == 1) {
+                    String nextGroup = tds.get(0).text();
+                    if (nextGroup.equals("Other Games")) {
+                        break;
+                    }
+                    if (entry.getCredits().containsKey(nextGroup)) {
+                        nextGroup = nextGroup + UUID.randomUUID().toString().toCharArray()[0];
+                    }
+                    if (!credits.isEmpty()) {
+                        entry.getCredits().put(group, credits);
+                    }
+                    group = nextGroup;
+                    credits = new LinkedHashMap<>();
+
+                } else if (tds.size() == 2) {
                     assert tr.hasClass("crln");
                     String role = tds.get(0).text();
                     List<Credits> ids = parseCredits(tds.get(1));
-                    entry.getCredits().put(role, ids);
+                    credits.put(role, ids);
+                } else {
+                    throw new RuntimeException();
                 }
-            });
+            }
+            if (!credits.isEmpty()) {
+                entry.getCredits().put(group, credits);
+            }
         } else if (h2Title.tagName().equals("br")) {
             Element p = getNext(h2Title);
             assert p.tagName().equals("p");
@@ -1524,9 +1559,17 @@ public class MobyCrawler {
                 return ((TextNode) node).text();
             } else {
                 A a = new A(node);
-                String id = getLastChunk(a).split(",")[1];
-                idNames.put(id, a.text().trim());
-                return id;
+
+                // Cloudflare email protection
+                // <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="cbb9a4a4bfa28bb9bbace5b8aeacaae5a8a4">[email&#160;protected]</a>
+                String email = a.attr("data-cfemail");
+                if (!email.isEmpty()) {
+                    return decodeCfEmail(email);
+                } else {
+                    String id = getLastChunk(a).split(",")[1];
+                    idNames.put(id, a.text().trim());
+                    return id;
+                }
             }
         }).collect(Collectors.joining());
 
@@ -1540,9 +1583,14 @@ public class MobyCrawler {
                     .map(String::trim).filter(StringUtils::isNotBlank).collect(Collectors.toList());
 
             switch (str.size()) {
-                case 1: return createCredit(idNames, idOrName, null, null);
-                case 2: return createCredit(idNames, str.get(0), str.get(1), null);
-                case 3: return createCredit(idNames, str.get(0), str.get(1), str.get(2));
+                case 1:
+                    return createCredit(idNames, idOrName, null, null, null);
+                case 2:
+                    return createCredit(idNames, str.get(0), str.get(1), null, null);
+                case 3:
+                    return createCredit(idNames, str.get(0), str.get(1), str.get(2), null);
+                case 4:
+                    return createCredit(idNames, str.get(0), str.get(1), str.get(2), str.get(3));
                 default: {
                     throw new RuntimeException("Wrong credits: " + text);
                 }
@@ -1551,12 +1599,23 @@ public class MobyCrawler {
     }
 
     //TODO сложные объекты по-любому потребуют ручной обработки
-    private static Credits createCredit(Map<String, String> idNames, String id, String origName, String group) {
+    private static Credits createCredit(Map<String, String> idNames, String id, String origName, String group, String yup) {
         String name = idNames.get(id); // Kunio Aoi
         if (name == null) {
-            return new Credits(null, id, origName, group);
+            return new Credits(null, id, origName, group, yup);
         } else {
-            return new Credits(id, name, origName, group);
+            return new Credits(id, name, origName, group, yup);
         }
+    }
+
+    static String decodeCfEmail(String encodedString) {
+        int n, i;
+        StringBuilder email = new StringBuilder();
+        int r = Integer.valueOf(encodedString.substring(0, 2), 16);
+        for (n = 2; n < encodedString.length() - 1; n += 2) {
+            i = Integer.valueOf(encodedString.substring(n, n + 2), 16) ^ r;
+            email.append((char) i);
+        }
+        return email.toString();
     }
 }

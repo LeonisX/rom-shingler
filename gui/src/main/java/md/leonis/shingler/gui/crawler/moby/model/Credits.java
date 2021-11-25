@@ -6,12 +6,15 @@ public class Credits {
     private String name;
     private String origName;
     private String note;
+    private String yup;
 
-    public Credits(String id, String name, String origName, String group) {
+    // 	Tetsuji Tanaka (Tanaka [タナカ]/Yuk)
+    public Credits(String id, String name, String origName, String group, String yup) {
         this.id = id;
         this.name = name;
         this.origName = origName;
         this.note = group;
+        this.yup = yup;
     }
 
     public String getId() {
@@ -46,6 +49,14 @@ public class Credits {
         this.note = note;
     }
 
+    public String getYup() {
+        return yup;
+    }
+
+    public void setYup(String yup) {
+        this.yup = yup;
+    }
+
     @Override
     public String toString() {
         String result = "{" + id + "=" + name;
@@ -54,6 +65,9 @@ public class Credits {
         }
         if (note != null) {
             result += ", group=" + note;
+        }
+        if (yup != null) {
+            result += ", yup=" + yup;
         }
         return result + '}';
     }

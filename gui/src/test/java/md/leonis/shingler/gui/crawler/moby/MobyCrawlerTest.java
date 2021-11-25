@@ -12,6 +12,34 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class MobyCrawlerTest {
 
+    // Cloudflare email protection
+    // Code from: https://www.ipvoid.com/cloudflare-email-decoder/
+
+
+
+    @Test
+    //   r o o t i . r p g . s e g a . c o
+    // cbb9a4a4bfa28bb9bbace5b8aeacaae5a8a4
+    void testCfDecodeEmail() { // A
+        assertEquals("rooti@rpg.sega.co", MobyCrawler.decodeCfEmail("cbb9a4a4bfa28bb9bbace5b8aeacaae5a8a4"));
+    }
+
+
+    // A
+    // A, A, A
+    // t
+    // A (t)
+    // t, t
+    // t, t, A (t)
+    // t, t (t)
+    // A (t), A (t)
+    // A (t), t, A (t [t]), t [t]
+    // A (t (t) )  Rieko Kodama (Phoenix Rie [フェニックスりえ])
+    // t [t]
+    // t [t], A (t)
+    // t, t, A (T (t) ), A (T (t) )
+    // Tetsuji Tanaka (Tanaka [タナカ]/Yuk)
+
     private static final String CREDITS1 = "<a href=\"https://www.mobygames.com/developer/sheet/view/developerId,45166/\">Ayako Mori</a>";
     private static final String CREDITS2 = "<a href=\"https://www.mobygames.com/developer/sheet/view/developerId,55535/\">Hideo Kodzima</a>";
     private static final String CREDITS3 = "<a href=\"https://www.mobygames.com/developer/sheet/view/developerId,12345/\">Eric Chahi</a>";
@@ -110,6 +138,27 @@ class MobyCrawlerTest {
         Element td = getTd("name1, name2, " + CREDITS1 + " (origName3 (note3) ), " + CREDITS2 + " (origName4 (note4) )");
         assertEquals("[{null=name1}, {null=name2}, {45166=Ayako Mori, origName=origName3, group=note3}, {55535=Hideo Kodzima, origName=origName4, group=note4}]", MobyCrawler.parseCredits(td).toString());
         assertEquals("{45166=Ayako Mori, 55535=Hideo Kodzima}", MobyCrawler.developers.toString());
+    }
+
+    @Test
+    void testCreditsATty() { // A (T [t]/Y)
+        Element td = getTd(CREDITS1 + " (origName3 [note3]/Yup)");
+        assertEquals("[{45166=Ayako Mori, origName=origName3, group=note3, yup=/Yup}]", MobyCrawler.parseCredits(td).toString());
+        assertEquals("{45166=Ayako Mori}", MobyCrawler.developers.toString());
+    }
+
+    @Test
+    void testCreditsRiverTop() { // (River Top/Kawasaki Minoru [リバートップ/かわさき みのる])
+        Element td = getTd(CREDITS1 + " (River Top/Kawasaki Minoru [リバートップ/かわさき みのる])");
+        assertEquals("[{45166=Ayako Mori, origName=River Top/Kawasaki Minoru, group=リバートップ/かわさき みのる}]", MobyCrawler.parseCredits(td).toString());
+        assertEquals("{45166=Ayako Mori}", MobyCrawler.developers.toString());
+    }
+
+    @Test
+    void testCreditsEncryptedEmail() { // Bug-Bug, rooti@rpg.sega.co
+        Element td = getTd("Bug-Bug, <a href=\"/cdn-cgi/l/email-protection\" class=\"__cf_email__\" data-cfemail=\"cbb9a4a4bfa28bb9bbace5b8aeacaae5a8a4\">[email&#160;protected]</a>");
+        assertEquals("[{null=Bug-Bug}, {null=rooti@rpg.sega.co}]", MobyCrawler.parseCredits(td).toString());
+        assertEquals("{}", MobyCrawler.developers.toString());
     }
 
     private Element getTd(String credits) {

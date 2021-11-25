@@ -41,6 +41,8 @@ public class HttpExecutor {
 
     private final List<Proxy> proxies;
 
+    public static boolean validate = false;
+
     private volatile int index;
 
     public HttpExecutor(List<Proxy> proxies) {
@@ -206,15 +208,20 @@ public class HttpExecutor {
             if (Files.exists(path)) { // TODO if read from cache
 
                 //TODO remove this validation, use in the specific validation task only
-                //validate
-                /*if (!ImagesTest.isValidImage(path)) {
-                    LOGGER.info("BrokenImage: " + path.toAbsolutePath().toString());
-                    Files.delete(path);
-                    //throw new RuntimeException("Invalid image: " + path);
-                } else {*/
+                if (validate) {
+
+                    if (!ImagesValidator.isValidImage(path)) {
+                        LOGGER.info("BrokenImage: " + path.toAbsolutePath().toString());
+                        Files.delete(path);
+                        //throw new RuntimeException("Invalid image: " + path);
+                    } else {
+                        LOGGER.info("Already cached: " + path.toAbsolutePath().toString());
+                        return;
+                    }
+                } else {
                     LOGGER.info("Already cached: " + path.toAbsolutePath().toString());
                     return;
-                //}
+                }
             }
 
             String[] chunks = host.split("://");
