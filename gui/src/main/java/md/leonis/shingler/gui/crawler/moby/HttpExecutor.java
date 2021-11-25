@@ -109,7 +109,7 @@ public class HttpExecutor {
                     path = path.resolve("default.htm");
                 }
                 if (Files.exists(path)) {
-                    LOGGER.info("Use cached page: " + path.toAbsolutePath().toString());
+                    LOGGER.info("Use cached page: " + path.toAbsolutePath());
                     return new HttpResponse(new String(Files.readAllBytes(path)), 200, new Header[0]);
                 }
             }
@@ -119,13 +119,8 @@ public class HttpExecutor {
 
             referrer = (referrer == null) ? "https://www.google.com/" : referrer;
 
-            httpUriRequestBase.addHeader(new BasicHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0"));
             httpUriRequestBase.addHeader(new BasicHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"));
-            httpUriRequestBase.addHeader(new BasicHeader("Accept-Language", "en-US;q=0.8,ru-RU,ru;q=0.5,en;q=0.3"));
-            //httpUriRequestBase.addHeader(new BasicHeader("Accept-Encoding", "gzip, deflate, br"));
-            httpUriRequestBase.addHeader(new BasicHeader("Referer", referrer));
-            httpUriRequestBase.addHeader(new BasicHeader("Connection", "keep-alive"));
-            httpUriRequestBase.addHeader(new BasicHeader("Cache-Control", "max-age=0"));
+            addBrowserHeaders(httpUriRequestBase, referrer);
 
             //Prepare the CloseableHttpClient
             CloseableHttpClient closeableHttpClient;
@@ -189,7 +184,7 @@ public class HttpExecutor {
         try {
             saveFile(url.getProtocol() + "://" + url.getHost(), url.getPath(), referrer, getProxy());
         } catch (Exception e) {
-            throw e;
+            throw new RuntimeException(e);
         }
     }
 
@@ -210,66 +205,29 @@ public class HttpExecutor {
                 //TODO remove this validation, use in the specific validation task only
                 if (validate) {
 
-                    if (!ImagesValidator.isValidImage(path)) {
-                        LOGGER.info("BrokenImage: " + path.toAbsolutePath().toString());
+                    if (ImagesValidator.isBrokenImage(path)) {
+                        LOGGER.info("BrokenImage: " + path.toAbsolutePath());
                         Files.delete(path);
                         //throw new RuntimeException("Invalid image: " + path);
                     } else {
-                        LOGGER.info("Already cached: " + path.toAbsolutePath().toString());
+                        LOGGER.info("Already cached: " + path.toAbsolutePath());
                         return;
                     }
                 } else {
-                    LOGGER.info("Already cached: " + path.toAbsolutePath().toString());
+                    LOGGER.info("Already cached: " + path.toAbsolutePath());
                     return;
                 }
             }
 
-            String[] chunks = host.split("://");
-            HttpHost targetHost = new HttpHost(chunks[0], chunks[1]);
+            HttpResponse httpResponse = getHttpResponse(host, referrer, proxy, httpUriRequestBase);
 
-            referrer = (referrer == null) ? "https://www.google.com/" : referrer;
-
-            httpUriRequestBase.addHeader(new BasicHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0"));
-            httpUriRequestBase.addHeader(new BasicHeader("Host", host.replace("http://", "").replace("https://", "")));
-            httpUriRequestBase.addHeader(new BasicHeader("Accept", "image/avif,image/webp,*/*"));
-            httpUriRequestBase.addHeader(new BasicHeader("Accept-Language", "en-US;q=0.8,ru-RU,ru;q=0.5,en;q=0.3"));
-            //httpUriRequestBase.addHeader(new BasicHeader("Accept-Encoding", "gzip, deflate, br"));
-            httpUriRequestBase.addHeader(new BasicHeader("Referer", referrer));
-            httpUriRequestBase.addHeader(new BasicHeader("Connection", "keep-alive"));
-            httpUriRequestBase.addHeader(new BasicHeader("Cache-Control", "max-age=0"));
-
-            //Prepare the CloseableHttpClient
-            CloseableHttpClient closeableHttpClient;
-
-            if (null != proxy.getHost()) {
-                HttpHost proxyHost = new HttpHost(proxy.getScheme(), proxy.getHost(), proxy.getPort());
-                httpUriRequestBase.setConfig(RequestConfig.custom().setProxy(proxyHost).build());
-
-                CredentialsStore credentialsProvider = new BasicCredentialsProvider();
-                credentialsProvider.setCredentials(new AuthScope(proxy.getHost(), proxy.getPort()),
-                        new UsernamePasswordCredentials(proxy.getUserName(), proxy.getPasswordArray()));
-
-                RequestConfig config = RequestConfig.custom()
-                        // Determines the timeout until a new connection is fully established. This may also include transport security negotiation exchanges such as SSL or TLS protocol negotiation).
-                        .setConnectTimeout(Timeout.ofSeconds(5)).build();
-
-                closeableHttpClient = HttpClients.custom().setDefaultCredentialsProvider(credentialsProvider).setDefaultRequestConfig(config).build();
-            } else {
-                closeableHttpClient = HttpClients.createDefault();
-            }
-
-            //Get the result
-            CloseableHttpResponse closeableHttpResponse = closeableHttpClient.execute(targetHost, httpUriRequestBase);
-            HttpResponse httpResponse = new HttpResponse("", closeableHttpResponse.getCode(), closeableHttpResponse.getHeaders());
-
-            byte[] bytes = EntityUtils.toByteArray(closeableHttpResponse.getEntity());
-            //LOGGER.info(httpResponse.getCode() + ": " + httpResponse.getBody());
             //validate
-            if (!ImagesValidator.isValidImage(host + uri, bytes)) {
-                throw new RuntimeException("Invalid image: " + host + uri);
+            if (ImagesValidator.isBrokenImage(host + uri, httpResponse.getBytes())) {
+                httpResponse = getHttpResponse(host, referrer, proxy, httpUriRequestBase);
+                if (ImagesValidator.isBrokenImage(host + uri, httpResponse.getBytes())) {
+                    MobyCrawler.brokenImages.add(host + uri);
+                }
             }
-
-            EntityUtils.consume(closeableHttpResponse.getEntity());
 
             updateProxy(proxy, httpResponse);
 
@@ -280,7 +238,7 @@ public class HttpExecutor {
             //System.out.println("trying to save: " + path);
             Path dir = path.getParent();
             Files.createDirectories(dir);
-            Files.write(path, bytes);
+            Files.write(path, httpResponse.getBytes());
 
         } catch (Exception e) {
 
@@ -289,6 +247,56 @@ public class HttpExecutor {
             LOGGER.error("REST request exception. Proxy host: " + proxy.getHost(), e);
             throw e;
         }
+    }
+
+    private HttpResponse getHttpResponse(String host, String referrer, Proxy proxy, HttpUriRequestBase httpUriRequestBase) throws Exception {
+
+        String[] chunks = host.split("://");
+        HttpHost targetHost = new HttpHost(chunks[0], chunks[1]);
+
+        referrer = (referrer == null) ? "https://www.google.com/" : referrer;
+
+        httpUriRequestBase.addHeader(new BasicHeader("Host", host.replace("http://", "").replace("https://", "")));
+        httpUriRequestBase.addHeader(new BasicHeader("Accept", "image/avif,image/webp,*/*"));
+        addBrowserHeaders(httpUriRequestBase, referrer);
+
+        //Prepare the CloseableHttpClient
+        CloseableHttpClient closeableHttpClient;
+
+        if (null != proxy.getHost()) {
+            HttpHost proxyHost = new HttpHost(proxy.getScheme(), proxy.getHost(), proxy.getPort());
+            httpUriRequestBase.setConfig(RequestConfig.custom().setProxy(proxyHost).build());
+
+            CredentialsStore credentialsProvider = new BasicCredentialsProvider();
+            credentialsProvider.setCredentials(new AuthScope(proxy.getHost(), proxy.getPort()),
+                    new UsernamePasswordCredentials(proxy.getUserName(), proxy.getPasswordArray()));
+
+            RequestConfig config = RequestConfig.custom()
+                    // Determines the timeout until a new connection is fully established. This may also include transport security negotiation exchanges such as SSL or TLS protocol negotiation).
+                    .setConnectTimeout(Timeout.ofSeconds(5)).build();
+
+            closeableHttpClient = HttpClients.custom().setDefaultCredentialsProvider(credentialsProvider).setDefaultRequestConfig(config).build();
+        } else {
+            closeableHttpClient = HttpClients.createDefault();
+        }
+
+        //Get the result
+        CloseableHttpResponse closeableHttpResponse = closeableHttpClient.execute(targetHost, httpUriRequestBase);
+        byte[] bytes = EntityUtils.toByteArray(closeableHttpResponse.getEntity());
+        HttpResponse response = new HttpResponse(bytes, closeableHttpResponse.getCode(), closeableHttpResponse.getHeaders());
+        EntityUtils.consume(closeableHttpResponse.getEntity());
+
+        return response;
+    }
+
+    private void addBrowserHeaders(HttpUriRequestBase httpUriRequestBase, String referrer) {
+
+        httpUriRequestBase.addHeader(new BasicHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0"));
+        httpUriRequestBase.addHeader(new BasicHeader("Accept-Language", "en-US;q=0.8,ru-RU,ru;q=0.5,en;q=0.3"));
+        //httpUriRequestBase.addHeader(new BasicHeader("Accept-Encoding", "gzip, deflate, br"));
+        httpUriRequestBase.addHeader(new BasicHeader("Referer", referrer));
+        httpUriRequestBase.addHeader(new BasicHeader("Connection", "keep-alive"));
+        httpUriRequestBase.addHeader(new BasicHeader("Cache-Control", "max-age=0"));
     }
 
     private Path getPath(Path path, String uri) {
@@ -320,11 +328,20 @@ public class HttpExecutor {
     public static class HttpResponse {
 
         private String body;
+        private byte[] bytes;
         private int code;
         private Header[] headers;
 
         public HttpResponse(String body, int code, Header[] headers) {
             this.body = body;
+            this.bytes = new byte[0];
+            this.code = code;
+            this.headers = headers;
+        }
+
+        public HttpResponse(byte[] bytes, int code, Header[] headers) {
+            this.body = "";
+            this.bytes = bytes;
             this.code = code;
             this.headers = headers;
         }
@@ -339,6 +356,14 @@ public class HttpExecutor {
 
         public void setBody(String body) {
             this.body = body;
+        }
+
+        public byte[] getBytes() {
+            return bytes;
+        }
+
+        public void setBytes(byte[] bytes) {
+            this.bytes = bytes;
         }
 
         public int getCode() {

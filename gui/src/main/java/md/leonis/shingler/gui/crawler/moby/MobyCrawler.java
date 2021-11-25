@@ -20,8 +20,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
-//TODO разобраться с битой картинкой, если что, то перечитывать раз, потом писать как есть.
-
 //TODO читать историю
 // https://www.mobygames.com/stats/recent_entries
 // https://www.mobygames.com/stats/recent_entries/offset,0/so,2d/
@@ -80,6 +78,7 @@ public class MobyCrawler {
     public static Map<String, String> sources;
     public static Map<String, String> users;
     public static Map<String, String> attributes;
+    public static List<String> brokenImages;
 
     private static class HttpProcessor implements Runnable {
 
@@ -109,7 +108,7 @@ public class MobyCrawler {
                             try {
                                 executor.saveFile(file.getKey(), file.getValue());
                             } catch (Exception e) {
-                                throw e;
+                                throw new RuntimeException(e);
                             }
                         }
                         inWork = false;
@@ -171,8 +170,6 @@ public class MobyCrawler {
 
         ExecutorService service = Executors.newCachedThreadPool();
         processors.forEach(service::execute);
-
-        // "genesis", "snes", "gameboy", "gameboy-color", "gameboy-advance", "game-com"
 
         HttpExecutor.validate = false;
 
@@ -256,12 +253,13 @@ public class MobyCrawler {
         save("sources.json", sources);
         save("users.json", users);
         save("attributes.json", attributes);
+        save("brokenImages.json", brokenImages);
         System.out.println("Saved.");
     }
 
     private static void save(String fileName, Object object) throws IOException {
 
-        System.out.println(String.format("Save %s in progress...", fileName));
+        System.out.printf("Save %s in progress...%n", fileName);
         IOUtils.backupFile(Paths.get(fileName));
 
         String result = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(object);
@@ -672,10 +670,9 @@ public class MobyCrawler {
 
     private static void parseGameReviews(MobyEntry entry) throws Exception {
 
-        //TODO return
-        /*if (!entry.hasReviews()) {
+        if (!entry.hasReviews()) {
             return;
-        }*/
+        }
 
         HttpExecutor.HttpResponse response = executor.getPage(String.format(GAME_REVIEWS, entry.platformId(), entry.gameId()), getGameLink(entry));
         Element container = getContainer(response);
@@ -796,9 +793,6 @@ public class MobyCrawler {
             return;
         }
         current = current.previousElementSibling();
-        /*if (current.className().equals("nav nav-pills")) {
-            current = getNext(current);
-        }*/
         // в цикле читать дивы:
         // coverHeading
         // row
@@ -842,10 +836,6 @@ public class MobyCrawler {
                 String style = a.attr("style");
                 style = style.substring(0, style.length() - 2); // ");:
                 style = style.replace("background-image:url(", "");
-
-                //style = "https://www.mobygames.com" + style;
-                //System.out.println(style);
-                //System.out.println(style.replace("/images/covers/s/", "/images/covers/l/"));
 
                 Element divS = select(div, "div.thumbnail-cover-caption");
                 Element p = getByTag(divS, "p");
@@ -996,9 +986,9 @@ public class MobyCrawler {
 
     private static void parseGameReleases(MobyEntry entry) throws Exception {
 
-        /*if (!entry.hasReleases()) {
+        if (!entry.hasReleases()) {
             return;
-        }*/
+        }
 
         HttpExecutor.HttpResponse response = executor.getPage(String.format(GAME_RELEASES, entry.platformId(), entry.gameId()), getGameLink(entry));
         Element container = getContainer(response);
@@ -1332,10 +1322,6 @@ public class MobyCrawler {
 
         System.out.println("Games count: " + gamesCount);
 
-        /*Objects.requireNonNull(doc.getElementsByClass("browseTable").first()).getElementsByTag("a").forEach(a -> {
-            games.put(parseSystemUrl(a.attr("href")), a.text());
-        });*/
-
         //parse #0 page
         parseGamesList(games, response.getBody());
 
@@ -1389,6 +1375,8 @@ public class MobyCrawler {
         sources = loadMap("sources.json");
         users = loadMap("users.json");
         attributes = loadMap("attributes.json");
+
+        brokenImages = loadList("brokenImages.json");
     }
 
     private static Map<String, String> loadMap(String fileName) {
@@ -1397,6 +1385,15 @@ public class MobyCrawler {
             });
         } catch (Exception e) {
             return new HashMap<>();
+        }
+    }
+
+    private static List<String> loadList(String fileName) {
+        try {
+            return new ObjectMapper().readValue(new File(fileName), new TypeReference<List<String>>() {
+            });
+        } catch (Exception e) {
+            return new ArrayList<>();
         }
     }
 
