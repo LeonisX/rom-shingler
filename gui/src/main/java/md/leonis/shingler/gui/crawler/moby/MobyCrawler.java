@@ -3,6 +3,7 @@ package md.leonis.shingler.gui.crawler.moby;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import md.leonis.shingler.gui.crawler.moby.model.*;
+import md.leonis.shingler.gui.crawler.moby.model.credits.*;
 import md.leonis.shingler.utils.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
@@ -17,8 +18,17 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+// TODO
+// на Моби бывают картинки с неверным расширением. JPG могут быть PNG и так далее
+
+// TODO credits - переводить японские имена
+// https://stackoverflow.com/questions/8147284/how-to-use-google-translate-api-in-my-java-application
 
 //TODO читать историю
 // https://www.mobygames.com/stats/recent_entries
@@ -142,7 +152,7 @@ public class MobyCrawler {
 
 
         //два контрибьютора + не закрытые теги.
-        MobyEntry entry = new MobyEntry("nes", "10-yard-fight_");
+        MobyEntry entry = new MobyEntry("turbografx-cd", "rom-karaoke-volume-4");
         parseGameMain(entry);
         parseGameCredits(entry);
         /*parseGameScreenshots(entry);
@@ -160,8 +170,6 @@ public class MobyCrawler {
 
         //Thread.sleep(300000);
 
-
-
         List<HttpProcessor> processors = new ArrayList<>();
         processors.add(new HttpProcessor());
         processors.add(new HttpProcessor());
@@ -173,9 +181,12 @@ public class MobyCrawler {
 
         HttpExecutor.validate = false;
 
-        //String[] platforms = new String[]{"nes", "sg-1000", "sega-master-system", "game-gear", "sega-32x"};
+        //String[] platforms = new String[]{"nes", "sg-1000", "sega-master-system", "game-gear", "sega-32x", "genesis",
+        // "snes", "gameboy", "gameboy-color", "game-com", "sega-cd", "3do", "virtual-boy", "1292-advanced-programmable-video-system",
+        // "apf", "channel-f", "neo-geo-pocket-color", "neo-geo-pocket", "atari-5200", "atari-7800", "turbografx-cd"};
 
-        String[] platforms = new String[]{"genesis", "snes", "gameboy", "gameboy-color", "gameboy-advance", "game-com"};
+        String[] platforms = new String[]{"turbo-grafx", "supervision", "supergrafx", "rca-studio-ii", "intellivision", "colecovision", "bally-astrocade", "zx-spectrum",
+        "atari-2600", "atari-8-bit", "gameboy-advance"};
 
         for (String platformId : platforms) {
 
@@ -477,9 +488,15 @@ public class MobyCrawler {
             node = getNextNode(node);
             if (node instanceof TextNode) {
                 description.add(((TextNode) node).text());
+                //System.out.println("TextNode: " + ((TextNode) node).text());
             } else {
+                //System.out.println("Node: " + node);
                 Element element = (Element) node;
-                assert element != null;
+                // Этот тот случай, когда два вложенных незакрытых тега. Сейчас будет долго реализовывать обработку детей
+                // ради 1-2 игр лучше сделать такой хак.
+                if (element == null) {
+                    break;
+                }
                 if (element.className().equals("sideBarLinks")) {
                     break;
                 }
@@ -489,6 +506,7 @@ public class MobyCrawler {
                 int index = -1;
                 for (int i = 0; i < element.childNodes().size(); i++) {
                     if (element.childNode(i) instanceof Element) {
+                        System.out.println("element.childNode(i): " + element.childNode(i));
                         Element el = (Element) element.childNode(i);
                         if (el.tagName().equals("div") && el.className().equals("sideBarLinks")) {
                             index = i;
@@ -561,7 +579,7 @@ public class MobyCrawler {
             Element table = getTable(div);
             assert table.attr("summary").equals("List of Credits");
 
-            Map<String, List<Credits>> credits = new LinkedHashMap<>();
+            Map<String, List<CreditsNode>> credits = new LinkedHashMap<>();
             String group = null;
 
             Elements trs = getTrs(table);
@@ -573,7 +591,7 @@ public class MobyCrawler {
                         break;
                     }
                     if (entry.getCredits().containsKey(nextGroup)) {
-                        nextGroup = nextGroup + UUID.randomUUID().toString().toCharArray()[0];
+                        nextGroup = nextGroup + "_" + UUID.randomUUID().toString().toCharArray()[0];
                     }
                     if (!credits.isEmpty()) {
                         entry.getCredits().put(group, credits);
@@ -584,7 +602,7 @@ public class MobyCrawler {
                 } else if (tds.size() == 2) {
                     assert tr.hasClass("crln");
                     String role = tds.get(0).text();
-                    List<Credits> ids = parseCredits(tds.get(1));
+                    List<CreditsNode> ids = parseCredits(tds.get(1));
                     credits.put(role, ids);
                 } else {
                     throw new RuntimeException();
@@ -1308,19 +1326,27 @@ public class MobyCrawler {
         Document doc = Jsoup.parse(response.getBody());
 
         // <td class="mobHeaderPage" width="33%">Viewing Page 1 of 56</td>
-        String[] chunks = getByClass(doc, "mobHeaderPage").text().split(" ");
-        int pagesCount = Integer.parseInt(chunks[chunks.length - 1]);
-        assert pagesCount > 0;
+        // Может и не быть если игр меньше 25
+        int pagesCount = 1;
+        Element td = doc.getElementsByClass("mobHeaderPage").first();
+        if (td != null) {
+            String[] chunks = Objects.requireNonNull(td).text().split(" ");
+            pagesCount = Integer.parseInt(chunks[chunks.length - 1]);
+            assert pagesCount > 0;
+        }
 
         System.out.println("Pages count: " + pagesCount);
 
         // <td class="mobHeaderItems" width="34%">(items 1-25 of 1397)</td>
-        chunks = getByClass(doc, "mobHeaderItems").text().split(" ");
-        String last = chunks[chunks.length - 1];
-        int gamesCount = Integer.parseInt(last.substring(0, last.length() - 1));
-        assert gamesCount > 0;
+        td = doc.getElementsByClass("mobHeaderItems").first();
+        if (td != null) {
+            String[] chunks = td.text().split(" ");
+            String last = chunks[chunks.length - 1];
+            int gamesCount = Integer.parseInt(last.substring(0, last.length() - 1));
+            assert gamesCount > 0;
 
-        System.out.println("Games count: " + gamesCount);
+            System.out.println("Games count: " + gamesCount);
+        }
 
         //parse #0 page
         parseGamesList(games, response.getBody());
@@ -1333,8 +1359,6 @@ public class MobyCrawler {
             response = executor.getPage(String.format(GAMES_PAGES, platformId, i * 25), String.format(GAMES_PAGES, platformId, 0));
             parseGamesList(games, response.getBody());
         }
-
-        assert games.size() == gamesCount;
 
         return games;
     }
@@ -1546,7 +1570,7 @@ public class MobyCrawler {
         return chunks[chunks.length - 2];
     }
 
-    static List<Credits> parseCredits(Element td) {
+    static List<CreditsNode> parseCredits(Element td) {
 
         Map<String, String> idNames = new LinkedHashMap<>();
         // <a href="https://www.mobygames.com/developer/sheet/view/developerId,45166/">Ayako Mori</a>
@@ -1576,32 +1600,46 @@ public class MobyCrawler {
 
         return devs.stream().map(idOrName -> {
 
-            List<String> str = Arrays.stream(idOrName.replaceAll("[\\[\\]()]", "!|").split("!\\|"))
+            // Предполагаю, что после ссылки всегда идёт скобка, текста быть не может.
+            List<String> str = Arrays.stream(idOrName.replace("(", "|(|").replace(")", "|)|")
+                    .replace("[", "|[|").replace("]", "|]|").replace("||", "|").replace("/", "").split("\\|"))
                     .map(String::trim).filter(StringUtils::isNotBlank).collect(Collectors.toList());
 
-            switch (str.size()) {
-                case 1:
-                    return createCredit(idNames, idOrName, null, null, null);
-                case 2:
-                    return createCredit(idNames, str.get(0), str.get(1), null, null);
-                case 3:
-                    return createCredit(idNames, str.get(0), str.get(1), str.get(2), null);
-                case 4:
-                    return createCredit(idNames, str.get(0), str.get(1), str.get(2), str.get(3));
-                default: {
-                    throw new RuntimeException("Wrong credits: " + text);
-                }
+            //System.out.println("Array: " + str);
+            if (str.isEmpty()) {
+                str.add("");
             }
+
+            String name = idNames.get(str.get(0)); // Kunio Aoi
+            CreditsNode node = (name == null) ? new TNode(str.get(0)) : new ANode(str.get(0), name);
+            parseNode(node, str, 1);
+            return node;
+
         }).collect(Collectors.toList());
     }
 
-    //TODO сложные объекты по-любому потребуют ручной обработки
-    private static Credits createCredit(Map<String, String> idNames, String id, String origName, String group, String yup) {
-        String name = idNames.get(id); // Kunio Aoi
-        if (name == null) {
-            return new Credits(null, id, origName, group, yup);
-        } else {
-            return new Credits(id, name, origName, group, yup);
+    private static void parseNode(CreditsNode node, List<String> str, int index) {
+
+        //System.out.println("Node : " + node);
+        //System.out.println(index == str.size() ? index : index + ": " + str.get(index));
+
+        if (index == str.size()) {
+            return;
+        }
+
+        switch (str.get(index)) {
+            case "(":
+                parseNode(new PNode(node, str.get(++index)), str, ++index);
+                break;
+            case "[":
+                parseNode(new SNode(node, str.get(++index)), str, ++index);
+                break;
+            case ")":
+            case "]":
+                parseNode(node.getParent() == null ? node : node.getParent(), str, ++index);
+                break;
+            default:
+                parseNode(new TNode(node, str.get(index)), str, ++index);
         }
     }
 

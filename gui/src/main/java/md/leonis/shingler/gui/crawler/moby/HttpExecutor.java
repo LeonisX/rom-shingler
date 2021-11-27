@@ -86,7 +86,6 @@ public class HttpExecutor {
         }
     }
 
-
     public HttpResponse getPage(String fullUri, String referrer) throws Exception {
         URL url = new URL(fullUri);
         return getPage(url.getProtocol() + "://" + url.getHost(), url.getPath(), referrer, getProxy());
@@ -184,7 +183,7 @@ public class HttpExecutor {
         try {
             saveFile(url.getProtocol() + "://" + url.getHost(), url.getPath(), referrer, getProxy());
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Can't save file " + fullUri, e);
         }
     }
 

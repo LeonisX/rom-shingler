@@ -1,4 +1,4 @@
-package md.leonis.shingler.gui.crawler.moby.model;
+package md.leonis.shingler.gui.crawler.moby.model.credits;
 
 public class Credits {
 
