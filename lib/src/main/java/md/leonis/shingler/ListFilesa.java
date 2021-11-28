@@ -1,5 +1,6 @@
-package md.leonis.shingler;
+package md.leonis.shingler.gui;
 
+import md.leonis.shingler.Cache;
 import md.leonis.shingler.model.*;
 import md.leonis.shingler.utils.*;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;

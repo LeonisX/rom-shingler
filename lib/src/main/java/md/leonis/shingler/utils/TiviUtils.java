@@ -1,4 +1,4 @@
-package md.leonis.shingler.utils;
+package md.leonis.shingler.gui.utils;
 
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;

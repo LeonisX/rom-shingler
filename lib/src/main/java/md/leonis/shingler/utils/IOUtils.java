@@ -1,4 +1,4 @@
-package md.leonis.shingler.utils;
+package md.leonis.shingler.gui.utils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -6,6 +6,7 @@ import md.leonis.shingler.model.*;
 import md.leonis.shingler.model.dto.FamiliesDto;
 import md.leonis.shingler.model.dto.FamilyDto;
 import md.leonis.shingler.model.dto.ResultDto;
+import md.leonis.shingler.utils.Measured;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 import org.slf4j.Logger;
@@ -25,7 +26,6 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static java.nio.file.FileVisitResult.CONTINUE;
-import static md.leonis.shingler.model.ConfigHolder.families;
 import static md.leonis.shingler.utils.BinaryUtils.*;
 
 public class IOUtils {

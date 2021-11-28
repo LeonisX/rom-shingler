@@ -1,4 +1,6 @@
-package md.leonis.shingler;
+package md.leonis.shingler.gui;
+
+import md.leonis.shingler.Cache;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -6,7 +8,6 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.LongStream;
 import java.util.zip.CRC32;
 
 //TODO list[], write direct, read direct
