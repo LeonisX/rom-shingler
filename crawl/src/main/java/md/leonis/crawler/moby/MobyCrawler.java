@@ -1,10 +1,9 @@
 package md.leonis.crawler.moby;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import md.leonis.crawler.moby.config.ConfigHolder;
+import md.leonis.crawler.moby.dto.FileEntry;
 import md.leonis.crawler.moby.model.*;
-import md.leonis.crawler.moby.model.credits.*;
-import md.leonis.shingler.utils.IOUtils;
+import md.leonis.shingler.utils.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -13,16 +12,46 @@ import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import static md.leonis.crawler.moby.config.ConfigHolder.*;
+import static md.leonis.shingler.utils.FileUtils.*;
+
+//TODO картинки складировать по системам
+// /moby/*.json
+// /moby/c@che/sega-cd/...
+
+//TODO скопировать в новый путь
+
+//TODO promo.original - remove host
+
+
+//TODO UI
+// список систем: название, %, дата сканирования
+// сортировка
+// фильтр - не начатые, начатые
+// перекидывать в очередь на загрузку
+// открывать в отдельном окне
+
+// нужно версионирование, сравнивать с существующими, при перечтении
+//
+// страница сопоставления с тиви
+// читать CSV (экспортировано с сайта)
+// можно поставить ендпоинт - список таблиц, и CSV - хорошая идея кстати
+// сопоставлять по какому-то алгоритму
+// название, тиви название, % совпадения
+// статус - одобрен
+// фильтры: одобренные, не одобренные
+// сортировка
+//
+// очередь на загрузку надо продумать.
+
 
 //TODO
 // brokenImages - сохранять причину - 404, либо сломанная, короче причину.
@@ -82,9 +111,8 @@ public class MobyCrawler {
     //TODO proxies list
     public static final HttpExecutor executor = HttpExecutor.directInstance();
 
-    private static final Queue<Map.Entry<String, String>> httpQueue = new ConcurrentLinkedQueue<>();
+    private static final Queue<FileEntry> httpQueue = new ConcurrentLinkedQueue<>();
 
-    public static Map<String, String> platforms;
     public static Map<String, String> games;
     public static Map<String, String> companies;
     public static Map<String, String> sheets;
@@ -115,13 +143,13 @@ public class MobyCrawler {
                     } else {
                         // TODO process
                         inWork = true;
-                        Map.Entry<String, String> file = httpQueue.poll();
+                        FileEntry file = httpQueue.poll();
                         if (file == null) {
                             System.out.println("===============File is null");
                             Thread.sleep(50);
                         } else {
                             try {
-                                executor.saveFile(file.getKey(), file.getValue());
+                                executor.saveFile(file.getPlatformId(), file.getUri(), file.getReferrer());
                             } catch (Exception e) {
                                 throw new RuntimeException(e);
                             }
@@ -157,7 +185,7 @@ public class MobyCrawler {
 
 
         //два контрибьютора + не закрытые теги.
-        MobyEntry entry = new MobyEntry("turbografx-cd", "rom-karaoke-volume-4");
+        MobyEntry entry = new MobyEntry("gameboy-advance", "britneys-dance-beat_");
         parseGameMain(entry);
         parseGameCredits(entry);
         /*parseGameScreenshots(entry);
@@ -186,12 +214,13 @@ public class MobyCrawler {
 
         HttpExecutor.validate = false;
 
-        //String[] platforms = new String[]{"nes", "sg-1000", "sega-master-system", "game-gear", "sega-32x", "genesis",
-        // "snes", "gameboy", "gameboy-color", "game-com", "sega-cd", "3do", "virtual-boy", "1292-advanced-programmable-video-system",
-        // "apf", "channel-f", "neo-geo-pocket-color", "neo-geo-pocket", "atari-5200", "atari-7800", "turbografx-cd", "turbo-grafx",
-        // "supervision", "supergrafx", "rca-studio-ii", "intellivision", "colecovision", "bally-astrocade", };
+        /*String[] platforms = new String[]{"nes", "sg-1000", "sega-master-system", "game-gear", "sega-32x", "genesis",
+         "snes", "gameboy", "gameboy-color", "game-com", "sega-cd", "3do", "virtual-boy", "1292-advanced-programmable-video-system",
+         "apf", "channel-f", "neo-geo-pocket-color", "neo-geo-pocket", "atari-5200", "atari-7800", "turbografx-cd", "turbo-grafx",
+         "supervision", "supergrafx", "rca-studio-ii", "intellivision", "colecovision", "bally-astrocade", "zx-spectrum", "atari-2600",
+         "atari-8-bit", "gameboy-advance"};*/
 
-        String[] platforms = new String[]{"zx-spectrum", "atari-2600", "atari-8-bit", "gameboy-advance", "arcade", "n64",
+        String[] platforms = new String[]{"arcade", "n64",
                 "arcadia-2001", "odyssey", "odyssey-2", "mattel-aquarius", "lynx", "jaguar", "interton-video-2000",
                 "cd-i", "fred-cosmac", "colecoadam", "supervision", "vectrex", "sega-saturn", "playstation", "neo-geo", "neo-geo-cd", "neo-geo-x",
         "dreamcast", "nintendo-dsi", "nintendo-ds"};
@@ -199,10 +228,64 @@ public class MobyCrawler {
         String[] platforms2 = new String[]{"pet", "vic-20", "c64", "c128", "commodore-16-plus4", "trs-80", "trs-80-coco", "trs-80-mc-10",
                 "msx", "amiga", "amiga-cd32", "cpc", "amstrad-pcw", "apple-i", "apple2", "apple2g", "atari-st", "bbc-micro_", "electron", "enterprise", "dos"};
 
+        /*for (String platformId : platforms) {
+            List<MobyEntry> entries = FileUtils.loadJsonList(gamesDir, platformId, MobyEntry.class);
+            //FileUtils.createDirectories();
+            entries.forEach(e -> {
+                e.getCovers().forEach(cover -> {
+                    cover.getImages().forEach(ai -> {
+                        // "small" : "/images/covers/s/327332-baseball-stars-neo-geo-pocket-front-cover.jpg",
+                        // "large" : "/images/covers/l/327332-baseball-stars-neo-geo-pocket-front-cover.jpg",
+                        try {
+                            Files.createDirectories(HttpExecutor.getPath(e.getPlatformId(), ai.getSmall()).getParent());
+                            Files.createDirectories(HttpExecutor.getPath(e.getPlatformId(), ai.getLarge()).getParent());
+                            Files.move(HttpExecutor.getPath(HttpExecutor.HTML_CACHE, "https@www.mobygames.com", ai.getSmall()), HttpExecutor.getPath(e.getPlatformId(), ai.getSmall()));
+                            Files.move(HttpExecutor.getPath(HttpExecutor.HTML_CACHE, "https@www.mobygames.com", ai.getLarge()), HttpExecutor.getPath(e.getPlatformId(), ai.getLarge()));
+                        } catch (Exception ex) {
+                            //throw new RuntimeException(ex);
+                        }
+                    });
+                });
+                e.getScreens().forEach(sc -> {
+                    // "small" : "/images/shots/s/708684-baseball-stars-neo-geo-pocket-screenshot-field.jpg",
+                    // "large" : "/images/shots/l/708684-baseball-stars-neo-geo-pocket-screenshot-field.png",
+                    try {
+                        Files.createDirectories(HttpExecutor.getPath(e.getPlatformId(), sc.getSmall()).getParent());
+                        Files.createDirectories(HttpExecutor.getPath(e.getPlatformId(), sc.getLarge()).getParent());
+                        Files.move(HttpExecutor.getPath(HttpExecutor.HTML_CACHE, "https@www.mobygames.com", sc.getSmall()), HttpExecutor.getPath(e.getPlatformId(), sc.getSmall()));
+                        Files.move(HttpExecutor.getPath(HttpExecutor.HTML_CACHE, "https@www.mobygames.com", sc.getLarge()), HttpExecutor.getPath(e.getPlatformId(), sc.getLarge()));
+                    } catch (Exception ex) {
+                        //throw new RuntimeException(ex);
+                    }
+                });
+                e.getPromos().forEach(promo -> {
+                    promo.getImages().forEach(pr -> {
+                        // "small" : "/images/promo/s/723944-10-yard-fight-screenshot.jpg",
+                        // "large" : "/images/promo/l/723944-10-yard-fight-screenshot.jpg",
+                        // "original" : "https://www.mobygames.com/images/promo/original/76d61ba2cebc4e6caea1561808ae08e9.jpg",
+                        try {
+                            String original = pr.getOriginal().replace("https://www.mobygames.com", "");
+                            pr.setOriginal(original);
+                            Files.createDirectories(HttpExecutor.getPath(e.getPlatformId(), pr.getSmall()).getParent());
+                            Files.createDirectories(HttpExecutor.getPath(e.getPlatformId(), pr.getLarge()).getParent());
+                            Files.createDirectories(HttpExecutor.getPath(e.getPlatformId(), original).getParent());
+                            Files.move(HttpExecutor.getPath(HttpExecutor.HTML_CACHE, "https@www.mobygames.com", pr.getSmall()), HttpExecutor.getPath(e.getPlatformId(), pr.getSmall()));
+                            Files.move(HttpExecutor.getPath(HttpExecutor.HTML_CACHE, "https@www.mobygames.com", pr.getLarge()), HttpExecutor.getPath(e.getPlatformId(), pr.getLarge()));
+                            Files.move(HttpExecutor.getPath(HttpExecutor.HTML_CACHE, "https@www.mobygames.com", original), HttpExecutor.getPath(e.getPlatformId(), original));
+                        } catch (Exception ex) {
+                            //throw new RuntimeException(ex);
+                        }
+                    });
+                });
+            });
+            saveAsJson(gamesDir, platformId, entries);
+        }*/
+
         for (String platformId : platforms) {
 
+            //TODO generate list of MobyEntry, also map
             Map<String, String> games = parseGamesListToc(platformId);
-            save(String.format("games-%s.json", platformId), games);
+            saveAsJson(sourceDir, String.format("games-%s.json", platformId), games);
 
             List<MobyEntry> mobyEntries = new ArrayList<>();
 
@@ -213,7 +296,7 @@ public class MobyCrawler {
                 try {
                     parseGameMain(mobyEntry);
                     // если ошибочная игра - не парсить.
-                    if (mobyEntry.gameId().isEmpty()) {
+                    if (mobyEntry.getGameId().isEmpty()) {
                         System.out.println("Ignore this game");
                     } else {
                         parseGameCredits(mobyEntry);
@@ -238,14 +321,14 @@ public class MobyCrawler {
 
                 if (++i == 50) {
                     save();
-                    save(String.format("moby-entry-%s.json", platformId), mobyEntries);
+                    saveAsJson(gamesDir, platformId, mobyEntries);
                     // TODO save position, return to position later
                     i = 0;
                 }
             }
 
             save();
-            save(String.format("moby-entry-%s.json", platformId), mobyEntries);
+            saveAsJson(gamesDir, platformId, mobyEntries);
         }
 
         processors.forEach(p -> p.canStop = true);
@@ -268,32 +351,20 @@ public class MobyCrawler {
 
     private static void save() throws IOException {
         System.out.println("Save in progress...");
-        save("companies.json", companies);
-        save("sheets.json", sheets);
-        save("gameGroups.json", gameGroups);
-        save("developers.json", developers);
-        save("sources.json", sources);
-        save("users.json", users);
-        save("attributes.json", attributes);
-        save("brokenImages.json", brokenImages);
-        System.out.println("Saved.");
-    }
-
-    private static void save(String fileName, Object object) throws IOException {
-
-        System.out.printf("Save %s in progress...%n", fileName);
-        IOUtils.backupFile(Paths.get(fileName));
-
-        String result = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(object);
-        result = result.replace("&nbsp;", " ");
-
-        Files.write(Paths.get(fileName), result.getBytes());
+        saveAsJson(sourceDir, "companies", companies);
+        saveAsJson(sourceDir, "sheets", sheets);
+        saveAsJson(sourceDir, "gameGroups", gameGroups);
+        saveAsJson(sourceDir, "developers", developers);
+        saveAsJson(sourceDir, "sources", sources);
+        saveAsJson(sourceDir, "users", users);
+        saveAsJson(sourceDir, "attributes", attributes);
+        saveAsJson(sourceDir, "brokenImages", brokenImages);
         System.out.println("Saved.");
     }
 
     private static void parseGameMain(MobyEntry entry) throws Exception {
 
-        HttpExecutor.HttpResponse response = executor.getPage(getGameLink(entry), getGameMainReferrer(entry.gameId()));
+        HttpExecutor.HttpResponse response = executor.getPage(getGameLink(entry), getGameMainReferrer(entry.getGameId()));
 
         Element container = getContainer(response);
 
@@ -309,8 +380,8 @@ public class MobyCrawler {
         String gameName = getLastChunk(niceHeaderTitleA.get(0).text());
         String platformName = getLastChunk(niceHeaderTitleA.get(1).text());
 
-        assert gameName.equals(games.get(entry.gameId()));
-        assert platformName.equals(games.get(entry.platformId()));
+        assert gameName.equals(games.get(entry.getGameId()));
+        assert platformName.equals(games.get(entry.getPlatformId()));
 
         // Main  Credits  Screenshots  Reviews  Cover Art  Promo Art  Releases  Trivia  Hints  Specs  Ad Blurb  Rating Systems  Buy/Trade
         Elements lis = selectUl(rightPanelHeader, "ul.nav-tabs");
@@ -568,11 +639,11 @@ public class MobyCrawler {
 
     private static void parseGameCredits(MobyEntry entry) throws Exception {
 
-        if (!entry.hasCredits()) {
+        if (!entry.isHasCredits()) {
             return;
         }
 
-        HttpExecutor.HttpResponse response = executor.getPage(String.format(GAME_CREDITS, entry.platformId(), entry.gameId()), getGameLink(entry));
+        HttpExecutor.HttpResponse response = executor.getPage(String.format(GAME_CREDITS, entry.getPlatformId(), entry.getGameId()), getGameLink(entry));
         Element container = getContainer(response);
         Element divColMd12 = getByClass(container, "col-md-12");
         // Все метаданные по игре + обложка
@@ -581,7 +652,7 @@ public class MobyCrawler {
         Element h2Title = getNext(coreGameInfo);
 
         if (h2Title.tagName().equals("h2")) {
-            assert h2Title.text().equals(games.get(entry.gameId()) + " Credits");
+            assert h2Title.text().equals(games.get(entry.getGameId()) + " Credits");
             //Div со всеми кредитами
             Element div = getNext(h2Title);
             // X people
@@ -634,18 +705,18 @@ public class MobyCrawler {
 
     private static void parseGameScreenshots(MobyEntry entry) throws Exception {
 
-        if (!entry.hasScreenshots()) {
+        if (!entry.isHasScreenshots()) {
             return;
         }
 
-        String thisLink = String.format(GAME_SCREENSHOTS, entry.platformId(), entry.gameId());
+        String thisLink = String.format(GAME_SCREENSHOTS, entry.getPlatformId(), entry.getGameId());
         HttpExecutor.HttpResponse response = executor.getPage(thisLink, getGameLink(entry));
         Element container = getContainer(response);
         Element divColMd12 = getByClass(container, "col-md-12");
 
         Element h2 = select(divColMd12, "h2:contains(User Screenshots)");
         Element h3 = getNext(h2);
-        assert h3.text().equals(games.get(entry.gameId()) + " version");
+        assert h3.text().equals(games.get(entry.getGameId()) + " version");
         Element divRow = getNext(h3);
         assert divRow.tagName().equals("div");
 
@@ -672,15 +743,15 @@ public class MobyCrawler {
 
             MobyImage mobyImage = new MobyImage(id, style, description);
             parseGameScreenshotsImage(entry, mobyImage);
-            httpQueue.add(new AbstractMap.SimpleEntry<>(HOST + mobyImage.getSmall(), thisLink));
-            httpQueue.add(new AbstractMap.SimpleEntry<>(HOST + mobyImage.getLarge(), thisLink));
+            httpQueue.add(new FileEntry(entry.getPlatformId(), HOST + mobyImage.getSmall(), thisLink));
+            httpQueue.add(new FileEntry(entry.getPlatformId(), HOST + mobyImage.getLarge(), thisLink));
             entry.getScreens().add(mobyImage);
         }
     }
 
     private static void parseGameScreenshotsImage(MobyEntry entry, MobyImage mobyImage) throws Exception {
 
-        String thisLink = String.format(GAME_SCREENSHOTS_IMAGE, entry.platformId(), entry.gameId(), mobyImage.getId());
+        String thisLink = String.format(GAME_SCREENSHOTS_IMAGE, entry.getPlatformId(), entry.getGameId(), mobyImage.getId());
         HttpExecutor.HttpResponse response = executor.getPage(thisLink, getGameLink(entry));
         Element container = getContainer(response);
 
@@ -699,11 +770,11 @@ public class MobyCrawler {
 
     private static void parseGameReviews(MobyEntry entry) throws Exception {
 
-        if (!entry.hasReviews()) {
+        if (!entry.isHasReviews()) {
             return;
         }
 
-        HttpExecutor.HttpResponse response = executor.getPage(String.format(GAME_REVIEWS, entry.platformId(), entry.gameId()), getGameLink(entry));
+        HttpExecutor.HttpResponse response = executor.getPage(String.format(GAME_REVIEWS, entry.getPlatformId(), entry.getGameId()), getGameLink(entry));
         Element container = getContainer(response);
         Element divColMd12 = getByClass(container, "col-md-12");
         // Все метаданные по игре + обложка
@@ -808,11 +879,11 @@ public class MobyCrawler {
 
     private static void parseGameCoverArt(MobyEntry entry) throws Exception {
 
-        if (!entry.hasCoverArt()) {
+        if (!entry.isHasCoverArt()) {
             return;
         }
 
-        String thisLink = String.format(GAME_COVER_ART, entry.platformId(), entry.gameId());
+        String thisLink = String.format(GAME_COVER_ART, entry.getPlatformId(), entry.getGameId());
         HttpExecutor.HttpResponse response = executor.getPage(thisLink, getGameLink(entry));
         Element container = getContainer(response);
 
@@ -836,7 +907,7 @@ public class MobyCrawler {
             }
             Element h2 = current.child(0);
             assert h2.tagName().equals("h2");
-            assert h2.text().equals(platforms.get(entry.platformId()));
+            assert h2.text().equals(platformsById.get(entry.getPlatformId()));
             Elements trs = getTrs(current);
             // Эти параметры на самом деле разные, надо собрать список и мэппить соответственно.
             for (Element tr : trs) {
@@ -871,8 +942,8 @@ public class MobyCrawler {
                 //System.out.println(p.text());
                 MobyArtImage mobyImage = new MobyArtImage(id, style, p.text());
                 parseGameCoverArtImage(entry, mobyImage);
-                httpQueue.add(new AbstractMap.SimpleEntry<>(HOST + mobyImage.getSmall(), thisLink));
-                httpQueue.add(new AbstractMap.SimpleEntry<>(HOST + mobyImage.getLarge(), thisLink));
+                httpQueue.add(new FileEntry(entry.getPlatformId(), HOST + mobyImage.getSmall(), thisLink));
+                httpQueue.add(new FileEntry(entry.getPlatformId(), HOST + mobyImage.getLarge(), thisLink));
                 covers.getImages().add(mobyImage);
             }
 
@@ -885,7 +956,7 @@ public class MobyCrawler {
 
     private static void parseGameCoverArtImage(MobyEntry entry, MobyArtImage mobyImage) throws Exception {
 
-        String thisLink = String.format(GAME_COVER_ART_IMAGE, entry.platformId(), entry.gameId(), mobyImage.getId());
+        String thisLink = String.format(GAME_COVER_ART_IMAGE, entry.getPlatformId(), entry.getGameId(), mobyImage.getId());
         HttpExecutor.HttpResponse response = executor.getPage(thisLink, getGameLink(entry));
         Element container = getContainer(response);
         Element div = getByClass(container, "col-md-12 col-lg-12");
@@ -902,11 +973,11 @@ public class MobyCrawler {
 
     private static void parseGamePromoArt(MobyEntry entry) throws Exception {
 
-        if (!entry.hasPromoArt()) {
+        if (!entry.isHasPromoArt()) {
             return;
         }
 
-        String thisLink = String.format(GAME_PROMO_ART, entry.platformId(), entry.gameId());
+        String thisLink = String.format(GAME_PROMO_ART, entry.getPlatformId(), entry.getGameId());
         HttpExecutor.HttpResponse response = executor.getPage(thisLink, getGameLink(entry));
         Element container = getContainer(response);
 
@@ -966,9 +1037,9 @@ public class MobyCrawler {
 
                 parseGamePromoArtImage(entry, pi);
 
-                httpQueue.add(new AbstractMap.SimpleEntry<>(HOST + pi.getSmall(), thisLink));
-                httpQueue.add(new AbstractMap.SimpleEntry<>(HOST + pi.getLarge(), thisLink));
-                httpQueue.add(new AbstractMap.SimpleEntry<>(pi.getOriginal(), thisLink));
+                httpQueue.add(new FileEntry(entry.getPlatformId(), HOST + pi.getSmall(), thisLink));
+                httpQueue.add(new FileEntry(entry.getPlatformId(), HOST + pi.getLarge(), thisLink));
+                httpQueue.add(new FileEntry(entry.getPlatformId(), HOST + pi.getOriginal(), thisLink));
 
                 promo.getImages().add(pi);
             }
@@ -978,7 +1049,7 @@ public class MobyCrawler {
 
     private static void parseGamePromoArtImage(MobyEntry entry, PromoImage promoImage) throws Exception {
 
-        String thisLink = String.format(GAME_PROMO_ART_IMAGE, entry.platformId(), entry.gameId(), promoImage.getId());
+        String thisLink = String.format(GAME_PROMO_ART_IMAGE, entry.getPlatformId(), entry.getGameId(), promoImage.getId());
         HttpExecutor.HttpResponse response = executor.getPage(thisLink, getGameLink(entry));
         Element container = getContainer(response);
 
@@ -991,7 +1062,7 @@ public class MobyCrawler {
         String large = img.attr("src");
 
         promoImage.setLarge(large);
-        promoImage.setOriginal(a.href());
+        promoImage.setOriginal(a.href().replace("https://www.mobygames.com", "")); //TODO host as constant
         //      figcaption
         //        <p>
         //        <p>
@@ -1015,11 +1086,11 @@ public class MobyCrawler {
 
     private static void parseGameReleases(MobyEntry entry) throws Exception {
 
-        if (!entry.hasReleases()) {
+        if (!entry.isHasReleases()) {
             return;
         }
 
-        HttpExecutor.HttpResponse response = executor.getPage(String.format(GAME_RELEASES, entry.platformId(), entry.gameId()), getGameLink(entry));
+        HttpExecutor.HttpResponse response = executor.getPage(String.format(GAME_RELEASES, entry.getPlatformId(), entry.getGameId()), getGameLink(entry));
         Element container = getContainer(response);
         Element divColMd12 = getByClass(container, "col-md-12");
         // Все метаданные по игре + обложка
@@ -1030,7 +1101,7 @@ public class MobyCrawler {
         assert p.text().equals("Release dates, publisher and developer information for this game listed by platform:");
 
         Element h2Title = getNext(p);
-        assert h2Title.text().equals(platforms.get(entry.platformId()));
+        assert h2Title.text().equals(platformsById.get(entry.getPlatformId()).getTitle());
 
         // читать по очереди, пока див.
         List<Map<String, String>> releases = new ArrayList<>();
@@ -1074,11 +1145,11 @@ public class MobyCrawler {
     // Одинаковое значение для всех платформ!!!
     private static void parseGameTrivia(MobyEntry entry) throws Exception {
 
-        if (!entry.hasTrivia()) {
+        if (!entry.isHasTrivia()) {
             return;
         }
 
-        HttpExecutor.HttpResponse response = executor.getPage(String.format(GAME_TRIVIA, entry.platformId(), entry.gameId()), getGameLink(entry));
+        HttpExecutor.HttpResponse response = executor.getPage(String.format(GAME_TRIVIA, entry.getPlatformId(), entry.getGameId()), getGameLink(entry));
         Element container = getContainer(response);
         Element divColMd12 = getByClass(container, "col-md-12 col-lg-12");
 
@@ -1127,11 +1198,11 @@ public class MobyCrawler {
 
     private static void parseGameHints(MobyEntry entry) throws Exception {
 
-        if (!entry.hasHints()) {
+        if (!entry.isHasHints()) {
             return;
         }
 
-        HttpExecutor.HttpResponse response = executor.getPage(String.format(GAME_HINTS, entry.platformId(), entry.gameId()), getGameLink(entry));
+        HttpExecutor.HttpResponse response = executor.getPage(String.format(GAME_HINTS, entry.getPlatformId(), entry.getGameId()), getGameLink(entry));
         Element table = select(getContainer(response), "table[summary]");
 
         if (table == null) {
@@ -1169,7 +1240,7 @@ public class MobyCrawler {
 
     private static List<String> parseGameHintsPage(MobyEntry entry, String hintId) throws Exception {
 
-        HttpExecutor.HttpResponse response = executor.getPage(String.format(GAME_HINTS_PAGE, entry.platformId(), entry.gameId(), hintId), getGameLink(entry));
+        HttpExecutor.HttpResponse response = executor.getPage(String.format(GAME_HINTS_PAGE, entry.getPlatformId(), entry.getGameId(), hintId), getGameLink(entry));
         Element table = select(getContainer(response), "table[summary]");
 
         if (table == null) {
@@ -1197,11 +1268,11 @@ public class MobyCrawler {
     // Одинаковое значение для всех платформ!!!
     private static void parseGameAds(MobyEntry entry) throws Exception {
 
-        if (!entry.hasAdBlurb()) {
+        if (!entry.isHasAdBlurb()) {
             return;
         }
 
-        HttpExecutor.HttpResponse response = executor.getPage(String.format(GAME_ADS, entry.platformId(), entry.gameId()), getGameLink(entry));
+        HttpExecutor.HttpResponse response = executor.getPage(String.format(GAME_ADS, entry.getPlatformId(), entry.getGameId()), getGameLink(entry));
         Element container = getContainer(response);
         Element divColMd12 = getByClass(container, "col-md-12 col-lg-12");
 
@@ -1268,11 +1339,11 @@ public class MobyCrawler {
 
     private static void parseGameSpecs(MobyEntry entry) throws Exception {
 
-        if (!entry.hasSpecs()) {
+        if (!entry.isHasSpecs()) {
             return;
         }
 
-        HttpExecutor.HttpResponse response = executor.getPage(String.format(GAME_SPECS, entry.platformId(), entry.gameId()), getGameLink(entry));
+        HttpExecutor.HttpResponse response = executor.getPage(String.format(GAME_SPECS, entry.getPlatformId(), entry.getGameId()), getGameLink(entry));
         Element table = select(getContainer(response), "table.techInfo");
 
         Elements trs = getTrs(table);
@@ -1299,11 +1370,11 @@ public class MobyCrawler {
 
     private static void parseGameRatings(MobyEntry entry) throws Exception {
 
-        if (!entry.hasSpecs()) {
+        if (!entry.isHasSpecs()) {
             return;
         }
 
-        HttpExecutor.HttpResponse response = executor.getPage(String.format(GAME_RATING_SYSTEMS, entry.platformId(), entry.gameId()), getGameLink(entry));
+        HttpExecutor.HttpResponse response = executor.getPage(String.format(GAME_RATING_SYSTEMS, entry.getPlatformId(), entry.getGameId()), getGameLink(entry));
         Element container = getContainer(response);
         Element divColMd12 = getByClass(container, "col-md-12 col-lg-12");
 
@@ -1388,48 +1459,33 @@ public class MobyCrawler {
         });
     }
 
-    private static Map<String, String> parseSystemsList() throws Exception {
+    public static List<Platform> parsePlatformsList() throws Exception {
 
-        Map<String, String> systems = new LinkedHashMap<>();
+        List<Platform> platforms = new ArrayList<>();
 
         HttpExecutor.HttpResponse response = executor.getPage(PLATFORMS, "https://www.mobygames.com");
         Document doc = Jsoup.parse(response.getBody());
-        getAs(getByClass(doc, "browseTable")).forEach(a -> systems.put(getLastChunk(a), a.text()));
+        getAs(getByClass(doc, "browseTable")).forEach(a -> platforms.add(new Platform(getLastChunk(a), a.text(), 0, 0, null)));
 
-        return systems;
+        saveAsJson(sourceDir, "platforms", platforms);
+
+        return platforms;
     }
 
     private static void preload() {
 
-        platforms = loadMap("platforms.json");
-        games = loadMap("games-nes.json");
-        companies = loadMap("companies.json");
-        sheets = loadMap("sheets.json");
-        gameGroups = loadMap("gameGroups.json");
-        developers = loadMap("developers.json");
-        sources = loadMap("sources.json");
-        users = loadMap("users.json");
-        attributes = loadMap("attributes.json");
+        ConfigHolder.setPlatforms(FileUtils.loadJsonList(ConfigHolder.sourceDir, "platforms", Platform.class));
+        //TODO удалить в пользу мобиентри (пусть и частично заполненных)
+        games = loadJsonMap(sourceDir, "games-nes"); //TODO WTF???? - это список игр, лучше сразу формировать мобиентри
+        companies = loadJsonMap(sourceDir, "companies");
+        sheets = loadJsonMap(sourceDir, "sheets");
+        gameGroups = loadJsonMap(sourceDir, "gameGroups");
+        developers = loadJsonMap(sourceDir, "developers");
+        sources = loadJsonMap(sourceDir, "sources");
+        users = loadJsonMap(sourceDir, "users");
+        attributes = loadJsonMap(sourceDir, "attributes");
 
-        brokenImages = loadList("brokenImages.json");
-    }
-
-    private static Map<String, String> loadMap(String fileName) {
-        try {
-            return new ObjectMapper().readValue(new File(fileName), new TypeReference<Map<String, String>>() {
-            });
-        } catch (Exception e) {
-            return new HashMap<>();
-        }
-    }
-
-    private static List<String> loadList(String fileName) {
-        try {
-            return new ObjectMapper().readValue(new File(fileName), new TypeReference<List<String>>() {
-            });
-        } catch (Exception e) {
-            return new ArrayList<>();
-        }
+        brokenImages = loadJsonList(sourceDir, "brokenImages");
     }
 
     private static String getGameMainReferrer(String gameId) {
@@ -1438,7 +1494,7 @@ public class MobyCrawler {
     }
 
     private static String getGameLink(MobyEntry entry) {
-        return String.format(GAME_MAIN, entry.platformId(), entry.gameId());
+        return String.format(GAME_MAIN, entry.getPlatformId(), entry.getGameId());
     }
 
     private static Element getContainer(HttpExecutor.HttpResponse response) {
@@ -1587,6 +1643,8 @@ public class MobyCrawler {
         // <a href="https://www.mobygames.com/developer/sheet/view/developerId,45166/">Ayako Mori</a>
         String text = td.childNodes().stream().map(node -> {
 
+            //System.out.println("NNode: " + node.outerHtml());
+
             if (node instanceof TextNode) {
                 return ((TextNode) node).text();
             } else {
@@ -1598,9 +1656,14 @@ public class MobyCrawler {
                 if (!email.isEmpty()) {
                     return decodeCfEmail(email);
                 } else {
-                    String id = getLastChunk(a).split(",")[1];
-                    idNames.put(id, a.text().trim());
-                    return id;
+                    String chunk = getLastChunk(a);
+                    if (!chunk.contains(",")) {
+                        return a.text();
+                    } else {
+                        String id = getLastChunk(a).split(",")[1];
+                        idNames.put(id, a.text().trim());
+                        return id;
+                    }
                 }
             }
         }).collect(Collectors.joining());
@@ -1613,7 +1676,7 @@ public class MobyCrawler {
 
             // Предполагаю, что после ссылки всегда идёт скобка, текста быть не может.
             List<String> str = Arrays.stream(idOrName.replace("(", "|(|").replace(")", "|)|")
-                    .replace("[", "|[|").replace("]", "|]|").replace("||", "|").replace("/", "").split("\\|"))
+                    .replace("[", "|[|").replace("]", "|]|").replace("||", "|")/*.replace("/", "")*/.split("\\|"))
                     .map(String::trim).filter(StringUtils::isNotBlank).collect(Collectors.toList());
 
             //System.out.println("Array: " + str);
@@ -1622,7 +1685,7 @@ public class MobyCrawler {
             }
 
             String name = idNames.get(str.get(0)); // Kunio Aoi
-            CreditsNode node = (name == null) ? new TNode(str.get(0)) : new ANode(str.get(0), name);
+            CreditsNode node = (name == null) ? new CreditsNode("text", str.get(0)) : new CreditsNode("link", str.get(0), name);
             parseNode(node, str, 1);
             return node;
 
@@ -1640,17 +1703,17 @@ public class MobyCrawler {
 
         switch (str.get(index)) {
             case "(":
-                parseNode(new PNode(node, str.get(++index)), str, ++index);
+                parseNode(new CreditsNode("round", node, str.get(++index)), str, ++index);
                 break;
             case "[":
-                parseNode(new SNode(node, str.get(++index)), str, ++index);
+                parseNode(new CreditsNode("square", node, str.get(++index)), str, ++index);
                 break;
             case ")":
             case "]":
                 parseNode(node.getParent() == null ? node : node.getParent(), str, ++index);
                 break;
             default:
-                parseNode(new TNode(node, str.get(index)), str, ++index);
+                parseNode(new CreditsNode("text", node, str.get(index)), str, ++index);
         }
     }
 

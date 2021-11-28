@@ -1,4 +1,4 @@
-package md.leonis.shingler.gui.utils;
+package md.leonis.shingler.utils;
 
 import org.slf4j.Logger;
 

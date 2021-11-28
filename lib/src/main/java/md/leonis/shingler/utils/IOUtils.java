@@ -1,4 +1,4 @@
-package md.leonis.shingler.gui.utils;
+package md.leonis.shingler.utils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -6,7 +6,6 @@ import md.leonis.shingler.model.*;
 import md.leonis.shingler.model.dto.FamiliesDto;
 import md.leonis.shingler.model.dto.FamilyDto;
 import md.leonis.shingler.model.dto.ResultDto;
-import md.leonis.shingler.utils.Measured;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 import org.slf4j.Logger;
@@ -26,7 +25,9 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static java.nio.file.FileVisitResult.CONTINUE;
+import static md.leonis.shingler.model.ConfigHolder.families;
 import static md.leonis.shingler.utils.BinaryUtils.*;
+import static md.leonis.shingler.utils.FileUtils.backupFile;
 
 public class IOUtils {
 
@@ -56,7 +57,7 @@ public class IOUtils {
 
     public static void downloadFromUrl(URL url, Path path) throws IOException {
 
-        createDirectories(path.getParent());
+        FileUtils.createDirectories(path.getParent());
 
         ReadableByteChannel channel = null;
         FileOutputStream fileOutputStream = null;
@@ -140,9 +141,8 @@ public class IOUtils {
     @Measured
     public static void serialize(File file, Object object) {
 
-        backupFile(file);
-
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
+            backupFile(file);
             oos.writeObject(object);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -255,9 +255,8 @@ public class IOUtils {
     @Measured
     public static void serializeAsJson(File file, Object object) {
 
-        backupFile(file);
-
         try {
+            backupFile(file);
             new ObjectMapper().writeValue(file, object);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -267,9 +266,8 @@ public class IOUtils {
     @Measured
     public static void serializeFamiliesAsJson(File file, Map<String, Family> families) {
 
-        backupFile(file);
-
         try {
+            backupFile(file);
             Map<Integer, Name> names = new HashMap<>();
 
             families.values().forEach(f -> f.getMembers().forEach(m -> {
@@ -298,9 +296,8 @@ public class IOUtils {
     @Measured
     public static void serializeFamilyRelationsAsJson(File file, Map<Family, Map<Family, Double>> familyRelations) {
 
-        backupFile(file);
-
         try {
+            backupFile(file);
             Map<String, Map<String, Double>> model = new LinkedHashMap<>();
 
             familyRelations.forEach((key1, value1) -> {
@@ -312,20 +309,6 @@ public class IOUtils {
             new ObjectMapper().writeValue(file, model);
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    public static void backupFile(Path path) {
-        backupFile(path.toFile());
-    }
-
-    public static void backupFile(File file) {
-        if (file.exists()) {
-            File backupFile = new File(file.getAbsolutePath() + ".bak");
-            if (backupFile.exists()) {
-                backupFile.delete();
-            }
-            file.renameTo(backupFile);
         }
     }
 
@@ -476,14 +459,6 @@ public class IOUtils {
             out.println(text);
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    public static void createDirectories(Path path) {
-        try {
-            Files.createDirectories(path);
-        } catch (IOException e) {
-            LOGGER.error("Can't create directory: {}", path.toString(), e);
         }
     }
 }

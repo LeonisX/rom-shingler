@@ -1,4 +1,4 @@
-package md.leonis.shingler.gui;
+package md.leonis.shingler;
 
 import md.leonis.shingler.utils.StringUtils;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;

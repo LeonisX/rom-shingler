@@ -28,13 +28,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
+import static md.leonis.crawler.moby.config.ConfigHolder.cacheDir;
+import static md.leonis.crawler.moby.config.ConfigHolder.pagesDir;
+
 public class HttpExecutor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpExecutor.class);
 
     private static final List<Proxy> DIRECT_LIST = Collections.singletonList(new Proxy(1, null, null, 0, null, null));
 
-    private static final Path HTML_CACHE = Paths.get("./cache");
+    public static final Path HTML_CACHE = Paths.get("./cache");
 
     private static final Random RANDOM = new Random();
 
@@ -100,7 +103,7 @@ public class HttpExecutor {
         try {
             LOGGER.info(host + uri);
 
-            Path path = getPath(HTML_CACHE, host + uri);
+            Path path = getPath(uri);
 
             if (Files.exists(path)) { // TODO if read from cache
                 if (Files.isDirectory(path)) {
@@ -177,26 +180,26 @@ public class HttpExecutor {
         }
     }
 
-    public void saveFile(String fullUri, String referrer) throws Exception {
+    public void saveFile(String platformId, String fullUri, String referrer) throws Exception {
         URL url = new URL(fullUri);
         try {
-            saveFile(url.getProtocol() + "://" + url.getHost(), url.getPath(), referrer, getProxy());
+            saveFile(platformId, url.getProtocol() + "://" + url.getHost(), url.getPath(), referrer, getProxy());
         } catch (Exception e) {
             throw new RuntimeException("Can't save file " + fullUri, e);
         }
     }
 
-    public void saveFile(String host, String uri, String referrer, Proxy proxy) throws Exception {
-        doSaveFile(host, uri, referrer, proxy, new HttpGet(uri));
+    public void saveFile(String platformId, String host, String uri, String referrer, Proxy proxy) throws Exception {
+        doSaveFile(platformId, host, uri, referrer, proxy, new HttpGet(uri));
     }
 
     //TODO process exceptions -> retry list
-    private void doSaveFile(String host, String uri, String referrer, Proxy proxy, HttpUriRequestBase httpUriRequestBase) throws Exception {
+    private void doSaveFile(String platformId, String host, String uri, String referrer, Proxy proxy, HttpUriRequestBase httpUriRequestBase) throws Exception {
 
         try {
             LOGGER.info(host + uri);
 
-            Path path = getPath(HTML_CACHE, host + uri);
+            Path path = getPath(platformId, uri);
 
             if (Files.exists(path)) { // TODO if read from cache
 
@@ -299,14 +302,32 @@ public class HttpExecutor {
         httpUriRequestBase.addHeader(new BasicHeader("Cache-Control", "max-age=0"));
     }
 
-    private Path getPath(Path path, String uri) {
+    //TODO remove
+    public static Path getPath(Path path, String host, String uri) {
 
-        if (uri.startsWith("http://")) {
-            uri = uri.replace("http://", "");
+        if (host.startsWith("http://")) {
+            host = host.replace("http://", "");
         }
-        uri = uri.replace("://", "@");
+        host = host.replace("://", "@");
 
-        return path.toAbsolutePath().resolve(uri).normalize();
+        return path.toAbsolutePath().resolve(host + uri).normalize();
+    }
+
+    // TODO source specific, move to crawler
+    public static Path getPath(String uri) {
+        if (uri.startsWith("/")) {
+            uri = uri.substring(1);
+        }
+        return pagesDir.resolve(uri).normalize().toAbsolutePath();
+    }
+
+    // TODO source specific, move to crawler
+    public static Path getPath(String platformId, String uri) {
+        uri = platformId + uri;
+        if (uri.startsWith("/")) {
+            uri = uri.substring(1);
+        }
+        return cacheDir.resolve(uri).normalize().toAbsolutePath();
     }
 
     private void updateProxy(Proxy proxy, HttpResponse response) {

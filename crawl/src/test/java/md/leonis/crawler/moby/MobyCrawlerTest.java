@@ -1,6 +1,6 @@
 package md.leonis.crawler.moby;
 
-import md.leonis.crawler.moby.model.credits.CreditsNode;
+import md.leonis.crawler.moby.model.CreditsNode;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -151,14 +151,14 @@ class MobyCrawlerTest {
     @Test
     void testCreditsATty() { // A (T [t]/Y)
         Element td = getTd(CREDITS1 + " (origName3 [note3]/Yup)");
-        Assertions.assertEquals("45166=Ayako Mori (origName3 [note3] Yup)", toString(MobyCrawler.parseCredits(td)));
+        Assertions.assertEquals("45166=Ayako Mori (origName3 [note3] /Yup)", toString(MobyCrawler.parseCredits(td)));
         assertEquals("{45166=Ayako Mori}", MobyCrawler.developers.toString());
     }
 
     @Test
     void testCreditsRiverTop() { // (River Top/Kawasaki Minoru [リバートップ/かわさき みのる])
         Element td = getTd(CREDITS1 + " (River Top/Kawasaki Minoru [リバートップ/かわさき みのる])");
-        Assertions.assertEquals("45166=Ayako Mori (River TopKawasaki Minoru [リバートップかわさき みのる])", toString(MobyCrawler.parseCredits(td)));
+        Assertions.assertEquals("45166=Ayako Mori (River Top/Kawasaki Minoru [リバートップ/かわさき みのる])", toString(MobyCrawler.parseCredits(td)));
         assertEquals("{45166=Ayako Mori}", MobyCrawler.developers.toString());
     }
 
@@ -204,6 +204,14 @@ class MobyCrawlerTest {
         Assertions.assertEquals("45166=Ayako Mori (of FUNCOM Productions [Oslo]), Norway", toString(MobyCrawler.parseCredits(td)));
         assertEquals("{45166=Ayako Mori}", MobyCrawler.developers.toString());
     }
+
+    @Test
+    void testCredits4x() { // <a href="http://www.4xtechnologies.com">http://www.4xtechnologies.com</a>
+        Element td = getTd("<a href=\"http://www.4xtechnologies.com\">http://www.4xtechnologies.com</a>");
+        Assertions.assertEquals("http://www.4xtechnologies.com", toString(MobyCrawler.parseCredits(td)));
+        assertEquals("{}", MobyCrawler.developers.toString());
+    }
+
 
     private Element getTd(String credits) {
         Document doc = Jsoup.parse("<td class=\"crln\">" + credits + "</td>");

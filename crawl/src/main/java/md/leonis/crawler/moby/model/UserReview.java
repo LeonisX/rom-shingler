@@ -1,5 +1,10 @@
 package md.leonis.crawler.moby.model;
 
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
 public class UserReview {
 
     private String rate;
@@ -9,30 +14,6 @@ public class UserReview {
     public UserReview(String rate, String userId, String summary) {
         this.rate = rate;
         this.userId = userId;
-        this.summary = summary;
-    }
-
-    public String getRate() {
-        return rate;
-    }
-
-    public void setRate(String rate) {
-        this.rate = rate;
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public String getSummary() {
-        return summary;
-    }
-
-    public void setSummary(String summary) {
         this.summary = summary;
     }
 }

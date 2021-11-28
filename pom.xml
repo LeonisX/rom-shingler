@@ -12,6 +12,7 @@
     <modules>
         <module>lib</module>
         <module>gui</module>
+        <module>crawl</module>
     </modules>
 
     <dependencies>

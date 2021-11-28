@@ -137,6 +137,10 @@ public class StageManager {
         alert.setTitle(title);
         alert.setHeaderText(header);
         alert.setContentText(content);
+        alert.setResizable(true);
+        if (content.length() > 1000) {
+            alert.getDialogPane().setPrefSize(720, alert.getDialogPane().getPrefHeight());
+        }
         alert.showAndWait();
     }
 

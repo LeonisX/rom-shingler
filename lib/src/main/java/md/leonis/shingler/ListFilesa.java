@@ -1,6 +1,5 @@
-package md.leonis.shingler.gui;
+package md.leonis.shingler;
 
-import md.leonis.shingler.Cache;
 import md.leonis.shingler.model.*;
 import md.leonis.shingler.utils.*;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
@@ -79,7 +78,7 @@ public class ListFilesa {
                     .forEach(e -> families.put(e.getKey(), new Family(e.getValue())));
 
             LOGGER.info("Saving families...");
-            IOUtils.createDirectories(workFamiliesPath());
+            FileUtils.createDirectories(workFamiliesPath());
             IOUtils.serializeFamiliesAsJson(familyFile, families);
         //}
 
@@ -122,7 +121,7 @@ public class ListFilesa {
                     .collect(Collectors.toMap(Map.Entry::getKey, e -> new Family(e.getKey(), e.getValue(), FamilyType.FAMILY)));
 
             LOGGER.info("Saving families...");
-            IOUtils.createDirectories(workFamiliesPath());
+            FileUtils.createDirectories(workFamiliesPath());
             IOUtils.serializeFamiliesAsJson(familyFile, families);
         //}
 

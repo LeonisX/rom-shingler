@@ -3,7 +3,6 @@ package md.leonis.crawler.moby.config;
 import javafx.stage.Stage;
 import md.leonis.crawler.moby.view.SpringFXMLLoader;
 import md.leonis.crawler.moby.view.StageManager;
-import md.leonis.shingler.model.ConfigHolder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;

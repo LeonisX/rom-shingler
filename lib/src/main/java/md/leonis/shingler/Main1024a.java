@@ -1,10 +1,7 @@
 package md.leonis.shingler;
 
 import md.leonis.shingler.model.*;
-import md.leonis.shingler.utils.IOUtils;
-import md.leonis.shingler.utils.MeasureMethodTest;
-import md.leonis.shingler.utils.Measured;
-import md.leonis.shingler.utils.ShingleUtils;
+import md.leonis.shingler.utils.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +63,7 @@ public class Main1024a {
     }
 
     public static void createSampleDirs(Path path) {
-        SAMPLES.stream().map(s -> path.resolve("sample-" + s)).forEach(IOUtils::createDirectories);
+        SAMPLES.stream().map(s -> path.resolve("sample-" + s)).forEach(FileUtils::createDirectories);
     }
 
     @SuppressWarnings("all")

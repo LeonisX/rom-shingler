@@ -1,8 +1,13 @@
 package md.leonis.crawler.moby.model;
 
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.util.ArrayList;
 import java.util.List;
 
+@Data
+@NoArgsConstructor
 public class Promo {
 
     private String id;
@@ -14,37 +19,5 @@ public class Promo {
         this.id = id;
         this.group = group;
         this.source = source;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getGroup() {
-        return group;
-    }
-
-    public void setGroup(String group) {
-        this.group = group;
-    }
-
-    public String getSource() {
-        return source;
-    }
-
-    public void setSource(String source) {
-        this.source = source;
-    }
-
-    public List<PromoImage> getImages() {
-        return images;
-    }
-
-    public void setImages(List<PromoImage> images) {
-        this.images = images;
     }
 }

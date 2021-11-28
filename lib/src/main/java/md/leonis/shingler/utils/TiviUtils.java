@@ -1,10 +1,11 @@
-package md.leonis.shingler.gui.utils;
+package md.leonis.shingler.utils;
 
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import javafx.util.Pair;
 import lombok.Data;
+import lombok.SneakyThrows;
 import md.leonis.shingler.CSV;
 import md.leonis.shingler.model.ConfigHolder;
 import md.leonis.shingler.model.Family;
@@ -253,9 +254,10 @@ public class TiviUtils {
         }
     }
 
+    @SneakyThrows
     public static void createCleanedXls() {
 
-        IOUtils.createDirectories(getInputPath());
+        FileUtils.createDirectories(getInputPath());
 
         // import CSV original
         List<CSV.MySqlStructure> records = readCsv();
@@ -270,19 +272,20 @@ public class TiviUtils {
         });
 
         // save as excel
-        IOUtils.backupFile(xlsUpdatePath());
+        FileUtils.backupFile(xlsUpdatePath());
         writeXls(xlsUpdatePath(), records);
 
         // Added
         records = readAddedCsv().stream().map(CSV.MySqlStructure::new).collect(Collectors.toList());
 
-        IOUtils.backupFile(xlsCreatePath());
+        FileUtils.backupFile(xlsCreatePath());
         writeXls(xlsCreatePath(), records);
 
         LOGGER.info("Done");
     }
 
     // html+dump+force63+split
+    @SneakyThrows
     public static void generatePageAndRomsForTvRoms() {
 
         TiViLists lists = new TiViLists();
@@ -310,7 +313,7 @@ public class TiviUtils {
             String platformGroup = needToSeparate ? String.format("%s%s", platform, (int) Math.ceil(g.getAndIncrement() / DIR_SEPARATE_SIZE)) : platform;
             Path destPath = getOutputPath().resolve(platform).resolve("games").resolve(platformGroup);
             if (isIO) {
-                IOUtils.createDirectories(destPath);
+                FileUtils.createDirectories(destPath);
             }
 
             List<String> members = tribes.get(t).stream().flatMap(f -> f.getMembers().stream()).map(Name::getName).sorted().collect(Collectors.toList());
@@ -384,10 +387,10 @@ public class TiviUtils {
         IOUtils.saveToFile(getInputPath().resolve(platform + "_htaccess.txt"), lists.getHtAccessLines());
 
         // save as excel
-        IOUtils.backupFile(xlsUpdatePath());
+        FileUtils.backupFile(xlsUpdatePath());
         writeXls(xlsUpdatePath(), lists.getRecords());
 
-        IOUtils.backupFile(xlsUpdatePath());
+        FileUtils.backupFile(xlsUpdatePath());
         writeXls(xlsCreatePath(), lists.getAddedRecords());
     }
 
@@ -482,7 +485,7 @@ public class TiviUtils {
                 gamePath = getOutputPath().resolve(platform).resolve("valid-game").resolve(uri.replace(romsUrl, ""));
 
                 if (!Files.exists(gamePath)) {
-                    IOUtils.createDirectories(gamePath.getParent());
+                    FileUtils.createDirectories(gamePath.getParent());
                     IOUtils.downloadFromUrl(new URL(uri), gamePath);
                 }
 
@@ -664,7 +667,7 @@ public class TiviUtils {
         Path uniquePath = getUniquePath();
 
         if (isIO) {
-            IOUtils.createDirectories(uniquePath);
+            FileUtils.createDirectories(uniquePath);
         }
 
         LOGGER.info("Processing families...");
@@ -1008,7 +1011,7 @@ public class TiviUtils {
             Path destFile = getOutputPath().resolve(platform + "-final").resolve(path).resolve(source.trim());
             if (Files.exists(sourceFile)) {
                 if (Files.notExists(destFile.getParent())) {
-                    IOUtils.createDirectories(destFile.getParent());
+                    FileUtils.createDirectories(destFile.getParent());
                 }
                 IOUtils.copyFile(sourceFile, destFile);
             } else if (!copied.contains(source)) {

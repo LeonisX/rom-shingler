@@ -3,8 +3,7 @@ package md.leonis.crawler.moby.controller;
 import javafx.fxml.FXML;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
-import md.leonis.shingler.gui.controller.template.LogController;
-import md.leonis.shingler.gui.view.StageManager;
+import md.leonis.crawler.moby.view.StageManager;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
 
@@ -28,6 +27,6 @@ public class DashboardController {
 
         stageManager.setRootLayout(container);
 
-        anchorPane.getChildren().add(new LogController(stageManager));
+        //anchorPane.getChildren().add(new LogController(stageManager));
     }
 }
