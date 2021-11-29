@@ -245,6 +245,8 @@ public class HttpExecutor {
 
         } catch (Exception e) {
 
+            //TODO тут неверно. ошибка не всегда из-за прокси, надо разбираться
+            e.printStackTrace();
             proxy.setStatus(Proxy.ProxyStatus.UNAVAILABLE);
             proxy.setRetryAfterSec(60);
             LOGGER.error("REST request exception. Proxy host: " + proxy.getHost(), e);

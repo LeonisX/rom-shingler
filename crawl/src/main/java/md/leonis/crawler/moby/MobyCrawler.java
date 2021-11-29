@@ -736,6 +736,9 @@ public class MobyCrawler {
             String style = a.attr("style");
             style = style.substring(0, style.length() - 2);
             style = style.replace("background-image:url(", "");
+            if (style.startsWith(HOST)) {
+                style = style.replace(HOST, "");
+            }
 
             Element divS = select(div, "div.thumbnail-caption");
             Element small = getByTag(divS, "small");
@@ -743,8 +746,9 @@ public class MobyCrawler {
 
             MobyImage mobyImage = new MobyImage(id, style, description);
             parseGameScreenshotsImage(entry, mobyImage);
-            httpQueue.add(new FileEntry(entry.getPlatformId(), HOST + mobyImage.getSmall(), thisLink));
-            httpQueue.add(new FileEntry(entry.getPlatformId(), HOST + mobyImage.getLarge(), thisLink));
+            //TODO тут попадаются скрины с хостом вместе
+            httpQueue.add(new FileEntry(entry.getPlatformId(), mobyImage.getSmall().startsWith(HOST) ? mobyImage.getSmall() : HOST + mobyImage.getSmall(), thisLink));
+            httpQueue.add(new FileEntry(entry.getPlatformId(), mobyImage.getLarge().startsWith(HOST) ? mobyImage.getLarge() : HOST + mobyImage.getLarge(), thisLink));
             entry.getScreens().add(mobyImage);
         }
     }
@@ -764,7 +768,11 @@ public class MobyCrawler {
         Element h3 = div.child(1);
         assert (h3.tagName().equals("h3"));
 
-        mobyImage.setLarge(img.attr("src"));
+        String large = img.attr("src");
+        if (large.startsWith(HOST)) {
+            large = large.replace(HOST, "");
+        }
+        mobyImage.setLarge(large);
         assert h3.text().equals(mobyImage.getDescription());
     }
 
