@@ -189,6 +189,10 @@ public class HttpExecutor {
         }
     }
 
+    public void saveFile(String platformId, String host, String uri, String referrer) throws Exception {
+        doSaveFile(platformId, host, uri, referrer, getProxy(), new HttpGet(uri));
+    }
+
     public void saveFile(String platformId, String host, String uri, String referrer, Proxy proxy) throws Exception {
         doSaveFile(platformId, host, uri, referrer, proxy, new HttpGet(uri));
     }

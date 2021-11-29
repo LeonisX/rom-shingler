@@ -23,15 +23,6 @@ import java.util.stream.Collectors;
 import static md.leonis.crawler.moby.config.ConfigHolder.*;
 import static md.leonis.shingler.utils.FileUtils.*;
 
-//TODO картинки складировать по системам
-// /moby/*.json
-// /moby/c@che/sega-cd/...
-
-//TODO скопировать в новый путь
-
-//TODO promo.original - remove host
-
-
 //TODO UI
 // список систем: название, %, дата сканирования
 // сортировка
@@ -65,10 +56,10 @@ import static md.leonis.shingler.utils.FileUtils.*;
 // https://stackoverflow.com/questions/8147284/how-to-use-google-translate-api-in-my-java-application
 
 //TODO читать историю
-// https://www.mobygames.com/stats/recent_entries
-// https://www.mobygames.com/stats/recent_entries/offset,0/so,2d/
-// https://www.mobygames.com/stats/recent_modifications
-// https://www.mobygames.com/stats/recent_reviews
+// /stats/recent_entries
+// /stats/recent_entries/offset,0/so,2d/
+// /stats/recent_modifications
+// /stats/recent_reviews
 
 //TODO нужен UI где можно видеть прогресс, очереди.
 
@@ -76,35 +67,35 @@ import static md.leonis.shingler.utils.FileUtils.*;
 //Пока код тестируется, есть смысл параллельно сохранять картинки.
 public class MobyCrawler {
 
-    private static final String HOST = "https://www.mobygames.com";
+    private static final String HOST = new StringBuilder("moc.semagybom.www//:sptth").reverse().toString();
 
-    public static final String GAME_MAIN_REFERRER = "https://www.mobygames.com/search/quick?q=%s";
+    public static final String GAME_MAIN_REFERRER = HOST + "/search/quick?q=%s";
 
-    public static final String PLATFORMS = "https://www.mobygames.com/browse/games/full,1/";
-    public static final String GAMES_PAGES = "https://www.mobygames.com/browse/games/%s/offset,%s/so,0a/list-games/";
-    public static final String GAME_MAIN = "https://www.mobygames.com/game/%s/%s";
-    public static final String GAME_CREDITS = "https://www.mobygames.com/game/%s/%s/credits";
-    public static final String GAME_SCREENSHOTS = "https://www.mobygames.com/game/%s/%s/screenshots";
-    public static final String GAME_SCREENSHOTS_IMAGE = "https://www.mobygames.com/game/%s/%s/screenshots/gameShotId,%s";
-    // About mobyrank: https://www.mobygames.com/info/mobyrank?nof=1
+    public static final String PLATFORMS = HOST + "/browse/games/full,1/";
+    public static final String GAMES_PAGES = HOST + "/browse/games/%s/offset,%s/so,0a/list-games/";
+    public static final String GAME_MAIN = HOST + "/game/%s/%s";
+    public static final String GAME_CREDITS = HOST + "/game/%s/%s/credits";
+    public static final String GAME_SCREENSHOTS = HOST + "/game/%s/%s/screenshots";
+    public static final String GAME_SCREENSHOTS_IMAGE = HOST + "/game/%s/%s/screenshots/gameShotId,%s";
+    // About mobyrank: /info/mobyrank?nof=1
     //TODO тут ссылки на некоторые источники сдохли.
     //Некоторые совсем, некоторые переехали.
     //Нужно уметь мэппить
-    public static final String GAME_REVIEWS = "https://www.mobygames.com/game/%s/%s/mobyrank";
-    public static final String GAME_COVER_ART = "https://www.mobygames.com/game/%s/%s/cover-art";
-    public static final String GAME_COVER_ART_IMAGE = "https://www.mobygames.com/game/%s/%s/cover-art/gameCoverId,%s";
-    public static final String GAME_PROMO_ART = "https://www.mobygames.com/game/%s/%s/promo";
-    public static final String GAME_PROMO_ART_IMAGE = "https://www.mobygames.com/game/%s/%s/promo/promoImageId,%s";
-    public static final String GAME_RELEASES = "https://www.mobygames.com/game/%s/%s/release-info";
-    public static final String GAME_TRIVIA = "https://www.mobygames.com/game/%s/%s/trivia";
-    public static final String GAME_HINTS = "https://www.mobygames.com/game/%s/%s/hints";
-    public static final String GAME_HINTS_PAGE = "https://www.mobygames.com/game/%s/%s/hints/hintId,%s";
-    public static final String GAME_SPECS = "https://www.mobygames.com/game/%s/%s/techinfo";
-    public static final String GAME_ADS = "https://www.mobygames.com/game/%s/%s/adblurbs";
-    public static final String GAME_RATING_SYSTEMS = "https://www.mobygames.com/game/%s/%s/rating-systems";
+    public static final String GAME_REVIEWS = HOST + "/game/%s/%s/mobyrank";
+    public static final String GAME_COVER_ART = HOST + "/game/%s/%s/cover-art";
+    public static final String GAME_COVER_ART_IMAGE = HOST + "/game/%s/%s/cover-art/gameCoverId,%s";
+    public static final String GAME_PROMO_ART = HOST + "/game/%s/%s/promo";
+    public static final String GAME_PROMO_ART_IMAGE = HOST + "/game/%s/%s/promo/promoImageId,%s";
+    public static final String GAME_RELEASES = HOST + "/game/%s/%s/release-info";
+    public static final String GAME_TRIVIA = HOST + "/game/%s/%s/trivia";
+    public static final String GAME_HINTS = HOST + "/game/%s/%s/hints";
+    public static final String GAME_HINTS_PAGE = HOST + "/game/%s/%s/hints/hintId,%s";
+    public static final String GAME_SPECS = HOST + "/game/%s/%s/techinfo";
+    public static final String GAME_ADS = HOST + "/game/%s/%s/adblurbs";
+    public static final String GAME_RATING_SYSTEMS = HOST + "/game/%s/%s/rating-systems";
 
     //TODO sources (журналы, сайты, откуда брались обзоры и ревью.
-    // ><a href="https://www.mobygames.com/mobyrank/source/sourceId,998/">Tilt </a> (Dec, 1987)</div>
+    // ><a href="/mobyrank/source/sourceId,998/">Tilt </a> (Dec, 1987)</div>
     // там список игр, которые оценивал источник с оценкой и датой
 
 
@@ -149,7 +140,7 @@ public class MobyCrawler {
                             Thread.sleep(50);
                         } else {
                             try {
-                                executor.saveFile(file.getPlatformId(), file.getUri(), file.getReferrer());
+                                executor.saveFile(file.getPlatformId(), HOST, file.getUri(), file.getReferrer());
                             } catch (Exception e) {
                                 throw new RuntimeException(e);
                             }
@@ -227,59 +218,6 @@ public class MobyCrawler {
 
         String[] platforms2 = new String[]{"pet", "vic-20", "c64", "c128", "commodore-16-plus4", "trs-80", "trs-80-coco", "trs-80-mc-10",
                 "msx", "amiga", "amiga-cd32", "cpc", "amstrad-pcw", "apple-i", "apple2", "apple2g", "atari-st", "bbc-micro_", "electron", "enterprise", "dos"};
-
-        /*for (String platformId : platforms) {
-            List<MobyEntry> entries = FileUtils.loadJsonList(gamesDir, platformId, MobyEntry.class);
-            //FileUtils.createDirectories();
-            entries.forEach(e -> {
-                e.getCovers().forEach(cover -> {
-                    cover.getImages().forEach(ai -> {
-                        // "small" : "/images/covers/s/327332-baseball-stars-neo-geo-pocket-front-cover.jpg",
-                        // "large" : "/images/covers/l/327332-baseball-stars-neo-geo-pocket-front-cover.jpg",
-                        try {
-                            Files.createDirectories(HttpExecutor.getPath(e.getPlatformId(), ai.getSmall()).getParent());
-                            Files.createDirectories(HttpExecutor.getPath(e.getPlatformId(), ai.getLarge()).getParent());
-                            Files.move(HttpExecutor.getPath(HttpExecutor.HTML_CACHE, "https@www.mobygames.com", ai.getSmall()), HttpExecutor.getPath(e.getPlatformId(), ai.getSmall()));
-                            Files.move(HttpExecutor.getPath(HttpExecutor.HTML_CACHE, "https@www.mobygames.com", ai.getLarge()), HttpExecutor.getPath(e.getPlatformId(), ai.getLarge()));
-                        } catch (Exception ex) {
-                            //throw new RuntimeException(ex);
-                        }
-                    });
-                });
-                e.getScreens().forEach(sc -> {
-                    // "small" : "/images/shots/s/708684-baseball-stars-neo-geo-pocket-screenshot-field.jpg",
-                    // "large" : "/images/shots/l/708684-baseball-stars-neo-geo-pocket-screenshot-field.png",
-                    try {
-                        Files.createDirectories(HttpExecutor.getPath(e.getPlatformId(), sc.getSmall()).getParent());
-                        Files.createDirectories(HttpExecutor.getPath(e.getPlatformId(), sc.getLarge()).getParent());
-                        Files.move(HttpExecutor.getPath(HttpExecutor.HTML_CACHE, "https@www.mobygames.com", sc.getSmall()), HttpExecutor.getPath(e.getPlatformId(), sc.getSmall()));
-                        Files.move(HttpExecutor.getPath(HttpExecutor.HTML_CACHE, "https@www.mobygames.com", sc.getLarge()), HttpExecutor.getPath(e.getPlatformId(), sc.getLarge()));
-                    } catch (Exception ex) {
-                        //throw new RuntimeException(ex);
-                    }
-                });
-                e.getPromos().forEach(promo -> {
-                    promo.getImages().forEach(pr -> {
-                        // "small" : "/images/promo/s/723944-10-yard-fight-screenshot.jpg",
-                        // "large" : "/images/promo/l/723944-10-yard-fight-screenshot.jpg",
-                        // "original" : "https://www.mobygames.com/images/promo/original/76d61ba2cebc4e6caea1561808ae08e9.jpg",
-                        try {
-                            String original = pr.getOriginal().replace("https://www.mobygames.com", "");
-                            pr.setOriginal(original);
-                            Files.createDirectories(HttpExecutor.getPath(e.getPlatformId(), pr.getSmall()).getParent());
-                            Files.createDirectories(HttpExecutor.getPath(e.getPlatformId(), pr.getLarge()).getParent());
-                            Files.createDirectories(HttpExecutor.getPath(e.getPlatformId(), original).getParent());
-                            Files.move(HttpExecutor.getPath(HttpExecutor.HTML_CACHE, "https@www.mobygames.com", pr.getSmall()), HttpExecutor.getPath(e.getPlatformId(), pr.getSmall()));
-                            Files.move(HttpExecutor.getPath(HttpExecutor.HTML_CACHE, "https@www.mobygames.com", pr.getLarge()), HttpExecutor.getPath(e.getPlatformId(), pr.getLarge()));
-                            Files.move(HttpExecutor.getPath(HttpExecutor.HTML_CACHE, "https@www.mobygames.com", original), HttpExecutor.getPath(e.getPlatformId(), original));
-                        } catch (Exception ex) {
-                            //throw new RuntimeException(ex);
-                        }
-                    });
-                });
-            });
-            saveAsJson(gamesDir, platformId, entries);
-        }*/
 
         for (String platformId : platforms) {
 
@@ -395,20 +333,20 @@ public class MobyCrawler {
             return;
         }
 
-        assert getA(lis.get(0)).text().equals("Main");      // https://www.mobygames.com/game/%s/%s
-        assert getA(lis.get(1)).text().equals("Credits");   //https://www.mobygames.com/game/%s/%s/credits
-        assert getA(lis.get(2)).text().equals("Screenshots"); //https://www.mobygames.com/game/%s/%s/screenshots
-        assert getA(lis.get(3)).text().equals("Reviews");   //https://www.mobygames.com/game/%s/%s/mobyrank
-        assert getA(lis.get(4)).text().equals("Cover Art"); //https://www.mobygames.com/game/%s/%s/cover-art
-        assert getA(lis.get(5)).text().equals("Promo Art"); //https://www.mobygames.com/game/%s/%s/promo
-        assert getA(lis.get(6)).text().equals("Releases");  //https://www.mobygames.com/game/%s/%s/release-info
-        assert getA(lis.get(7)).text().equals("Trivia");    //https://www.mobygames.com/game/%s/%s/trivia
-        assert getA(lis.get(8)).text().equals("Hints");     //https://www.mobygames.com/game/%s/%s/hints
-        assert getA(lis.get(9)).text().equals("Specs");     //https://www.mobygames.com/game/%s/%s/techinfo
-        assert getA(lis.get(10)).text().equals("Ad Blurb"); //https://www.mobygames.com/game/%s/%s/adblurbs
-        assert getA(lis.get(11)).text().equals("Rating Systems");//https://www.mobygames.com/game/%s/%s/rating-systems
+        assert getA(lis.get(0)).text().equals("Main");      // /game/%s/%s
+        assert getA(lis.get(1)).text().equals("Credits");   ///game/%s/%s/credits
+        assert getA(lis.get(2)).text().equals("Screenshots"); ///game/%s/%s/screenshots
+        assert getA(lis.get(3)).text().equals("Reviews");   ///game/%s/%s/mobyrank
+        assert getA(lis.get(4)).text().equals("Cover Art"); ///game/%s/%s/cover-art
+        assert getA(lis.get(5)).text().equals("Promo Art"); ///game/%s/%s/promo
+        assert getA(lis.get(6)).text().equals("Releases");  ///game/%s/%s/release-info
+        assert getA(lis.get(7)).text().equals("Trivia");    ///game/%s/%s/trivia
+        assert getA(lis.get(8)).text().equals("Hints");     ///game/%s/%s/hints
+        assert getA(lis.get(9)).text().equals("Specs");     ///game/%s/%s/techinfo
+        assert getA(lis.get(10)).text().equals("Ad Blurb"); ///game/%s/%s/adblurbs
+        assert getA(lis.get(11)).text().equals("Rating Systems");///game/%s/%s/rating-systems
         assert lis.get(12).text().isEmpty();
-        assert getA(lis.get(13)).text().equals("Buy/Trade");//https://www.mobygames.com/game/%s/%s/buy-trade
+        assert getA(lis.get(13)).text().equals("Buy/Trade");///game/%s/%s/buy-trade
 
         entry.setHasCredits(!lis.get(1).hasClass("disabled"));
         entry.setHasScreenshots(!lis.get(2).hasClass("disabled"));
@@ -434,41 +372,41 @@ public class MobyCrawler {
             Element title = divs.get(i);
             switch (title.text()) {
                 case "Published by":
-                    // <a href="https://www.mobygames.com/company/capcom-usa-inc">Capcom&nbsp;U.S.A.,&nbsp;Inc.</a>
+                    // <a href=".../company/capcom-usa-inc">Capcom&nbsp;U.S.A.,&nbsp;Inc.</a>
                     entry.setPublishers(getSheets(divs.get(i + 1)));
                     break;
                 case "Developed by":
-                    // <a href="https://www.mobygames.com/company/capcom-co-ltd">Capcom&nbsp;Co.,&nbsp;Ltd.</a>
+                    // <a href=".../company/capcom-co-ltd">Capcom&nbsp;Co.,&nbsp;Ltd.</a>
                     entry.setDevelopers(getSheets(divs.get(i + 1)));
                     break;
                 case "Released":
-                    // <a href="https://www.mobygames.com/game/%s/%s/release-info">Nov, 1986</a>
+                    // <a href=".../game/%s/%s/release-info">Nov, 1986</a>
                     getAs(divs.get(i + 1)).forEach(a -> entry.getDates().add(a.text()));
                     break;
                 case "Official Site":
-                    // <a href="https://www.mobygames.com/company/capcom-co-ltd">Capcom&nbsp;Co.,&nbsp;Ltd.</a>
+                    // <a href=".../company/capcom-co-ltd">Capcom&nbsp;Co.,&nbsp;Ltd.</a>
                     entry.setOfficialSites(getSheets(divs.get(i + 1)));
                     break;
                 case "Also For":
-                    // <a href="https://www.mobygames.com/game/cpc/1942arcade">Amstrad CPC</a>
+                    // <a href=".../game/cpc/1942arcade">Amstrad CPC</a>
                     // ,
-                    // <a href="https://www.mobygames.com/game/android/1942arcade">Android</a>
+                    // <a href=".../game/android/1942arcade">Android</a>
                     // ,
                     // ...
                     // |
-                    // <a href="https://www.mobygames.com/game/1942arcade">Combined&nbsp;View</a>
+                    // <a href=".../game/1942arcade">Combined&nbsp;View</a>
                     List<A> alsoFor = getAs(divs.get(i + 1));
                     alsoFor.subList(0, alsoFor.size() - 1).forEach(a -> entry.getAlsoFor().add(getPreLastChunk(a.href())));
                     break;
                 case "Platform":
                 case "Platforms":
-                    // <a href="https://www.mobygames.com/game/cpc/1942arcade">Amstrad CPC</a>
+                    // <a href=".../game/cpc/1942arcade">Amstrad CPC</a>
                     // ,
-                    // <a href="https://www.mobygames.com/game/android/1942arcade">Android</a>
+                    // <a href=".../game/android/1942arcade">Android</a>
                     // ,
                     // ...
                     // |
-                    // <a href="https://www.mobygames.com/game/1942arcade">Combined&nbsp;View</a>
+                    // <a href=".../game/1942arcade">Combined&nbsp;View</a>
                     List<A> platforms = getAs(divs.get(i + 1));
                     platforms.forEach(a -> entry.getAlsoFor().add(getPreLastChunk(a.href())));
                     break;
@@ -490,68 +428,68 @@ public class MobyCrawler {
             Element title = divs.get(i);
             switch (title.text()) {
                 case "ESRB Rating":
-                    // <a href="https://www.mobygames.com/attribute/sheet/attributeId,91/">Kids to Adults</a>
+                    // <a href=".../attribute/sheet/attributeId,91/">Kids to Adults</a>
                     entry.setEsbrRatings(getSheets(divs.get(i + 1)));
                     break;
                 case "Genre":
-                    // <a href="https://www.mobygames.com/genre/sheet/action/">Action</a>
+                    // <a href=".../genre/sheet/action/">Action</a>
                     entry.setGenres(getSheets(divs.get(i + 1)));
                     break;
                 case "Perspective":
-                    // <a href="https://www.mobygames.com/genre/sheet/top-down/">Top-down</a>
+                    // <a href=".../genre/sheet/top-down/">Top-down</a>
                     entry.setPerspectives(getSheets(divs.get(i + 1)));
                     break;
                 case "Visual":
-                    // <a href="https://www.mobygames.com/genre/sheet/2d-scrolling/">2D&nbsp;scrolling</a>
+                    // <a href=".../genre/sheet/2d-scrolling/">2D&nbsp;scrolling</a>
                     entry.setVisuals(getSheets(divs.get(i + 1)));
                     break;
                 case "Pacing":
-                    // <a href="https://www.mobygames.com/genre/sheet/turn-based/">Turn-based</a>
+                    // <a href=".../genre/sheet/turn-based/">Turn-based</a>
                     entry.setPacings(getSheets(divs.get(i + 1)));
                     break;
                 case "Art":
-                    // <a href="https://www.mobygames.com/genre/sheet/anime-manga/">Anime&nbsp;/&nbsp;manga</a>
+                    // <a href=".../genre/sheet/anime-manga/">Anime&nbsp;/&nbsp;manga</a>
                     entry.setArts(getSheets(divs.get(i + 1)));
                     break;
                 case "Gameplay":
-                    // <a href="https://www.mobygames.com/genre/sheet/arcade_/">Arcade</a>,
-                    // <a href="https://www.mobygames.com/genre/sheet/shooter/">Shooter</a>
+                    // <a href=".../genre/sheet/arcade_/">Arcade</a>,
+                    // <a href=".../genre/sheet/shooter/">Shooter</a>
                     entry.setGameplays(getSheets(divs.get(i + 1)));
                     break;
                 case "Educational":
-                    // <a href="https://www.mobygames.com/genre/sheet/math-logic/">Math&nbsp;/&nbsp;logic</a>
+                    // <a href=".../genre/sheet/math-logic/">Math&nbsp;/&nbsp;logic</a>
                     entry.setEducationals(getSheets(divs.get(i + 1)));
                     break;
                 case "Interface":
-                    // <a href="https://www.mobygames.com/genre/sheet/direct_control/">Direct&nbsp;control</a>
+                    // <a href=".../genre/sheet/direct_control/">Direct&nbsp;control</a>
                     entry.setInterfaces(getSheets(divs.get(i + 1)));
                     break;
                 case "Vehicular":
-                    // <a href="https://www.mobygames.com/genre/sheet/automobile/">Automobile</a>
+                    // <a href=".../genre/sheet/automobile/">Automobile</a>
                     entry.setVehiculars(getSheets(divs.get(i + 1)));
                     break;
                 case "Setting":
-                    // <a href="https://www.mobygames.com/genre/sheet/world-war-ii/">World&nbsp;War&nbsp;II</a>
+                    // <a href=".../genre/sheet/world-war-ii/">World&nbsp;War&nbsp;II</a>
                     entry.setSettings(getSheets(divs.get(i + 1)));
                     break;
                 case "Sport":
-                    // <a href="https://www.mobygames.com/genre/sheet/football-american/">Football&nbsp;(American)</a>
+                    // <a href=".../genre/sheet/football-american/">Football&nbsp;(American)</a>
                     entry.setSports(getSheets(divs.get(i + 1)));
                     break;
                 case "Narrative":
-                    // <a href="https://www.mobygames.com/genre/sheet/football-american/">Football&nbsp;(American)</a>
+                    // <a href=".../genre/sheet/football-american/">Football&nbsp;(American)</a>
                     entry.setNarratives(getSheets(divs.get(i + 1)));
                     break;
                 case "Special Edition":
-                    // <a href="https://www.mobygames.com/genre/sheet/physical-extras/">Physical&nbsp;extras</a>
+                    // <a href=".../genre/sheet/physical-extras/">Physical&nbsp;extras</a>
                     entry.setSpecialEditions(getSheets(divs.get(i + 1)));
                     break;
                 case "Add-on":
-                    // <a href="https://www.mobygames.com/genre/sheet/map_level/">Map&nbsp;/&nbsp;level</a>
+                    // <a href=".../genre/sheet/map_level/">Map&nbsp;/&nbsp;level</a>
                     entry.setAddons(getSheets(divs.get(i + 1)));
                     break;
                 case "Misc":
-                    // <a href="https://www.mobygames.com/genre/sheet/regional-differences/">Regional&nbsp;differences</a>
+                    // <a href=".../genre/sheet/regional-differences/">Regional&nbsp;differences</a>
                     entry.setMiscs(getSheets(divs.get(i + 1)));
                     break;
                 default:
@@ -623,7 +561,7 @@ public class MobyCrawler {
         lis = selectNextUlOrEmpty(divColMd8, "h2:contains(Part of the Following Group)");
         lis.forEach(li -> {
             A a = getA(li.child(0));
-            // https://www.mobygames.com/game-group/mario-games
+            // .../game-group/mario-games
             gameGroups.put(getLastChunk(a), a.text());
             entry.getGameGroup().add(getLastChunk(a));
         });
@@ -721,7 +659,7 @@ public class MobyCrawler {
         assert divRow.tagName().equals("div");
 
         // <div class="thumbnail-image-wrapper">
-        // <a href="https://www.mobygames.com/game/nes/1942arcade/screenshots/gameShotId,34513/"
+        // <a href=".../game/nes/1942arcade/screenshots/gameShotId,34513/"
         // title="1942 NES Title screen" class="thumbnail-image"
         // style="background-image:url(/images/shots/s/34513-1942-nes-screenshot-title-screen.jpg);"></a>
         // </div>
@@ -730,25 +668,22 @@ public class MobyCrawler {
             Element divI = select(div, "div.thumbnail-image-wrapper");
             A a = getA(divI);
             String id = getLastChunk(a).split(",")[1];
-            // https://www.mobygames.com/game/nes/1942arcade/screenshots/gameShotId,34513/
-            // https://www.mobygames.com/images/shots/l/34513-1942-nes-screenshot-title-screen.jpg
+            // .../game/nes/1942arcade/screenshots/gameShotId,34513/
+            // .../images/shots/l/34513-1942-nes-screenshot-title-screen.jpg
             //System.out.println(a.attr("href"));
-            String style = a.attr("style");
-            style = style.substring(0, style.length() - 2);
-            style = style.replace("background-image:url(", "");
-            if (style.startsWith(HOST)) {
-                style = style.replace(HOST, "");
-            }
+            String small = a.attr("style");
+            small = small.substring(0, small.length() - 2);
+            small = removeHost(small.replace("background-image:url(", ""));
 
             Element divS = select(div, "div.thumbnail-caption");
-            Element small = getByTag(divS, "small");
-            String description = small.text();
+            Element divSmall = getByTag(divS, "small");
+            String description = divSmall.text();
 
-            MobyImage mobyImage = new MobyImage(id, style, description);
+            MobyImage mobyImage = new MobyImage(id, small, description);
             parseGameScreenshotsImage(entry, mobyImage);
             //TODO тут попадаются скрины с хостом вместе
-            httpQueue.add(new FileEntry(entry.getPlatformId(), mobyImage.getSmall().startsWith(HOST) ? mobyImage.getSmall() : HOST + mobyImage.getSmall(), thisLink));
-            httpQueue.add(new FileEntry(entry.getPlatformId(), mobyImage.getLarge().startsWith(HOST) ? mobyImage.getLarge() : HOST + mobyImage.getLarge(), thisLink));
+            httpQueue.add(new FileEntry(entry.getPlatformId(), mobyImage.getSmall(), thisLink));
+            httpQueue.add(new FileEntry(entry.getPlatformId(), mobyImage.getLarge(), thisLink));
             entry.getScreens().add(mobyImage);
         }
     }
@@ -768,12 +703,17 @@ public class MobyCrawler {
         Element h3 = div.child(1);
         assert (h3.tagName().equals("h3"));
 
-        String large = img.attr("src");
-        if (large.startsWith(HOST)) {
-            large = large.replace(HOST, "");
-        }
+        String large = removeHost(img.attr("src"));
         mobyImage.setLarge(large);
         assert h3.text().equals(mobyImage.getDescription());
+    }
+
+    private static String removeHost(String uri) {
+        if (uri.startsWith(HOST)) {
+            return uri.replace(HOST, "");
+        } else {
+            return uri;
+        }
     }
 
     private static void parseGameReviews(MobyEntry entry) throws Exception {
@@ -797,11 +737,11 @@ public class MobyCrawler {
             trs.forEach(tr -> {
                 Elements tds = getTds(tr);
                 A a = getA(tds.get(0));
-                // https://www.mobygames.com/game/nes/1942arcade/reviews/reviewerId,1717/
+                // .../game/nes/1942arcade/reviews/reviewerId,1717/
                 //String reviewLink = a.href();
                 String summary = a.text();
                 a = getA(tds.get(1));
-                // https://www.mobygames.com/user/sheet/userSheetId,1717/
+                // .../user/sheet/userSheetId,1717/
                 String reviewerLink = a.href();
                 String reviewerId = getLastChunk(reviewerLink).split(",")[1];
                 String reviewer = a.text();
@@ -857,7 +797,7 @@ public class MobyCrawler {
         Elements divRanks = getAllByClass(divColMd12, "floatholder mobyrank scoresource");
         // <div class="floatholder mobyrank scoresource">
         //  <div class="fl scoreBoxMed scoreHi">80</div>
-        //  <div class="source scoreBorderHi"><a href="https://www.mobygames.com/mobyrank/source/sourceId,998/">Tilt </a> (Dec, 1987)</div>
+        //  <div class="source scoreBorderHi"><a href=".../mobyrank/source/sourceId,998/">Tilt </a> (Dec, 1987)</div>
         //  <div class="citation">En conclusion, 1942 est, à tous points de vue, un très bon jeu sur console.</div>
         //  <div class="url"><a target="_blank" href="http://download.abandonware.org/magazines/Tilt/tilt_numero049/TILT%20-%20n%B049%20-%20decembre%201987%20-%20page100%20et%20page101.jpg">read review</a></div>
         //</div>
@@ -866,11 +806,11 @@ public class MobyCrawler {
             String stringScore = divs.get(1).text();
             Integer score = stringScore.isEmpty() ? null : Integer.valueOf(stringScore);
             // Такие следует сохранять
-            // <div class="source scoreBorderHi"><a href="https://www.mobygames.com/mobyrank/source/sourceId,2153/">Sharkberg</a> (Sep 09, 2015)</div>
+            // <div class="source scoreBorderHi"><a href=".../mobyrank/source/sourceId,2153/">Sharkberg</a> (Sep 09, 2015)</div>
             TextNode textNode = (TextNode) divs.get(2).childNode(1);
             A a = getA(divs.get(2));
             String source = a.text().trim();
-            // https://www.mobygames.com/mobyrank/source/sourceId,998/
+            // .../mobyrank/source/sourceId,998/
             String sourceId = getLastChunk(a).split(",")[1];
             String date = textNode.text().trim(); // todo parse
             String citation = divs.get(3).text();
@@ -915,7 +855,7 @@ public class MobyCrawler {
             }
             Element h2 = current.child(0);
             assert h2.tagName().equals("h2");
-            assert h2.text().equals(platformsById.get(entry.getPlatformId()));
+            assert h2.text().equals(platformsById.get(entry.getPlatformId()).getTitle());
             Elements trs = getTrs(current);
             // Эти параметры на самом деле разные, надо собрать список и мэппить соответственно.
             for (Element tr : trs) {
@@ -934,24 +874,24 @@ public class MobyCrawler {
             assert current.className().equals("row");
             Elements divs = getAllByClass(current, "col-xs-6 col-sm-3 col-md-2");
             for (Element div : divs) {
-                // <a href="https://www.mobygames.com/game/nes/3-d-worldrunner/cover-art/gameCoverId,32861/"
+                // <a href=".../game/nes/3-d-worldrunner/cover-art/gameCoverId,32861/"
                 // title="3-D WorldRunner NES Front Cover" class="thumbnail-cover"
                 // style="background-image:url(/images/covers/s/32861-3-d-worldrunner-nes-front-cover.jpg);"></a>
                 Element a = select(div, "a.thumbnail-cover");
-                // https://www.mobygames.com/images/covers/s/17048-1942-nes-front-cover.jpg
-                // https://www.mobygames.com/images/covers/l/17048-1942-nes-front-cover.jpg
+                // .../images/covers/s/17048-1942-nes-front-cover.jpg
+                // .../images/covers/l/17048-1942-nes-front-cover.jpg
                 String id = getLastChunk(a.attr("href")).split(",")[1];
-                String style = a.attr("style");
-                style = style.substring(0, style.length() - 2); // ");:
-                style = style.replace("background-image:url(", "");
+                String small = a.attr("style");
+                small = small.substring(0, small.length() - 2); // ");:
+                small = removeHost(small.replace("background-image:url(", ""));
 
                 Element divS = select(div, "div.thumbnail-cover-caption");
                 Element p = getByTag(divS, "p");
                 //System.out.println(p.text());
-                MobyArtImage mobyImage = new MobyArtImage(id, style, p.text());
+                MobyArtImage mobyImage = new MobyArtImage(id, small, p.text());
                 parseGameCoverArtImage(entry, mobyImage);
-                httpQueue.add(new FileEntry(entry.getPlatformId(), HOST + mobyImage.getSmall(), thisLink));
-                httpQueue.add(new FileEntry(entry.getPlatformId(), HOST + mobyImage.getLarge(), thisLink));
+                httpQueue.add(new FileEntry(entry.getPlatformId(), mobyImage.getSmall(), thisLink));
+                httpQueue.add(new FileEntry(entry.getPlatformId(), mobyImage.getLarge(), thisLink));
                 covers.getImages().add(mobyImage);
             }
 
@@ -973,7 +913,7 @@ public class MobyCrawler {
         Element center = select(div, "center");
         Element img = center.child(0);
         assert (img.tagName().equals("img"));
-        mobyImage.setLarge(img.attr("src"));
+        mobyImage.setLarge(removeHost(img.attr("src")));
 
         Element table = select(container, "table[summary*=Cover Descriptions]");
         getTrs(table).forEach(tr -> mobyImage.getSummary().put(tr.child(0).text(), tr.child(1).text().replace(": ", "")));
@@ -997,10 +937,10 @@ public class MobyCrawler {
         Elements sections = getAllByTag(current, "section");
 
         // грабить здесь всё, кроме нижнего описания, его брать отсюда:
-        // https://www.mobygames.com/game/snes/contra-iii-the-alien-wars/promo/promoImageId,92195/
+        // .../game/snes/contra-iii-the-alien-wars/promo/promoImageId,92195/
         //короче, операция получения доп инфо в обоих случаях это просто добор инфы.
         // подумать как это сделать грамотно.
-        for (Element section : sections) {// <h2><a href="https://www.mobygames.com/game/snes/contra-iii-the-alien-wars/promo/groupId,52916/">Magazine Advertisements</a></h2>
+        for (Element section : sections) {// <h2><a href=".../game/snes/contra-iii-the-alien-wars/promo/groupId,52916/">Magazine Advertisements</a></h2>
             Element h2 = getH2(section);
             A a = getA(h2);
             String promoId = getLastChunk(a).split(",")[1];
@@ -1017,16 +957,16 @@ public class MobyCrawler {
             //    figure
             for (Element li : lis) {
                 Element figure = getByTag(li, "figure");
-                //      a - <a href="https://www.mobygames.com/game/snes/contra-iii-the-alien-wars/promo/promoImageId,92195/">
+                //      a - <a href=".../game/snes/contra-iii-the-alien-wars/promo/promoImageId,92195/">
                 //       img - screenshot <img alt="Contra III: The Alien Wars Screenshot" src="/images/promo/s/92195-contra-iii-the-alien-wars-screenshot.jpg">
                 a = getA(figure);
                 String promoImageId = getLastChunk(a).split(",")[1];
-                String promoImage = a.child(0).attr("src");
+                String promoImage = removeHost(a.child(0).attr("src"));
                 //      figcaption
                 //        span - imageTypeName
                 //        [br]
                 //        текст - описание источника. Может быть линк со ссылкой на источник
-                //        <a href="https://www.mobygames.com/mobyrank/source/sourceId,106/">VideoGame...</a>
+                //        <a href=".../mobyrank/source/sourceId,106/">VideoGame...</a>
                 Element figcaption = getByTag(figure, "figcaption");
                 Element span = figcaption.child(0);
                 String imageTypeName = span.text();
@@ -1045,9 +985,9 @@ public class MobyCrawler {
 
                 parseGamePromoArtImage(entry, pi);
 
-                httpQueue.add(new FileEntry(entry.getPlatformId(), HOST + pi.getSmall(), thisLink));
-                httpQueue.add(new FileEntry(entry.getPlatformId(), HOST + pi.getLarge(), thisLink));
-                httpQueue.add(new FileEntry(entry.getPlatformId(), HOST + pi.getOriginal(), thisLink));
+                httpQueue.add(new FileEntry(entry.getPlatformId(), pi.getSmall(), thisLink));
+                httpQueue.add(new FileEntry(entry.getPlatformId(), pi.getLarge(), thisLink));
+                httpQueue.add(new FileEntry(entry.getPlatformId(), pi.getOriginal(), thisLink));
 
                 promo.getImages().add(pi);
             }
@@ -1062,15 +1002,15 @@ public class MobyCrawler {
         Element container = getContainer(response);
 
         Element figure = select(container, "figure.promoImage");
-        //      a - <a href="https://www.mobygames.com/images/promo/original/1465483400-3500966055.jpg"><img alt="1942 Screenshot" src="/images/promo/l/4391-1942-screenshot.jpg" width="321" height="242" border="0"></a>
+        //      a - <a href=".../images/promo/original/1465483400-3500966055.jpg"><img alt="1942 Screenshot" src="/images/promo/l/4391-1942-screenshot.jpg" width="321" height="242" border="0"></a>
         //       img - screenshot <img alt="1942 Screenshot" src="/images/promo/l/4391-1942-screenshot.jpg" width="321" height="242" border="0">
         A a = getA(figure);
         Element img = a.child(0);
         assert img.tagName().equals("img");
-        String large = img.attr("src");
+        String large = removeHost(img.attr("src"));
 
         promoImage.setLarge(large);
-        promoImage.setOriginal(a.href().replace("https://www.mobygames.com", "")); //TODO host as constant
+        promoImage.setOriginal(removeHost(a.href()));
         //      figcaption
         //        <p>
         //        <p>
@@ -1125,7 +1065,7 @@ public class MobyCrawler {
                 }
                 Element divFl = current.child(0); // <div style="width: 10em;" class="fl">Published by</div>
                 String key = divFl.text();
-                Element a = getNext(divFl); //<a href="https://www.mobygames.com/company/capcom-co-ltd">Capcom Co., Ltd.</a>
+                Element a = getNext(divFl); //<a href=".../company/capcom-co-ltd">Capcom Co., Ltd.</a>
                 String companyId = getLastChunk(a.attr("href"));
                 String companyName = a.text();
                 companies.put(companyId, companyName);
@@ -1170,7 +1110,7 @@ public class MobyCrawler {
         List<String> values = new ArrayList<>();
         while (true) {
             el = getNextNode(el);
-            if (el == null) { // https://www.mobygames.com/game/nes/ballblazer/trivia - contributed внутри ul
+            if (el == null) { // .../game/nes/ballblazer/trivia - contributed внутри ul
                 break;
             } else if (el instanceof TextNode) {
                 if (!((TextNode) el).text().trim().isEmpty()) {
@@ -1195,7 +1135,7 @@ public class MobyCrawler {
                 }
             }
         }
-        // https://www.mobygames.com/game/nes/bible-buffet/trivia
+        // .../game/nes/bible-buffet/trivia
         // содержит только текст без h3 :(
         if (key == null) {
             //TODO automatically parse these values, get key from them
@@ -1234,7 +1174,7 @@ public class MobyCrawler {
                 key = tr.child(0).child(0).text().split(" - ")[0]; // <td colspan="5"><b>General Hints/Tips - SNES</b></td>
             } else {
                 isGroup = false;
-                // <a href="https://www.mobygames.com/game/snes/killer-instinct/hints/hintId,1409/">Continue</a>
+                // <a href=".../game/snes/killer-instinct/hints/hintId,1409/">Continue</a>
                 A a = getA(tr.child(1));
                 String hintId = getLastChunk(a.href()).split(",")[1];
                 String title = a.text();
@@ -1396,8 +1336,8 @@ public class MobyCrawler {
             if (as.isEmpty()) {
                 entry.getRatingSystems().put(key, Collections.singletonList(tr.child(2).text()));
             } else {
-                // <a href="https://www.mobygames.com/attribute/sheet/attributeId,91/">Kids to Adults</a>
-                // <td><img alt="Teen" src="/images/i/15/32/3375282.jpeg" width="15" height="20" border="0">&nbsp;<a href="https://www.mobygames.com/attribute/sheet/attributeId,92/">Teen</a> (Descriptors: <a href="https://www.mobygames.com/attribute/sheet/attributeId,692/">Animated Blood and Gore</a>, <a href="https://www.mobygames.com/attribute/sheet/attributeId,690/">Animated Violence</a>) </td>
+                // <a href=".../attribute/sheet/attributeId,91/">Kids to Adults</a>
+                // <td><img alt="Teen" src="/images/i/15/32/3375282.jpeg" width="15" height="20" border="0">&nbsp;<a href=".../attribute/sheet/attributeId,92/">Teen</a> (Descriptors: <a href=".../attribute/sheet/attributeId,692/">Animated Blood and Gore</a>, <a href=".../attribute/sheet/attributeId,690/">Animated Violence</a>) </td>
                 List<String> values = as.stream().map(a -> {
                     String id = getLastChunk(a).split(",")[1];
                     attributes.put(id, a.text());
@@ -1412,7 +1352,7 @@ public class MobyCrawler {
 
         Map<String, String> games = Collections.synchronizedMap(new LinkedHashMap<>());
 
-        HttpExecutor.HttpResponse response = executor.getPage(String.format(GAMES_PAGES, platformId, 0), "https://www.mobygames.com");
+        HttpExecutor.HttpResponse response = executor.getPage(String.format(GAMES_PAGES, platformId, 0), HOST);
         Document doc = Jsoup.parse(response.getBody());
 
         // <td class="mobHeaderPage" width="33%">Viewing Page 1 of 56</td>
@@ -1471,7 +1411,7 @@ public class MobyCrawler {
 
         List<Platform> platforms = new ArrayList<>();
 
-        HttpExecutor.HttpResponse response = executor.getPage(PLATFORMS, "https://www.mobygames.com");
+        HttpExecutor.HttpResponse response = executor.getPage(PLATFORMS, HOST);
         Document doc = Jsoup.parse(response.getBody());
         getAs(getByClass(doc, "browseTable")).forEach(a -> platforms.add(new Platform(getLastChunk(a), a.text(), 0, 0, null)));
 
@@ -1648,7 +1588,7 @@ public class MobyCrawler {
     static List<CreditsNode> parseCredits(Element td) {
 
         Map<String, String> idNames = new LinkedHashMap<>();
-        // <a href="https://www.mobygames.com/developer/sheet/view/developerId,45166/">Ayako Mori</a>
+        // <a href=".../developer/sheet/view/developerId,45166/">Ayako Mori</a>
         String text = td.childNodes().stream().map(node -> {
 
             //System.out.println("NNode: " + node.outerHtml());

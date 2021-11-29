@@ -19,8 +19,6 @@ class MobyCrawlerTest {
     // Cloudflare email protection
     // Code from: https://www.ipvoid.com/cloudflare-email-decoder/
 
-
-
     @Test
     //   r o o t i . r p g . s e g a . c o
     // cbb9a4a4bfa28bb9bbace5b8aeacaae5a8a4
@@ -44,9 +42,9 @@ class MobyCrawlerTest {
     // t, t, A (T (t) ), A (T (t) )
     // Tetsuji Tanaka (Tanaka [タナカ]/Yuk)
 
-    private static final String CREDITS1 = "<a href=\"https://www.mobygames.com/developer/sheet/view/developerId,45166/\">Ayako Mori</a>";
-    private static final String CREDITS2 = "<a href=\"https://www.mobygames.com/developer/sheet/view/developerId,55535/\">Hideo Kodzima</a>";
-    private static final String CREDITS3 = "<a href=\"https://www.mobygames.com/developer/sheet/view/developerId,12345/\">Eric Chahi</a>";
+    private static final String CREDITS1 = "<a href=\".../developer/sheet/view/developerId,45166/\">Ayako Mori</a>";
+    private static final String CREDITS2 = "<a href=\".../developer/sheet/view/developerId,55535/\">Hideo Kodzima</a>";
+    private static final String CREDITS3 = "<a href=\".../developer/sheet/view/developerId,12345/\">Eric Chahi</a>";
 
     @BeforeEach
     void setUp() {
