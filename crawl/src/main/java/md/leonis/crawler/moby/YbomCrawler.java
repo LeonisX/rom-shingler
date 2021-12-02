@@ -60,7 +60,7 @@ public class YbomCrawler implements Crawler {
 
     private static final Queue<FileEntry> httpQueue = new ConcurrentLinkedQueue<>();
 
-    public static Map<String, String> games;
+    //public static Map<String, String> games;
     public static Map<String, String> companies;
     public static Map<String, String> sheets;
     public static Map<String, String> gameGroups;
@@ -77,7 +77,7 @@ public class YbomCrawler implements Crawler {
         preload();
 
         //два контрибьютора + не закрытые теги.
-        MobyEntry entry = new MobyEntry("gameboy-advance", "britneys-dance-beat_");
+        GameEntry entry = new GameEntry("gameboy-advance", "britneys-dance-beat_", "bibi");
         parseGameMain(entry);
         parseGameCredits(entry);
         /*parseGameScreenshots(entry);
@@ -106,51 +106,42 @@ public class YbomCrawler implements Crawler {
 
         HttpExecutor.validate = false;
 
-        /*String[] platforms = new String[]{"nes", "sg-1000", "sega-master-system", "game-gear", "sega-32x", "genesis",
+        String[] platforms = new String[]{/*"nes", "sg-1000", "sega-master-system", "game-gear", "sega-32x", "genesis",
          "snes", "gameboy", "gameboy-color", "game-com", "sega-cd", "3do", "virtual-boy", "1292-advanced-programmable-video-system",
          "apf", "channel-f", "neo-geo-pocket-color", "neo-geo-pocket", "atari-5200", "atari-7800", "turbografx-cd", "turbo-grafx",
-         "supervision", "supergrafx", "rca-studio-ii", "intellivision", "colecovision", "bally-astrocade", "zx-spectrum", "atari-2600",
+         "supervision", "supergrafx", "rca-studio-ii", "intellivision", "colecovision", "bally-astrocade", */"zx-spectrum", "atari-2600",
          "atari-8-bit", "gameboy-advance", "arcade", "n64",
                 "arcadia-2001", "odyssey", "odyssey-2", "mattel-aquarius", "lynx", "jaguar", "interton-video-2000",
                 "cd-i", "fred-cosmac", "colecoadam", "supervision", "vectrex", "sega-saturn", "playstation",
-                "neo-geo", "neo-geo-cd", "neo-geo-x"};*/
-
-        String[] platforms = new String[]{"dreamcast"};
+                "neo-geo", "neo-geo-cd", "neo-geo-x", "dreamcast"};
 
         String[] platforms2 = new String[]{"nintendo-dsi", "nintendo-ds", "pet", "vic-20", "c64", "c128", "commodore-16-plus4", "trs-80", "trs-80-coco", "trs-80-mc-10",
                 "msx", "amiga", "amiga-cd32", "cpc", "amstrad-pcw", "apple-i", "apple2", "apple2g", "atari-st", "bbc-micro_", "electron", "enterprise", "dos"};
 
         for (String platformId : platforms) {
-
-            //TODO generate list of MobyEntry, also map
-            Map<String, String> games = crawler.getGamesList(platformId);
-            crawler.saveGamesList(platformId, games);
-
-            List<MobyEntry> mobyEntries = new ArrayList<>();
+            List<GameEntry> games = crawler.getGamesList(platformId);
 
             int i = 0;
-            for (String gameId : games.keySet()) {
-                MobyEntry mobyEntry = new MobyEntry(platformId, gameId);
+            for (GameEntry gameEntry : games) {
 
                 try {
-                    parseGameMain(mobyEntry);
+                    parseGameMain(gameEntry);
                     // если ошибочная игра - не парсить.
-                    if (mobyEntry.getGameId().isEmpty()) {
+                    if (gameEntry.getGameId().isEmpty()) {
                         System.out.println("Ignore this game");
                     } else {
-                        parseGameCredits(mobyEntry);
-                        parseGameScreenshots(mobyEntry);
-                        parseGameReviews(mobyEntry);
-                        parseGameCoverArt(mobyEntry);
-                        parseGamePromoArt(mobyEntry);
-                        parseGameReleases(mobyEntry);
-                        parseGameTrivia(mobyEntry);
-                        parseGameHints(mobyEntry);
-                        parseGameSpecs(mobyEntry);
-                        parseGameAds(mobyEntry);
-                        parseGameRatings(mobyEntry);
-
-                        mobyEntries.add(mobyEntry);
+                        parseGameCredits(gameEntry);
+                        parseGameScreenshots(gameEntry);
+                        parseGameReviews(gameEntry);
+                        parseGameCoverArt(gameEntry);
+                        parseGamePromoArt(gameEntry);
+                        parseGameReleases(gameEntry);
+                        parseGameTrivia(gameEntry);
+                        parseGameHints(gameEntry);
+                        parseGameSpecs(gameEntry);
+                        parseGameAds(gameEntry);
+                        parseGameRatings(gameEntry);
+                        gameEntry.setCompleted(true);
                     }
                 } catch (Exception e) {
                     throw new RuntimeException(e);
@@ -160,14 +151,14 @@ public class YbomCrawler implements Crawler {
 
                 if (++i == 50) {
                     save();
-                    saveAsJson(gamesDir, platformId, mobyEntries);
+                    saveAsJson(gamesDir, platformId, games);
                     // TODO save position, return to position later
                     i = 0;
                 }
             }
 
             save();
-            saveAsJson(gamesDir, platformId, mobyEntries);
+            crawler.saveGamesList(platformId, games);
         }
 
         processors.forEach(p -> p.setCanStop(true));
@@ -203,7 +194,7 @@ public class YbomCrawler implements Crawler {
         System.out.println("Saved.");
     }
 
-    private static void parseGameMain(MobyEntry entry) throws Exception {
+    private static void parseGameMain(GameEntry entry) throws Exception {
 
         HttpExecutor.HttpResponse response = executor.getPage(getGameLink(entry), getGameMainReferrer(entry.getGameId()));
 
@@ -221,8 +212,8 @@ public class YbomCrawler implements Crawler {
         String gameName = getLastChunk(niceHeaderTitleA.get(0).text());
         String platformName = getLastChunk(niceHeaderTitleA.get(1).text());
 
-        assert gameName.equals(games.get(entry.getGameId()));
-        assert platformName.equals(games.get(entry.getPlatformId()));
+        assert gameName.equals(entry.getTitle());
+        assert platformName.equals(platformsById.get(entry.getPlatformId()).getTitle());
 
         // Main  Credits  Screenshots  Reviews  Cover Art  Promo Art  Releases  Trivia  Hints  Specs  Ad Blurb  Rating Systems  Buy/Trade
         Elements lis = selectUl(rightPanelHeader, "ul.nav-tabs");
@@ -231,7 +222,7 @@ public class YbomCrawler implements Crawler {
         // Иногда по ошибке игра отображается для системы, но фактически она ей не принадлежит
         // Тогда моби показывает групповую инфу, которая нам не нужна.
         if (!getA(lis.get(0)).href().equals(getGameLink(entry))) {
-            System.out.println("Ignore this game and delete: " + games.get(entry.getGameId()));
+            System.out.println("Ignore this game and delete: " + entry.getTitle());
             entry.setGameId("");
             return;
         }
@@ -478,7 +469,7 @@ public class YbomCrawler implements Crawler {
         }).collect(Collectors.toList());
     }
 
-    private static void parseGameCredits(MobyEntry entry) throws Exception {
+    private static void parseGameCredits(GameEntry entry) throws Exception {
 
         if (!entry.isHasCredits()) {
             return;
@@ -493,7 +484,7 @@ public class YbomCrawler implements Crawler {
         Element h2Title = getNext(coreGameInfo);
 
         if (h2Title.tagName().equals("h2")) {
-            assert h2Title.text().equals(games.get(entry.getGameId()) + " Credits");
+            assert h2Title.text().equals(entry.getTitle() + " Credits");
             //Div со всеми кредитами
             Element div = getNext(h2Title);
             // X people
@@ -544,7 +535,7 @@ public class YbomCrawler implements Crawler {
         }
     }
 
-    private static void parseGameScreenshots(MobyEntry entry) throws Exception {
+    private static void parseGameScreenshots(GameEntry entry) throws Exception {
 
         if (!entry.isHasScreenshots()) {
             return;
@@ -557,7 +548,7 @@ public class YbomCrawler implements Crawler {
 
         Element h2 = select(divColMd12, "h2:contains(User Screenshots)");
         Element h3 = getNext(h2);
-        assert h3.text().equals(games.get(entry.getGameId()) + " version");
+        assert h3.text().equals(entry.getTitle() + " version");
         Element divRow = getNext(h3);
         assert divRow.tagName().equals("div");
 
@@ -590,7 +581,7 @@ public class YbomCrawler implements Crawler {
         }
     }
 
-    private static void parseGameScreenshotsImage(MobyEntry entry, MobyImage mobyImage) throws Exception {
+    private static void parseGameScreenshotsImage(GameEntry entry, MobyImage mobyImage) throws Exception {
 
         String thisLink = String.format(GAME_SCREENSHOTS_IMAGE, entry.getPlatformId(), entry.getGameId(), mobyImage.getId());
         HttpExecutor.HttpResponse response = executor.getPage(thisLink, getGameLink(entry));
@@ -618,7 +609,7 @@ public class YbomCrawler implements Crawler {
         }
     }
 
-    private static void parseGameReviews(MobyEntry entry) throws Exception {
+    private static void parseGameReviews(GameEntry entry) throws Exception {
 
         if (!entry.isHasReviews()) {
             return;
@@ -727,7 +718,7 @@ public class YbomCrawler implements Crawler {
         }
     }
 
-    private static void parseGameCoverArt(MobyEntry entry) throws Exception {
+    private static void parseGameCoverArt(GameEntry entry) throws Exception {
 
         if (!entry.isHasCoverArt()) {
             return;
@@ -804,7 +795,7 @@ public class YbomCrawler implements Crawler {
         } while (true);
     }
 
-    private static void parseGameCoverArtImage(MobyEntry entry, MobyArtImage mobyImage) throws Exception {
+    private static void parseGameCoverArtImage(GameEntry entry, MobyArtImage mobyImage) throws Exception {
 
         String thisLink = String.format(GAME_COVER_ART_IMAGE, entry.getPlatformId(), entry.getGameId(), mobyImage.getId());
         HttpExecutor.HttpResponse response = executor.getPage(thisLink, getGameLink(entry));
@@ -821,7 +812,7 @@ public class YbomCrawler implements Crawler {
         getTrs(table).forEach(tr -> mobyImage.getSummary().put(tr.child(0).text(), tr.child(1).text().replace(": ", "")));
     }
 
-    private static void parseGamePromoArt(MobyEntry entry) throws Exception {
+    private static void parseGamePromoArt(GameEntry entry) throws Exception {
 
         if (!entry.isHasPromoArt()) {
             return;
@@ -897,7 +888,7 @@ public class YbomCrawler implements Crawler {
         }
     }
 
-    private static void parseGamePromoArtImage(MobyEntry entry, PromoImage promoImage) throws Exception {
+    private static void parseGamePromoArtImage(GameEntry entry, PromoImage promoImage) throws Exception {
 
         String thisLink = String.format(GAME_PROMO_ART_IMAGE, entry.getPlatformId(), entry.getGameId(), promoImage.getId());
         HttpExecutor.HttpResponse response = executor.getPage(thisLink, getGameLink(entry));
@@ -934,7 +925,7 @@ public class YbomCrawler implements Crawler {
         }
     }
 
-    private static void parseGameReleases(MobyEntry entry) throws Exception {
+    private static void parseGameReleases(GameEntry entry) throws Exception {
 
         if (!entry.isHasReleases()) {
             return;
@@ -993,7 +984,7 @@ public class YbomCrawler implements Crawler {
     }
 
     // Одинаковое значение для всех платформ!!!
-    private static void parseGameTrivia(MobyEntry entry) throws Exception {
+    private static void parseGameTrivia(GameEntry entry) throws Exception {
 
         if (!entry.isHasTrivia()) {
             return;
@@ -1046,7 +1037,7 @@ public class YbomCrawler implements Crawler {
         entry.getTrivia().put(key, values);
     }
 
-    private static void parseGameHints(MobyEntry entry) throws Exception {
+    private static void parseGameHints(GameEntry entry) throws Exception {
 
         if (!entry.isHasHints()) {
             return;
@@ -1088,7 +1079,7 @@ public class YbomCrawler implements Crawler {
         entry.setHints(allHints);
     }
 
-    private static List<String> parseGameHintsPage(MobyEntry entry, String hintId) throws Exception {
+    private static List<String> parseGameHintsPage(GameEntry entry, String hintId) throws Exception {
 
         HttpExecutor.HttpResponse response = executor.getPage(String.format(GAME_HINTS_PAGE, entry.getPlatformId(), entry.getGameId(), hintId), getGameLink(entry));
         Element table = select(getContainer(response), "table[summary]");
@@ -1116,7 +1107,7 @@ public class YbomCrawler implements Crawler {
     }
 
     // Одинаковое значение для всех платформ!!!
-    private static void parseGameAds(MobyEntry entry) throws Exception {
+    private static void parseGameAds(GameEntry entry) throws Exception {
 
         if (!entry.isHasAdBlurb()) {
             return;
@@ -1187,7 +1178,7 @@ public class YbomCrawler implements Crawler {
         }
     }
 
-    private static void parseGameSpecs(MobyEntry entry) throws Exception {
+    private static void parseGameSpecs(GameEntry entry) throws Exception {
 
         if (!entry.isHasSpecs()) {
             return;
@@ -1218,7 +1209,7 @@ public class YbomCrawler implements Crawler {
         }
     }
 
-    private static void parseGameRatings(MobyEntry entry) throws Exception {
+    private static void parseGameRatings(GameEntry entry) throws Exception {
 
         if (!entry.isHasSpecs()) {
             return;
@@ -1251,9 +1242,9 @@ public class YbomCrawler implements Crawler {
     }
 
     @Override
-    public Map<String, String> getGamesList(String platformId) throws Exception {
+    public List<GameEntry> getGamesList(String platformId) throws Exception {
 
-        Map<String, String> games = Collections.synchronizedMap(new LinkedHashMap<>());
+        List<GameEntry> games = new ArrayList<>();
 
         HttpExecutor.HttpResponse response = executor.getPage(String.format(GAMES_PAGES, platformId, 0), ROOT);
         Document doc = Jsoup.parse(response.getBody());
@@ -1282,7 +1273,7 @@ public class YbomCrawler implements Crawler {
         }
 
         //parse #0 page
-        parseGamesList(games, response.getBody());
+        parseGamesList(platformId, games, response.getBody());
 
         //parse in cycle
         // 1 - 0
@@ -1290,13 +1281,13 @@ public class YbomCrawler implements Crawler {
         // 3 - 50
         for (int i = 1; i < pagesCount; i++) {
             response = executor.getPage(String.format(GAMES_PAGES, platformId, i * 25), String.format(GAMES_PAGES, platformId, 0));
-            parseGamesList(games, response.getBody());
+            parseGamesList(platformId, games, response.getBody());
         }
 
         return games;
     }
 
-    private static void parseGamesList(Map<String, String> games, String html) {
+    private static void parseGamesList(String platformId, List<GameEntry> games, String html) {
 
         Document doc = Jsoup.parse(html);
 
@@ -1306,18 +1297,18 @@ public class YbomCrawler implements Crawler {
             // Game Title	        Year	Publisher	        Genre
             // Bad Street Brawler	1989	Mattel Electronics	Action
             A a = getA(getTds(tr).get(0));
-            games.put(getLastChunk(a.href()), a.text());
+            games.add(new GameEntry(platformId, getLastChunk(a.href()), a.text()));
         });
     }
 
     @Override
-    public void saveGamesList(String platformId, Map<String, String> games) throws Exception {
-        saveAsJson(sourceDir, String.format("games-%s.json", platformId), games);
+    public void saveGamesList(String platformId, List<GameEntry> games) throws Exception {
+        saveAsJson(gamesDir, platformId, games);
     }
 
     @Override
-    public Map<String, String> getSavedGamesList(String platformId) throws Exception {
-        return loadJsonMap(sourceDir, String.format("games-%s.json", platformId));
+    public List<GameEntry> getSavedGamesList(String platformId) {
+        return loadJsonList(gamesDir, platformId, GameEntry.class);
     }
 
     @Override
@@ -1340,8 +1331,6 @@ public class YbomCrawler implements Crawler {
     private static void preload() {
 
         ConfigHolder.setPlatforms(FileUtils.loadJsonList(ConfigHolder.sourceDir, "platforms", Platform.class));
-        //TODO удалить в пользу мобиентри (пусть и частично заполненных)
-        games = loadJsonMap(sourceDir, "games-nes"); //TODO WTF???? - это список игр, лучше сразу формировать мобиентри
         companies = loadJsonMap(sourceDir, "companies");
         sheets = loadJsonMap(sourceDir, "sheets");
         gameGroups = loadJsonMap(sourceDir, "gameGroups");
@@ -1358,7 +1347,7 @@ public class YbomCrawler implements Crawler {
         return String.format(GAME_MAIN_REFERRER, formattedGameName);
     }
 
-    private static String getGameLink(MobyEntry entry) {
+    private static String getGameLink(GameEntry entry) {
         return String.format(GAME_MAIN, entry.getPlatformId(), entry.getGameId());
     }
 

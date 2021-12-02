@@ -7,6 +7,7 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.util.Callback;
 import md.leonis.crawler.moby.config.ConfigHolder;
+import md.leonis.crawler.moby.model.GameEntry;
 import md.leonis.crawler.moby.model.Platform;
 import md.leonis.crawler.moby.view.FxmlView;
 import md.leonis.crawler.moby.view.StageManager;
@@ -14,11 +15,11 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
 
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static md.leonis.crawler.moby.config.ConfigHolder.*;
 
 @Controller
 public class PlatformsController {
@@ -51,11 +52,11 @@ public class PlatformsController {
     }
 
     private void updatePlatformsList() {
-        platformsTableView.setItems(FXCollections.observableArrayList(ConfigHolder.platforms.stream().filter(p -> {
-            if (showEmptyPlatformsCheckBox.isSelected() && p.getCount() == 0) {
+        platformsTableView.setItems(FXCollections.observableArrayList(platforms.stream().filter(p -> {
+            if (showEmptyPlatformsCheckBox.isSelected() && p.getTotal() == 0) {
                 return true;
             } else {
-                return showReadyPlatformsCheckBox.isSelected() && p.getCount() > 0;
+                return showReadyPlatformsCheckBox.isSelected() && p.getTotal() > 0;
             }
         }).collect(Collectors.toList())));
     }
@@ -74,9 +75,9 @@ public class PlatformsController {
         platformsTableView.sort();
 
         platformTableColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
-        gamesTableColumn.setCellValueFactory(new PropertyValueFactory<>("count"));
+        gamesTableColumn.setCellValueFactory(new PropertyValueFactory<>("total"));
         percentTableColumn.setCellValueFactory(p ->
-                new ReadOnlyStringWrapper(String.format("%.2f%%", p.getValue().getCount() == 0 ? 0 : p.getValue().getIndex() * 100.0 / p.getValue().getCount())));
+                new ReadOnlyStringWrapper(String.format("%.2f%%", p.getValue().getTotal() == 0 ? 0 : p.getValue().getCompleted() * 100.0 / p.getValue().getTotal())));
         versionTableColumn.setCellValueFactory(p ->
                 new ReadOnlyStringWrapper(p.getValue().getDate() == null ? "" : formatter.format(p.getValue().getDate())));
 
@@ -107,12 +108,12 @@ public class PlatformsController {
     public void reloadPlatformsButtonClick() {
 
         try {
-            List<Platform> platforms = ConfigHolder.crawler.getPlatformsList();
-            platforms.forEach(p -> p.updateFrom(ConfigHolder.platformsById.get(p.getId())));
-            ConfigHolder.crawler.savePlatformsList(platforms);
+            List<Platform> platforms = crawler.getPlatformsList();
+            platforms.forEach(p -> p.updateFrom(platformsById.get(p.getId())));
+            crawler.savePlatformsList(platforms);
             //diff
             List<String> titles = platforms.stream().map(Platform::getTitle).collect(Collectors.toList());
-            titles.removeAll(ConfigHolder.platformsById.values().stream().map(Platform::getTitle).collect(Collectors.toList()));
+            titles.removeAll(platformsById.values().stream().map(Platform::getTitle).collect(Collectors.toList()));
             if (!titles.isEmpty()) {
                 String text = String.join(", ", titles);
                 stageManager.showInformationAlert("New platforms", titles.size() + " new platform(s) found:", text);
@@ -137,19 +138,28 @@ public class PlatformsController {
     public void reloadGamesListButtonClick() {
 
         try {
-            //TODO list of mobyentry
             List<String> allTitles = new ArrayList<>();
             for (Platform platform : platformsQueueListView.getItems()) {
-                Map<String, String> prevGames = ConfigHolder.crawler.getSavedGamesList(platform.getId());
-                Map<String, String> newGames = ConfigHolder.crawler.getGamesList(platform.getId());
-                ConfigHolder.crawler.saveGamesList(platform.getId(), newGames);
-                ConfigHolder.platformsById.get(platform.getId()).setCount(newGames.size());
-                //TODO diff
-                Collection<String> titles = newGames.values();
-                titles.removeAll(prevGames.values());
+                List<GameEntry> prevGames = crawler.getSavedGamesList(platform.getId());
+                List<GameEntry> newGames = crawler.getGamesList(platform.getId());
+                //diff
+                Collection<String> titles = newGames.stream().map(GameEntry::getTitle).collect(Collectors.toList());
+                titles.removeAll(prevGames.stream().map(GameEntry::getTitle).collect(Collectors.toList()));
                 allTitles.addAll(titles);
+                //save
+                Map<String, GameEntry> gamesMap = prevGames.stream().collect(Collectors.toMap(GameEntry::getGameId, Function.identity()));
+                newGames.forEach(ng -> {
+                    GameEntry current = gamesMap.get(ng.getGameId());
+                    if (null != current) {
+                        prevGames.add(ng);
+                    }
+                });
+                platformsById.get(platform.getId()).setTotal(newGames.size());
+                platformsById.get(platform.getId()).setCompleted(newGames.stream().filter(GameEntry::isCompleted).count());
+                crawler.savePlatformsList(platforms);
+                crawler.saveGamesList(platform.getId(), prevGames.stream().sorted(Comparator.comparing(GameEntry::getTitle)).collect(Collectors.toList()));
             }
-            ConfigHolder.crawler.savePlatformsList(ConfigHolder.platforms);
+            crawler.savePlatformsList(platforms);
             updatePlatformsList();
             //TODO show platform
             if (!allTitles.isEmpty()) {

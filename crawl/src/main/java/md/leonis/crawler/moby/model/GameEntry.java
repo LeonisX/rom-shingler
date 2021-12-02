@@ -10,10 +10,11 @@ import java.util.Map;
 
 @Data
 @NoArgsConstructor
-public class MobyEntry {
+public class GameEntry {
 
     private String platformId;
     private String gameId;
+    private String title;
 
     private List<String> publishers = new ArrayList<>();
     private List<String> developers = new ArrayList<>();
@@ -78,8 +79,11 @@ public class MobyEntry {
     private boolean hasAdBlurb;
     private boolean hasRatings;
 
-    public MobyEntry(String platformId, String gameId) {
+    private boolean completed;
+
+    public GameEntry(String platformId, String gameId, String title) {
         this.platformId = platformId;
         this.gameId = gameId;
+        this.title = title;
     }
 }

@@ -13,15 +13,15 @@ public class Platform {
 
     private String id;
     private String title;
-    private int count;
-    private int index;
+    private long total;
+    private long completed;
     private LocalDateTime date;
 
     public void updateFrom(Platform platform) {
 
         if (platform != null) {
-            this.count = platform.count;
-            this.index = platform.index;
+            this.total = platform.total;
+            this.completed = platform.completed;
             this.date = platform.date;
         }
     }
