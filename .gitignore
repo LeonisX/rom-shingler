@@ -5,3 +5,5 @@ rom-shingler.iml
 
 *.iml
 /cache/
+/moby/
+/Atari 7800/
