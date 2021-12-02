@@ -1,5 +1,6 @@
 package md.leonis.crawler.moby;
 
+import md.leonis.crawler.moby.dto.FileEntry;
 import org.apache.hc.client5.http.auth.AuthScope;
 import org.apache.hc.client5.http.auth.CredentialsStore;
 import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
@@ -189,9 +190,16 @@ public class HttpExecutor {
         }
     }
 
+    public void saveFile(FileEntry file) throws Exception {
+        doSaveFile(file.getPlatformId(), file.getHost(), file.getUri(), file.getReferrer(), getProxy(), new HttpGet(file.getUri()));
+    }
+
     public void saveFile(String platformId, String host, String uri, String referrer) throws Exception {
         doSaveFile(platformId, host, uri, referrer, getProxy(), new HttpGet(uri));
     }
+
+
+
 
     public void saveFile(String platformId, String host, String uri, String referrer, Proxy proxy) throws Exception {
         doSaveFile(platformId, host, uri, referrer, proxy, new HttpGet(uri));
@@ -230,14 +238,14 @@ public class HttpExecutor {
             if (ImagesValidator.isBrokenImage(host + uri, httpResponse.getBytes())) {
                 httpResponse = getHttpResponse(host, referrer, proxy, httpUriRequestBase);
                 if (ImagesValidator.isBrokenImage(host + uri, httpResponse.getBytes())) {
-                    MobyCrawler.brokenImages.add(host + uri);
+                    YbomCrawler.brokenImages.add(host + uri);
                 }
             }
 
             updateProxy(proxy, httpResponse);
 
             if (httpResponse.getCode() == 404) {
-                MobyCrawler.brokenImages.add(host + uri);
+                YbomCrawler.brokenImages.add(host + uri);
             } else if (httpResponse.getCode() != 200) {
                 throw new RuntimeException(httpResponse.getCode() + ": " + host + uri);
             }

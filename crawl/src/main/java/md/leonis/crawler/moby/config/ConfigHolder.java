@@ -2,6 +2,7 @@ package md.leonis.crawler.moby.config;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import md.leonis.crawler.moby.Crawler;
 import md.leonis.crawler.moby.model.Platform;
 
 import java.nio.file.Path;
@@ -16,6 +17,7 @@ public class ConfigHolder {
 
     public static List<Platform> platforms = new ArrayList<>();
     public static Map<String, Platform> platformsById = new LinkedHashMap<>();
+    public static Crawler crawler;
 
     public static void setPlatforms(List<Platform> platforms) {
         ConfigHolder.platforms = platforms;

@@ -28,6 +28,7 @@ import md.leonis.shingler.gui.view.FxmlView;
 import md.leonis.shingler.gui.view.StageManager;
 import md.leonis.shingler.model.*;
 import md.leonis.shingler.utils.ArchiveUtils;
+import md.leonis.shingler.utils.FileUtils;
 import md.leonis.shingler.utils.IOUtils;
 import md.leonis.shingler.utils.TiviUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -1351,7 +1352,7 @@ public class FamilyController {
 
     public void saveFamiliesButtonClick() {
         LOGGER.info("Saving families as JSON...");
-        IOUtils.createDirectories(workFamiliesPath());
+        FileUtils.createDirectories(workFamiliesPath());
         stageManager.showWaitAlertAndRun("Saving families", () -> IOUtils.serializeFamiliesAsJson(fullFamiliesPath().toFile(), families));
         familiesModified.setValue(false);
     }
@@ -1359,7 +1360,7 @@ public class FamilyController {
     public void saveRelationsButtonClick() {
         if (familyRelations != null) {
             LOGGER.info("Saving family relations...");
-            IOUtils.createDirectories(workFamiliesPath());
+            FileUtils.createDirectories(workFamiliesPath());
             stageManager.showWaitAlertAndRun("Saving family relations", () -> IOUtils.serializeFamilyRelationsAsJson(fullFamilyRelationsPath().toFile(), familyRelations));
             familyRelationsModified.setValue(false);
         }

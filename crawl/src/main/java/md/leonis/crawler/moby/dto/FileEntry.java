@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 public class FileEntry {
 
     private String platformId;
+    private String host;
     private String uri;
     private String referrer;
 }

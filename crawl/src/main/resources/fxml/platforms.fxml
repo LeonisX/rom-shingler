@@ -2,17 +2,25 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ContextMenu?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane prefHeight="501.0" prefWidth="930.0" BorderPane.alignment="CENTER" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="md.leonis.crawler.moby.controller.PlatformsController">
+<BorderPane prefHeight="534.0" prefWidth="930.0" BorderPane.alignment="CENTER" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="md.leonis.crawler.moby.controller.PlatformsController">
     <right>
         <VBox prefHeight="463.0" prefWidth="253.0" spacing="5.0" BorderPane.alignment="CENTER">
             <Button fx:id="reloadPlatformsButton" mnemonicParsing="false" onAction="#reloadPlatformsButtonClick" text="Reload platforms" />
+         <ListView fx:id="platformsQueueListView" prefHeight="356.0" prefWidth="253.0" />
+         <Button fx:id="reloadGamesListButton" mnemonicParsing="false" onAction="#reloadGamesListButtonClick" text="Reload games list" />
+         <Button fx:id="reloadGamesButton" mnemonicParsing="false" onAction="#reloadGamesButtonClick" text="Reload games" />
+         <Button fx:id="clearListButton" mnemonicParsing="false" onAction="#clearListButtonClick" text="Clear list" />
          <BorderPane.margin>
             <Insets left="5.0" right="5.0" />
          </BorderPane.margin>
@@ -24,7 +32,12 @@
                 <Insets left="5.0" right="5.0" />
             </BorderPane.margin>
             <Button fx:id="backButton" mnemonicParsing="false" onAction="#backButtonClick" text="&lt;&lt; back" />
-            <Label text="Select platform:" />
+            <Label text="Select platform:">
+            <HBox.margin>
+               <Insets right="100.0" />
+            </HBox.margin></Label>
+         <CheckBox mnemonicParsing="false" fx:id="showReadyPlatformsCheckBox" onAction="#showReadyPlatformsCheckBoxClick" selected="true" text="Show ready platforms" />
+         <CheckBox mnemonicParsing="false" fx:id="showEmptyPlatformsCheckBox" onAction="#showEmptyPlatformsCheckBoxClick" selected="true" text="Show empty platforms" />
         </HBox>
     </top>
     <center>
@@ -35,6 +48,15 @@
                 <TableColumn fx:id="percentTableColumn" minWidth="65.0" prefWidth="65.0" style="-fx-alignment: CENTER;" text="Status" />
                 <TableColumn fx:id="versionTableColumn" prefWidth="120.0" text="Version" />
             </columns>
+         <contextMenu>
+            <ContextMenu>
+              <items>
+                  <MenuItem fx:id="loadGamesListMenuItem" mnemonicParsing="false" onAction="#loadGamesListMenuItemClick" text="Load games list" />
+                  <MenuItem fx:id="auditMenuItem" mnemonicParsing="false" onAction="#auditMenuItemClick" text="Audit" />
+                  <MenuItem fx:id="addToQueueMenuItem" mnemonicParsing="false" onAction="#addToQueueMenuItemClick" text="Add to queue" />
+              </items>
+            </ContextMenu>
+         </contextMenu>
         </TableView>
     </center>
 </BorderPane>

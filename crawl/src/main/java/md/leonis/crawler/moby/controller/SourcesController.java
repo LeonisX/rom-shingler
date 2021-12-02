@@ -2,6 +2,7 @@ package md.leonis.crawler.moby.controller;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import md.leonis.crawler.moby.YbomCrawler;
 import md.leonis.crawler.moby.config.ConfigHolder;
 import md.leonis.crawler.moby.model.Platform;
 import md.leonis.crawler.moby.view.FxmlView;
@@ -30,6 +31,7 @@ public class SourcesController {
 
     public void mobyButtonClick() {
         ConfigHolder.setPlatforms(FileUtils.loadJsonList(ConfigHolder.sourceDir, "platforms", Platform.class));
+        ConfigHolder.crawler = new YbomCrawler();
         stageManager.showPane(FxmlView.PLATFORMS);
     }
 }

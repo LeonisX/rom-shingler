@@ -23,81 +23,37 @@ import java.util.stream.Collectors;
 import static md.leonis.crawler.moby.config.ConfigHolder.*;
 import static md.leonis.shingler.utils.FileUtils.*;
 
-//TODO UI
-// список систем: название, %, дата сканирования
-// сортировка
-// фильтр - не начатые, начатые
-// перекидывать в очередь на загрузку
-// открывать в отдельном окне
+public class YbomCrawler implements Crawler {
 
-// нужно версионирование, сравнивать с существующими, при перечтении
-//
-// страница сопоставления с тиви
-// читать CSV (экспортировано с сайта)
-// можно поставить ендпоинт - список таблиц, и CSV - хорошая идея кстати
-// сопоставлять по какому-то алгоритму
-// название, тиви название, % совпадения
-// статус - одобрен
-// фильтры: одобренные, не одобренные
-// сортировка
-//
-// очередь на загрузку надо продумать.
+    private static final String ROOT = new StringBuilder("moc.semagybom.www//:sptth").reverse().toString();
 
+    public static final String GAME_MAIN_REFERRER = ROOT + "/search/quick?q=%s";
 
-//TODO
-// brokenImages - сохранять причину - 404, либо сломанная, короче причину.
-
-
-// TODO
-// на Моби бывают картинки с неверным расширением. JPG могут быть PNG и так далее
-// необходимо добавить поле куда сохранять правильное расширение.
-
-// TODO credits - переводить японские имена
-// https://stackoverflow.com/questions/8147284/how-to-use-google-translate-api-in-my-java-application
-
-//TODO читать историю
-// /stats/recent_entries
-// /stats/recent_entries/offset,0/so,2d/
-// /stats/recent_modifications
-// /stats/recent_reviews
-
-//TODO нужен UI где можно видеть прогресс, очереди.
-
-//TODO распараллелить обработку игр и сохранение картинок.
-//Пока код тестируется, есть смысл параллельно сохранять картинки.
-public class MobyCrawler {
-
-    private static final String HOST = new StringBuilder("moc.semagybom.www//:sptth").reverse().toString();
-
-    public static final String GAME_MAIN_REFERRER = HOST + "/search/quick?q=%s";
-
-    public static final String PLATFORMS = HOST + "/browse/games/full,1/";
-    public static final String GAMES_PAGES = HOST + "/browse/games/%s/offset,%s/so,0a/list-games/";
-    public static final String GAME_MAIN = HOST + "/game/%s/%s";
-    public static final String GAME_CREDITS = HOST + "/game/%s/%s/credits";
-    public static final String GAME_SCREENSHOTS = HOST + "/game/%s/%s/screenshots";
-    public static final String GAME_SCREENSHOTS_IMAGE = HOST + "/game/%s/%s/screenshots/gameShotId,%s";
-    // About mobyrank: /info/mobyrank?nof=1
+    public static final String PLATFORMS = ROOT + "/browse/games/full,1/";
+    public static final String GAMES_PAGES = ROOT + "/browse/games/%s/offset,%s/so,0a/list-games/";
+    public static final String GAME_MAIN = ROOT + "/game/%s/%s";
+    public static final String GAME_CREDITS = ROOT + "/game/%s/%s/credits";
+    public static final String GAME_SCREENSHOTS = ROOT + "/game/%s/%s/screenshots";
+    public static final String GAME_SCREENSHOTS_IMAGE = ROOT + "/game/%s/%s/screenshots/gameShotId,%s";
+    // About rank: /info/mobyrank?nof=1
     //TODO тут ссылки на некоторые источники сдохли.
     //Некоторые совсем, некоторые переехали.
     //Нужно уметь мэппить
-    public static final String GAME_REVIEWS = HOST + "/game/%s/%s/mobyrank";
-    public static final String GAME_COVER_ART = HOST + "/game/%s/%s/cover-art";
-    public static final String GAME_COVER_ART_IMAGE = HOST + "/game/%s/%s/cover-art/gameCoverId,%s";
-    public static final String GAME_PROMO_ART = HOST + "/game/%s/%s/promo";
-    public static final String GAME_PROMO_ART_IMAGE = HOST + "/game/%s/%s/promo/promoImageId,%s";
-    public static final String GAME_RELEASES = HOST + "/game/%s/%s/release-info";
-    public static final String GAME_TRIVIA = HOST + "/game/%s/%s/trivia";
-    public static final String GAME_HINTS = HOST + "/game/%s/%s/hints";
-    public static final String GAME_HINTS_PAGE = HOST + "/game/%s/%s/hints/hintId,%s";
-    public static final String GAME_SPECS = HOST + "/game/%s/%s/techinfo";
-    public static final String GAME_ADS = HOST + "/game/%s/%s/adblurbs";
-    public static final String GAME_RATING_SYSTEMS = HOST + "/game/%s/%s/rating-systems";
-
     //TODO sources (журналы, сайты, откуда брались обзоры и ревью.
     // ><a href="/mobyrank/source/sourceId,998/">Tilt </a> (Dec, 1987)</div>
     // там список игр, которые оценивал источник с оценкой и датой
-
+    public static final String GAME_REVIEWS = ROOT + "/game/%s/%s/mobyrank";
+    public static final String GAME_COVER_ART = ROOT + "/game/%s/%s/cover-art";
+    public static final String GAME_COVER_ART_IMAGE = ROOT + "/game/%s/%s/cover-art/gameCoverId,%s";
+    public static final String GAME_PROMO_ART = ROOT + "/game/%s/%s/promo";
+    public static final String GAME_PROMO_ART_IMAGE = ROOT + "/game/%s/%s/promo/promoImageId,%s";
+    public static final String GAME_RELEASES = ROOT + "/game/%s/%s/release-info";
+    public static final String GAME_TRIVIA = ROOT + "/game/%s/%s/trivia";
+    public static final String GAME_HINTS = ROOT + "/game/%s/%s/hints";
+    public static final String GAME_HINTS_PAGE = ROOT + "/game/%s/%s/hints/hintId,%s";
+    public static final String GAME_SPECS = ROOT + "/game/%s/%s/techinfo";
+    public static final String GAME_ADS = ROOT + "/game/%s/%s/adblurbs";
+    public static final String GAME_RATING_SYSTEMS = ROOT + "/game/%s/%s/rating-systems";
 
     //TODO proxies list
     public static final HttpExecutor executor = HttpExecutor.directInstance();
@@ -114,66 +70,11 @@ public class MobyCrawler {
     public static Map<String, String> attributes;
     public static List<String> brokenImages;
 
-    private static class HttpProcessor implements Runnable {
-
-        boolean cancelled = false;
-        boolean canStop = false;
-        boolean inWork = false;
-        volatile Exception exception = null;
-        volatile boolean finished = false;
-
-        @Override
-        public void run() {
-            while (!cancelled) {
-                try {
-                    if (httpQueue.isEmpty()) {
-                        if (canStop && !inWork) {
-                            stop();
-                        }
-                        Thread.sleep(50);
-                    } else {
-                        // TODO process
-                        inWork = true;
-                        FileEntry file = httpQueue.poll();
-                        if (file == null) {
-                            System.out.println("===============File is null");
-                            Thread.sleep(50);
-                        } else {
-                            try {
-                                executor.saveFile(file.getPlatformId(), HOST, file.getUri(), file.getReferrer());
-                            } catch (Exception e) {
-                                throw new RuntimeException(e);
-                            }
-                        }
-                        inWork = false;
-                    }
-
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (Exception e) {
-                    exception = e;
-                    cancelled = true;
-                }
-            }
-            finished = true;
-        }
-
-        public void stop() {
-            cancelled = true;
-        }
-    }
-
     public static void main(String[] args) throws Exception {
 
-        /*//TODO get list of systems
-        Map<String, String> platforms = parseSystemsList();
-        System.out.println(platforms);
-
-        new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(new File("platforms.json"), platforms);
-        */
+        YbomCrawler crawler = new YbomCrawler();
 
         preload();
-
 
         //два контрибьютора + не закрытые теги.
         MobyEntry entry = new MobyEntry("gameboy-advance", "britneys-dance-beat_");
@@ -195,10 +96,10 @@ public class MobyCrawler {
         //Thread.sleep(300000);
 
         List<HttpProcessor> processors = new ArrayList<>();
-        processors.add(new HttpProcessor());
-        processors.add(new HttpProcessor());
-        processors.add(new HttpProcessor());
-        processors.add(new HttpProcessor());
+        processors.add(new HttpProcessor(httpQueue, executor));
+        processors.add(new HttpProcessor(httpQueue, executor));
+        processors.add(new HttpProcessor(httpQueue, executor));
+        processors.add(new HttpProcessor(httpQueue, executor));
 
         ExecutorService service = Executors.newCachedThreadPool();
         processors.forEach(service::execute);
@@ -209,21 +110,21 @@ public class MobyCrawler {
          "snes", "gameboy", "gameboy-color", "game-com", "sega-cd", "3do", "virtual-boy", "1292-advanced-programmable-video-system",
          "apf", "channel-f", "neo-geo-pocket-color", "neo-geo-pocket", "atari-5200", "atari-7800", "turbografx-cd", "turbo-grafx",
          "supervision", "supergrafx", "rca-studio-ii", "intellivision", "colecovision", "bally-astrocade", "zx-spectrum", "atari-2600",
-         "atari-8-bit", "gameboy-advance"};*/
-
-        String[] platforms = new String[]{"arcade", "n64",
+         "atari-8-bit", "gameboy-advance", "arcade", "n64",
                 "arcadia-2001", "odyssey", "odyssey-2", "mattel-aquarius", "lynx", "jaguar", "interton-video-2000",
-                "cd-i", "fred-cosmac", "colecoadam", "supervision", "vectrex", "sega-saturn", "playstation", "neo-geo", "neo-geo-cd", "neo-geo-x",
-        "dreamcast", "nintendo-dsi", "nintendo-ds"};
+                "cd-i", "fred-cosmac", "colecoadam", "supervision", "vectrex", "sega-saturn", "playstation",
+                "neo-geo", "neo-geo-cd", "neo-geo-x"};*/
 
-        String[] platforms2 = new String[]{"pet", "vic-20", "c64", "c128", "commodore-16-plus4", "trs-80", "trs-80-coco", "trs-80-mc-10",
+        String[] platforms = new String[]{"dreamcast"};
+
+        String[] platforms2 = new String[]{"nintendo-dsi", "nintendo-ds", "pet", "vic-20", "c64", "c128", "commodore-16-plus4", "trs-80", "trs-80-coco", "trs-80-mc-10",
                 "msx", "amiga", "amiga-cd32", "cpc", "amstrad-pcw", "apple-i", "apple2", "apple2g", "atari-st", "bbc-micro_", "electron", "enterprise", "dos"};
 
         for (String platformId : platforms) {
 
             //TODO generate list of MobyEntry, also map
-            Map<String, String> games = parseGamesListToc(platformId);
-            saveAsJson(sourceDir, String.format("games-%s.json", platformId), games);
+            Map<String, String> games = crawler.getGamesList(platformId);
+            crawler.saveGamesList(platformId, games);
 
             List<MobyEntry> mobyEntries = new ArrayList<>();
 
@@ -269,18 +170,20 @@ public class MobyCrawler {
             saveAsJson(gamesDir, platformId, mobyEntries);
         }
 
-        processors.forEach(p -> p.canStop = true);
+        processors.forEach(p -> p.setCanStop(true));
 
-        while (processors.stream().filter(p -> p.finished).count() < processors.size()) {
+        while (processors.stream().filter(HttpProcessor::isFinished).count() < processors.size()) {
             stopAllProcessorsOnError(service, processors);
             Thread.sleep(200);
         }
     }
 
+
+
     private static void stopAllProcessorsOnError(ExecutorService service, List<HttpProcessor> processors) throws InterruptedException {
-        Exception exception = processors.stream().filter(p -> p.exception != null).findFirst().map(p -> p.exception).orElse(null);
+        Exception exception = processors.stream().filter(p -> p.getException() != null).findFirst().map(HttpProcessor::getException).orElse(null);
         if (exception != null) {
-            processors.forEach(p -> p.cancelled = true);
+            processors.forEach(p -> p.setCancelled(true));
             service.awaitTermination(2, TimeUnit.SECONDS);
             service.shutdown();
             throw new RuntimeException(exception);
@@ -681,9 +584,8 @@ public class MobyCrawler {
 
             MobyImage mobyImage = new MobyImage(id, small, description);
             parseGameScreenshotsImage(entry, mobyImage);
-            //TODO тут попадаются скрины с хостом вместе
-            httpQueue.add(new FileEntry(entry.getPlatformId(), mobyImage.getSmall(), thisLink));
-            httpQueue.add(new FileEntry(entry.getPlatformId(), mobyImage.getLarge(), thisLink));
+            httpQueue.add(new FileEntry(entry.getPlatformId(), ROOT, mobyImage.getSmall(), thisLink));
+            httpQueue.add(new FileEntry(entry.getPlatformId(), ROOT, mobyImage.getLarge(), thisLink));
             entry.getScreens().add(mobyImage);
         }
     }
@@ -709,8 +611,8 @@ public class MobyCrawler {
     }
 
     private static String removeHost(String uri) {
-        if (uri.startsWith(HOST)) {
-            return uri.replace(HOST, "");
+        if (uri.startsWith(ROOT)) {
+            return uri.replace(ROOT, "");
         } else {
             return uri;
         }
@@ -890,8 +792,8 @@ public class MobyCrawler {
                 //System.out.println(p.text());
                 MobyArtImage mobyImage = new MobyArtImage(id, small, p.text());
                 parseGameCoverArtImage(entry, mobyImage);
-                httpQueue.add(new FileEntry(entry.getPlatformId(), mobyImage.getSmall(), thisLink));
-                httpQueue.add(new FileEntry(entry.getPlatformId(), mobyImage.getLarge(), thisLink));
+                httpQueue.add(new FileEntry(entry.getPlatformId(), ROOT, mobyImage.getSmall(), thisLink));
+                httpQueue.add(new FileEntry(entry.getPlatformId(), ROOT, mobyImage.getLarge(), thisLink));
                 covers.getImages().add(mobyImage);
             }
 
@@ -985,9 +887,9 @@ public class MobyCrawler {
 
                 parseGamePromoArtImage(entry, pi);
 
-                httpQueue.add(new FileEntry(entry.getPlatformId(), pi.getSmall(), thisLink));
-                httpQueue.add(new FileEntry(entry.getPlatformId(), pi.getLarge(), thisLink));
-                httpQueue.add(new FileEntry(entry.getPlatformId(), pi.getOriginal(), thisLink));
+                httpQueue.add(new FileEntry(entry.getPlatformId(), ROOT, pi.getSmall(), thisLink));
+                httpQueue.add(new FileEntry(entry.getPlatformId(), ROOT, pi.getLarge(), thisLink));
+                httpQueue.add(new FileEntry(entry.getPlatformId(), ROOT, pi.getOriginal(), thisLink));
 
                 promo.getImages().add(pi);
             }
@@ -1348,11 +1250,12 @@ public class MobyCrawler {
         }
     }
 
-    private static Map<String, String> parseGamesListToc(String platformId) throws Exception {
+    @Override
+    public Map<String, String> getGamesList(String platformId) throws Exception {
 
         Map<String, String> games = Collections.synchronizedMap(new LinkedHashMap<>());
 
-        HttpExecutor.HttpResponse response = executor.getPage(String.format(GAMES_PAGES, platformId, 0), HOST);
+        HttpExecutor.HttpResponse response = executor.getPage(String.format(GAMES_PAGES, platformId, 0), ROOT);
         Document doc = Jsoup.parse(response.getBody());
 
         // <td class="mobHeaderPage" width="33%">Viewing Page 1 of 56</td>
@@ -1407,17 +1310,31 @@ public class MobyCrawler {
         });
     }
 
-    public static List<Platform> parsePlatformsList() throws Exception {
+    @Override
+    public void saveGamesList(String platformId, Map<String, String> games) throws Exception {
+        saveAsJson(sourceDir, String.format("games-%s.json", platformId), games);
+    }
+
+    @Override
+    public Map<String, String> getSavedGamesList(String platformId) throws Exception {
+        return loadJsonMap(sourceDir, String.format("games-%s.json", platformId));
+    }
+
+    @Override
+    public List<Platform> getPlatformsList() throws Exception {
 
         List<Platform> platforms = new ArrayList<>();
 
-        HttpExecutor.HttpResponse response = executor.getPage(PLATFORMS, HOST);
+        HttpExecutor.HttpResponse response = executor.getPage(PLATFORMS, ROOT);
         Document doc = Jsoup.parse(response.getBody());
         getAs(getByClass(doc, "browseTable")).forEach(a -> platforms.add(new Platform(getLastChunk(a), a.text(), 0, 0, null)));
 
-        saveAsJson(sourceDir, "platforms", platforms);
-
         return platforms;
+    }
+
+    @Override
+    public void savePlatformsList(List<Platform> platforms) throws Exception {
+        saveAsJson(sourceDir, "platforms", platforms);
     }
 
     private static void preload() {

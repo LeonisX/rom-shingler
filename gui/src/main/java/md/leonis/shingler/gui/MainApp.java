@@ -5,6 +5,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import md.leonis.shingler.gui.view.FxmlView;
 import md.leonis.shingler.gui.view.StageManager;
+import md.leonis.shingler.utils.FileUtils;
 import md.leonis.shingler.utils.IOUtils;
 import md.leonis.shingler.utils.MeasureMethodTest;
 import org.slf4j.Logger;
@@ -56,7 +57,7 @@ public class MainApp extends Application {
 
         if (familiesModified.getValue() || familyRelationsModified.getValue()) {
 
-            IOUtils.createDirectories(workFamiliesPath());
+            FileUtils.createDirectories(workFamiliesPath());
 
             if (familiesModified.getValue()) {
                 LOGGER.info("Saving families...");

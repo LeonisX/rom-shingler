@@ -5,6 +5,7 @@ import md.leonis.shingler.model.ConfigHolder;
 import md.leonis.shingler.model.Platform;
 import md.leonis.shingler.model.nes.INesHeader;
 import md.leonis.shingler.model.nes.UnifHeader;
+import md.leonis.shingler.utils.FileUtils;
 import md.leonis.shingler.utils.IOUtils;
 import md.leonis.shingler.utils.StringUtils;
 
@@ -68,7 +69,7 @@ public class NesGroup {
             }
 
             try {
-                IOUtils.createDirectories(root.toPath().resolve(mapper));
+                FileUtils.createDirectories(root.toPath().resolve(mapper));
                 Files.copy(file.toPath(), root.toPath().resolve(mapper).resolve(file.getName()), StandardCopyOption.REPLACE_EXISTING);
             } catch (Exception e) {
                 throw new RuntimeException(e);

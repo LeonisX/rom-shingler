@@ -1,39 +1,80 @@
-## JavaFX + SpringBoot + Maven project template
+## TODO List
 
-At the start of each new JavaFX project, you have to create a framework from scratch, or, more often, cut functionality from an existing project.
+Список задач
 
-This solution allows you to immediately begin development. Its key features:
+### UI
 
-- Integration Maven, JavaFX, Spring Boot
-- Configure Liquibase + database
-- Java 8
-- Template for showing alerts
-- Template for opening a window
+* v список систем: название, %, дата сканирования
+* v сортировка
+* v фильтр - не начатые, начатые
+* v перекидывать в очередь на загрузку
+* открывать в отдельном окне
 
-### Possible questions
+* нужно версионирование, сравнивать с существующими, при перечтении
 
-- Why Maven? Because in fact for most projects this is the best solution. Gradle, with its rich capabilities, is more difficult to configure.
-- Why JavaFX? Because it is a great solution for creating windowed applications, leaving behind legacy solutions: AWT, Swing, and others.
-- Why Spring Boot? Because it really simplifies creating a project based on JavaFX. Try without it to make a difference.
-- Why Liquibase + H2? That bunch worked in the project from which the current one was assembled. I did not want to remove this solution, the database is used quite often.
-- Why Java 8? Just because I now have all the current Java 8 projects. JavaFX 11 is much richer, so if nothing restricts, then go for it.
+* страница сопоставления с тиви
+* читать CSV (экспортировано с сайта)
+* можно поставить ендпоинт - список таблиц, и CSV - хорошая идея кстати
+* сопоставлять по какому-то алгоритму
+* название, тиви название, % совпадения
+* статус - одобрен
+* фильтры: одобренные, не одобренные
+* сортировка
 
-## Шаблон проекта JavaFX + SpringBoot + Maven
+* очередь на загрузку надо продумать.
 
-При старте каждого нового проекта на JavaFX приходится с нуля создавать каркас, или, что чаще бывает, вырезать функциональность из существующего проекта.
 
-Данное решение позволяет сразу начать разработку. Его ключевые особенности:
+//TODO
+// brokenImages - сохранять причину - 404, либо сломанная, короче причину.
 
-- Интеграция Maven, JavaFX, Spring Boot
-- Настройка Liquibase +  база данных
-- Java 8 (просто больше пока не потребовалось)
-- Заготовка для показа оповещения
-- Заготовка для открытия окна
 
-### Возможные вопросы
+// TODO
+// бывают картинки с неверным расширением. JPG могут быть PNG и так далее
+// необходимо добавить поле куда сохранять правильное расширение.
 
-- Почему Maven? Да потому что по факту для большинства проектов это лучшее решение. Gradle, обладая богатыми возможностями, сложнее в настройке.
-- Почему JavaFX? Потому что это отличное решение для создания оконных приложений, оставляющее позади устаревшие решения: AWT, Swing, и другие.
-- Почему Spring Boot? Потому что он реально упрощает создания проекта на основе JavaFX. Попробуйте без него, чтобы почувствовать разницу.
-- Почему Liquibase + H2? та связка работала в проекте, из которого был собран текущий. Не хотелось убирать это решение, база данных используется достаточно часто.
-- Почему Java 8? Просто лишь потому что сейчас у меня все текущие проекты на Java 8. JavaFX 11 куда богаче, так что, если ничего не ограничивает, то переходите на него.
+// TODO credits - переводить японские имена
+// https://stackoverflow.com/questions/8147284/how-to-use-google-translate-api-in-my-java-application
+
+//TODO читать историю
+// /stats/recent_entries
+// /stats/recent_entries/offset,0/so,2d/
+// /stats/recent_modifications
+// /stats/recent_reviews
+
+//TODO нужен UI где можно видеть прогресс, очереди.
+
+//TODO распараллелить обработку игр и сохранение картинок.
+//Пока код тестируется, есть смысл параллельно сохранять картинки.
+
+## Алгоритмы сравнения текста
+
+* https://stackoverflow.com/questions/955110/similarity-string-comparison-in-java
+* https://softwareengineering.stackexchange.com/questions/330934/what-algorithm-would-you-best-use-for-string-similarity
+
+
+## Access
+
+* https://jackcess.sourceforge.io/cookbook.html#Reading_a_Table
+* https://mvnrepository.com/artifact/com.healthmarketscience.jackcess/jackcess/4.0.1
+* https://commons.apache.org/proper/commons-text/apidocs/org/apache/commons/text/similarity/package-summary.html
+
+
+
+## Интересные сайты
+
+* http://tv-games.ru/games/index.html
+* https://emu-russia.net/ru/romz/
+* http://www.emu-land.net/consoles/dendy/roms/rating
+* https://retrowith.in/browse.php?cat[35]=1&incldead=1&search=gamebase
+* https://www.t2e.pl/t2e-download/gamebase.706
+* https://minirevver.weebly.com/
+* https://platformadventure.weebly.com/
+* https://www.uvlist.net/game-7879-Ikari+Warriors
+* https://www.mobygames.com
+* https://www.igdb.com/games/ikari-warriors
+* https://www.giantbomb.com/ikari-warriors/3030-1619/
+* https://www.giantbomb.com/pachiokun/3005-32373/games/
+* https://videogamegeek.com/videogameversion/68700/us-atari-7800-edition
+* http://www.hardcoregaming101.net/american-dream/
+* https://superfamicom.org/famicom/info/american-dream
+* https://videogamecritic.com/

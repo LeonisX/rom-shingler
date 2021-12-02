@@ -19,10 +19,8 @@ import org.slf4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -136,6 +134,9 @@ public class StageManager {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(title);
         alert.setHeaderText(header);
+        if (content.length() > 6000) {
+            content = content.substring(0, 6000) + "...";
+        }
         alert.setContentText(content);
         alert.setResizable(true);
         if (content.length() > 1000) {
@@ -152,11 +153,24 @@ public class StageManager {
         alert.showAndWait();
     }
 
+    public void showErrorAlert(String title, String header, Throwable throwable) {
+        StackTraceElement[] elements = throwable.getStackTrace();
+        List<String> traces = Arrays.stream(elements).map(StackTraceElement::toString).limit(15).collect(Collectors.toList());
+        if (elements.length > 15) {
+            traces.add("...");
+        }
+        showErrorAlert(title, header, String.join("\n", traces));
+    }
+
     public void showErrorAlert(String title, String header, String content) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle(title);
         alert.setHeaderText(header);
         alert.setContentText(content);
+        alert.setResizable(true);
+        if (content.length() > 1000) {
+            alert.getDialogPane().setPrefSize(720, alert.getDialogPane().getPrefHeight());
+        }
         alert.showAndWait();
     }
 

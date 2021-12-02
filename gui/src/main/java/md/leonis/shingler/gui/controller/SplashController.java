@@ -6,7 +6,7 @@ import javafx.util.Duration;
 import md.leonis.shingler.gui.view.FxmlView;
 import md.leonis.shingler.gui.view.StageManager;
 import md.leonis.shingler.model.Platform;
-import md.leonis.shingler.utils.IOUtils;
+import md.leonis.shingler.utils.FileUtils;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
 
@@ -74,8 +74,8 @@ public class SplashController {
 
         platforms.values().forEach(p -> platformsByCpu.put(p.getCpu(), p));
 
-        IOUtils.createDirectories(collectionsDir);
-        platforms.values().forEach(p -> IOUtils.createDirectories(collectionsDir.resolve(p.getCpu())));
+        FileUtils.createDirectories(collectionsDir);
+        platforms.values().forEach(p -> FileUtils.createDirectories(collectionsDir.resolve(p.getCpu())));
 
         //TODO switch on
         //PauseTransition delay = new PauseTransition(Duration.seconds(1));
