@@ -1,5 +1,7 @@
-package md.leonis.crawler.moby;
+package md.leonis.crawler.moby.executor;
 
+import md.leonis.crawler.moby.ImagesValidator;
+import md.leonis.crawler.moby.Proxy;
 import md.leonis.crawler.moby.dto.FileEntry;
 import org.apache.hc.client5.http.auth.AuthScope;
 import org.apache.hc.client5.http.auth.CredentialsStore;
@@ -13,32 +15,24 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.HttpHost;
-import org.apache.hc.core5.http.ParseException;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.message.BasicHeader;
 import org.apache.hc.core5.util.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-import static md.leonis.crawler.moby.config.ConfigHolder.cacheDir;
-import static md.leonis.crawler.moby.config.ConfigHolder.pagesDir;
-
-public class HttpExecutor {
+public class HttpExecutor implements Executor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpExecutor.class);
 
     private static final List<Proxy> DIRECT_LIST = Collections.singletonList(new Proxy(1, null, null, 0, null, null));
-
-    public static final Path HTML_CACHE = Paths.get("./cache");
 
     private static final Random RANDOM = new Random();
 
@@ -48,15 +42,16 @@ public class HttpExecutor {
 
     private volatile int index;
 
+    public HttpExecutor() {
+
+        this.proxies = DIRECT_LIST;
+        this.index = proxies.isEmpty() ? 0 : RANDOM.nextInt(proxies.size());
+    }
+
     public HttpExecutor(List<Proxy> proxies) {
 
         this.proxies = proxies;
         this.index = proxies.isEmpty() ? 0 : RANDOM.nextInt(proxies.size());
-    }
-
-    // Instance for test purposes
-    public static HttpExecutor directInstance() {
-        return new HttpExecutor(DIRECT_LIST);
     }
 
     // Proxies selector
@@ -89,22 +84,21 @@ public class HttpExecutor {
         }
     }
 
-    public HttpResponse getPage(String fullUri, String referrer) throws Exception {
+    public Executor.HttpResponse getPage(String fullUri, String referrer) throws Exception {
         URL url = new URL(fullUri);
         return getPage(url.getProtocol() + "://" + url.getHost(), url.getPath(), referrer, getProxy());
     }
 
-    public HttpResponse getPage(String host, String uri, String referrer, Proxy proxy) throws Exception {
+    public Executor.HttpResponse getPage(String host, String uri, String referrer, Proxy proxy) throws Exception {
         return doGetPage(host, uri, referrer, proxy, new HttpGet(uri));
     }
 
-    //TODO process exceptions -> retry list
     private HttpResponse doGetPage(String host, String uri, String referrer, Proxy proxy, HttpUriRequestBase httpUriRequestBase) throws Exception {
 
         try {
             LOGGER.info(host + uri);
 
-            Path path = getPath(uri);
+            Path path = Executor.getPath(uri);
 
             if (Files.exists(path)) { // TODO if read from cache
                 if (Files.isDirectory(path)) {
@@ -198,20 +192,16 @@ public class HttpExecutor {
         doSaveFile(platformId, host, uri, referrer, getProxy(), new HttpGet(uri));
     }
 
-
-
-
     public void saveFile(String platformId, String host, String uri, String referrer, Proxy proxy) throws Exception {
         doSaveFile(platformId, host, uri, referrer, proxy, new HttpGet(uri));
     }
 
-    //TODO process exceptions -> retry list
     private void doSaveFile(String platformId, String host, String uri, String referrer, Proxy proxy, HttpUriRequestBase httpUriRequestBase) throws Exception {
 
         try {
             LOGGER.info(host + uri);
 
-            Path path = getPath(platformId, uri);
+            Path path = Executor.getPath(platformId, uri);
 
             if (Files.exists(path)) { // TODO if read from cache
 
@@ -235,25 +225,26 @@ public class HttpExecutor {
             HttpResponse httpResponse = getHttpResponse(host, referrer, proxy, httpUriRequestBase);
 
             //validate
-            if (ImagesValidator.isBrokenImage(host + uri, httpResponse.getBytes())) {
+            //validator disabled for not
+            /*if (ImagesValidator.isBrokenImage(host + uri, httpResponse.getBytes())) {
                 httpResponse = getHttpResponse(host, referrer, proxy, httpUriRequestBase);
                 if (ImagesValidator.isBrokenImage(host + uri, httpResponse.getBytes())) {
                     YbomCrawler.brokenImages.add(host + uri);
                 }
-            }
+            }*/
 
             updateProxy(proxy, httpResponse);
 
             if (httpResponse.getCode() == 404) {
-                YbomCrawler.brokenImages.add(host + uri);
+                //YbomCrawler.brokenImages.add(host + uri);
             } else if (httpResponse.getCode() != 200) {
                 throw new RuntimeException(httpResponse.getCode() + ": " + host + uri);
+            } else {
+                //System.out.println("trying to save: " + path);
+                Path dir = path.getParent();
+                Files.createDirectories(dir);
+                Files.write(path, httpResponse.getBytes());
             }
-
-            //System.out.println("trying to save: " + path);
-            Path dir = path.getParent();
-            Files.createDirectories(dir);
-            Files.write(path, httpResponse.getBytes());
 
         } catch (Exception e) {
 
@@ -316,34 +307,6 @@ public class HttpExecutor {
         httpUriRequestBase.addHeader(new BasicHeader("Cache-Control", "max-age=0"));
     }
 
-    //TODO remove
-    public static Path getPath(Path path, String host, String uri) {
-
-        if (host.startsWith("http://")) {
-            host = host.replace("http://", "");
-        }
-        host = host.replace("://", "@");
-
-        return path.toAbsolutePath().resolve(host + uri).normalize();
-    }
-
-    // TODO source specific, move to crawler
-    public static Path getPath(String uri) {
-        if (uri.startsWith("/")) {
-            uri = uri.substring(1);
-        }
-        return pagesDir.resolve(uri).normalize().toAbsolutePath();
-    }
-
-    // TODO source specific, move to crawler
-    public static Path getPath(String platformId, String uri) {
-        uri = platformId + uri;
-        if (uri.startsWith("/")) {
-            uri = uri.substring(1);
-        }
-        return cacheDir.resolve(uri).normalize().toAbsolutePath();
-    }
-
     private void updateProxy(Proxy proxy, HttpResponse response) {
 
         // When a 429 is received, it's your obligation as an API to back off and not spam the API.
@@ -357,64 +320,6 @@ public class HttpExecutor {
             LOGGER.warn("Unexpected response code from proxy: " + response.getCode());
             //TODO proxy.setStatus(status);
             //TODO proxy.setRetryAfterSec(retryAfterSec);
-        }
-    }
-
-    public static class HttpResponse {
-
-        private String body;
-        private byte[] bytes;
-        private int code;
-        private Header[] headers;
-
-        public HttpResponse(String body, int code, Header[] headers) {
-            this.body = body;
-            this.bytes = new byte[0];
-            this.code = code;
-            this.headers = headers;
-        }
-
-        public HttpResponse(byte[] bytes, int code, Header[] headers) {
-            this.body = "";
-            this.bytes = bytes;
-            this.code = code;
-            this.headers = headers;
-        }
-
-        public HttpResponse(CloseableHttpResponse httpResponse) throws IOException, ParseException {
-            this(EntityUtils.toString(httpResponse.getEntity()), httpResponse.getCode(), httpResponse.getHeaders());
-        }
-
-        public String getBody() {
-            return body;
-        }
-
-        public void setBody(String body) {
-            this.body = body;
-        }
-
-        public byte[] getBytes() {
-            return bytes;
-        }
-
-        public void setBytes(byte[] bytes) {
-            this.bytes = bytes;
-        }
-
-        public int getCode() {
-            return code;
-        }
-
-        public void setCode(int code) {
-            this.code = code;
-        }
-
-        public Header[] getHeaders() {
-            return headers;
-        }
-
-        public void setHeaders(Header[] headers) {
-            this.headers = headers;
         }
     }
 }

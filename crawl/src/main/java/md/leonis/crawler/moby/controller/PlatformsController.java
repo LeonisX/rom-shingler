@@ -6,14 +6,19 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.util.Callback;
+import javafx.util.Pair;
 import md.leonis.crawler.moby.config.ConfigHolder;
+import md.leonis.crawler.moby.crawler.Crawler;
+import md.leonis.crawler.moby.model.Activity;
 import md.leonis.crawler.moby.model.GameEntry;
 import md.leonis.crawler.moby.model.Platform;
 import md.leonis.crawler.moby.view.FxmlView;
 import md.leonis.crawler.moby.view.StageManager;
+import md.leonis.shingler.utils.FileUtils;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
 
+import java.io.IOException;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
@@ -39,11 +44,18 @@ public class PlatformsController {
     public MenuItem auditMenuItem;
     public MenuItem addToQueueMenuItem;
     public ListView<Platform> platformsQueueListView;
+
     public Button reloadGamesListButton;
-    public Button reloadGamesButton;
+
+    public Button loadGamesButton;
+    public Button validateImagesButton;
+    public CheckBox useCacheCheckBox;
     public Button clearListButton;
+
     public CheckBox showReadyPlatformsCheckBox;
     public CheckBox showEmptyPlatformsCheckBox;
+
+    private Crawler crawler;
 
     @Lazy
     public PlatformsController(StageManager stageManager, ConfigHolder configHolder) {
@@ -64,8 +76,7 @@ public class PlatformsController {
     @FXML
     private void initialize() {
 
-        //TODO
-        //ConfigHolder.platforms.add(new Platform("1", "title", 100, 55, LocalDateTime.now()));
+        crawler = getCrawler();
 
         updatePlatformsList();
 
@@ -108,7 +119,7 @@ public class PlatformsController {
     public void reloadPlatformsButtonClick() {
 
         try {
-            List<Platform> platforms = crawler.getPlatformsList();
+            List<Platform> platforms = crawler.parsePlatformsList();
             platforms.forEach(p -> p.updateFrom(platformsById.get(p.getId())));
             crawler.savePlatformsList(platforms);
             //diff
@@ -138,13 +149,13 @@ public class PlatformsController {
     public void reloadGamesListButtonClick() {
 
         try {
-            List<String> allTitles = new ArrayList<>();
+            List<Pair<String, String>> allTitles = new ArrayList<>();
             for (Platform platform : platformsQueueListView.getItems()) {
-                List<GameEntry> prevGames = crawler.getSavedGamesList(platform.getId());
-                List<GameEntry> newGames = crawler.getGamesList(platform.getId());
+                List<GameEntry> prevGames = crawler.loadGamesList(platform.getId());
+                List<GameEntry> newGames = crawler.parseGamesList(platform.getId());
                 //diff
-                Collection<String> titles = newGames.stream().map(GameEntry::getTitle).collect(Collectors.toList());
-                titles.removeAll(prevGames.stream().map(GameEntry::getTitle).collect(Collectors.toList()));
+                Collection<Pair<String, String>> titles = newGames.stream().map(g -> new Pair<>(g.getPlatformId(), g.getTitle())).collect(Collectors.toList());
+                titles.removeAll(prevGames.stream().map(g -> new Pair<>(g.getPlatformId(), g.getTitle())).collect(Collectors.toList()));
                 allTitles.addAll(titles);
                 //save
                 Map<String, GameEntry> gamesMap = prevGames.stream().collect(Collectors.toMap(GameEntry::getGameId, Function.identity()));
@@ -161,9 +172,8 @@ public class PlatformsController {
             }
             crawler.savePlatformsList(platforms);
             updatePlatformsList();
-            //TODO show platform
             if (!allTitles.isEmpty()) {
-                String text = String.join(", ", allTitles);
+                String text = allTitles.stream().map(t -> t.getKey() + "::" + t.getValue()).collect(Collectors.joining(", "));
                 stageManager.showInformationAlert("New games", allTitles.size() + " new game(s) found:", text);
             }
         } catch (Exception e) {
@@ -171,13 +181,29 @@ public class PlatformsController {
         }
     }
 
-    public void reloadGamesButtonClick() {
+    public void loadGamesButtonClick() throws IOException {
 
-        gamesTableColumn.setSortable(true);
-        gamesTableColumn.setSortType(TableColumn.SortType.DESCENDING);
-        platformsTableView.getSortOrder().add(gamesTableColumn);
-        platformsTableView.sort();
+        List<String> platforms = platformsQueueListView.getItems().stream().map(Platform::getId).collect(Collectors.toList());
+        if (!platforms.isEmpty()) {
+            Activity.Task task = useCacheCheckBox.isSelected() ? Activity.Task.LOAD : Activity.Task.RELOAD;
+            activity = new Activity(platforms, task);
+            FileUtils.saveAsJson(sourceDir, "activity", activity);
+            stageManager.showPane(FxmlView.ACTIVITY);
+        } else {
+            stageManager.showErrorAlert("No platforms selected!", "Please, select at once one platform", "");
+        }
+    }
 
+    public void validateImagesButtonClick() throws IOException {
+
+        if (!platforms.isEmpty()) {
+            List<String> platforms = platformsQueueListView.getItems().stream().map(Platform::getId).collect(Collectors.toList());
+            activity = new Activity(platforms, Activity.Task.VALIDATE);
+            FileUtils.saveAsJson(sourceDir, "activity", activity);
+            stageManager.showPane(FxmlView.ACTIVITY);
+        } else {
+            stageManager.showErrorAlert("No platforms selected!", "Please, select at once one platform", "");
+        }
     }
 
     public void clearListButtonClick() {

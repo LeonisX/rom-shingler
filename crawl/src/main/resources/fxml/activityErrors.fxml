@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TreeTableColumn?>
+<?import javafx.scene.control.TreeTableView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="616.0" prefWidth="1009.0" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="md.leonis.crawler.moby.controller.ActivityErrorsController">
+   <bottom>
+      <HBox alignment="CENTER" prefHeight="39.0" prefWidth="1009.0" BorderPane.alignment="CENTER">
+         <Button fx:id="okButton" mnemonicParsing="false" onAction="#okButtonClick" prefHeight="25.0" prefWidth="72.0" text="OK" />
+      </HBox>
+   </bottom>
+   <top>
+      <HBox alignment="CENTER_LEFT" prefHeight="30.0" prefWidth="1009.0" BorderPane.alignment="CENTER">
+         <Label text="The following unrecoverable errors occurred during data processing:" />
+         <BorderPane.margin>
+            <Insets left="5.0" />
+         </BorderPane.margin>
+      </HBox>
+   </top>
+   <center>
+      <TreeTableView fx:id="gameOrFileTreeTableView" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+        <columns>
+          <TreeTableColumn fx:id="gameOrFileColumn" minWidth="1000.0" prefWidth="-1.0" text="Game or file" />
+        </columns>
+      </TreeTableView>
+   </center>
+</BorderPane>

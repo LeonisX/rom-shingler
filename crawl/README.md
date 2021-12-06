@@ -4,31 +4,16 @@
 
 ### UI
 
-* v список систем: название, %, дата сканирования
-* v сортировка
-* v фильтр - не начатые, начатые
-* v перекидывать в очередь на загрузку
-* открывать в отдельном окне, 
+постараться переписать под https://github.com/AdamBien/afterburner.fx
 
-окно - таблица файлов
-таблица страниц: платформа, название
-
-внизу воркеры и их статус
-
-хранить данные проекта:
-файл с картинками на загрузку (статус) - если есть, то открывать сразу страницу загрузки
-файл с играми - он уже есть
-
-после того, как пробежал всё - вернуться и пройти ещё раз, надо чтобы статусы были ок
-
-ставить на паузу (сохраняться), обрывать загрузку
-
-в случае ошибки просто пропускать, запись в логи кидать.
-в случае файловой ошибки спать определённое время, если повторяется, то спать больше.
-
-
-
-* нужно версионирование, сравнивать с существующими, при перечтении
+https://stackoverflow.com/questions/30274267/component-constructor-arguments-fxml-javafx
+https://stackoverflow.com/questions/34785417/javafx-fxml-controller-constructor-vs-initialize-method
+https://community.oracle.com/tech/developers/discussion/2529134/how-to-have-constructor-with-arguments-for-controller
+https://stackoverflow.com/questions/14187963/passing-parameters-javafx-fxml
+https://stackoverflow.com/questions/48173320/javafx-fxml-parameter-passing-from-controller-a-to-b-and-back/48217255#48217255
+https://github.com/AdamBien/afterburner.fx
+https://github.com/AdamBien/followme.fx/tree/master/src/main/java/com/airhacks/followme/dashboard
+https://docs.oracle.com/javase/8/javafx/api/javafx/fxml/doc-files/introduction_to_fxml.html
 
 * страница сопоставления с тиви
 * читать CSV (экспортировано с сайта)
@@ -40,6 +25,9 @@
 * сортировка
 
 * очередь на загрузку надо продумать.
+
+* нужно версионирование, сравнивать с существующими, при перечтении
+
 
 
 //TODO

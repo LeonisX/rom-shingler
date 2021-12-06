@@ -13,13 +13,22 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane prefHeight="534.0" prefWidth="930.0" BorderPane.alignment="CENTER" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="md.leonis.crawler.moby.controller.PlatformsController">
+<BorderPane prefHeight="594.0" prefWidth="1067.0" BorderPane.alignment="CENTER" xmlns="http://javafx.com/javafx/8.0.281" xmlns:fx="http://javafx.com/fxml/1" fx:controller="md.leonis.crawler.moby.controller.PlatformsController">
     <right>
-        <VBox prefHeight="463.0" prefWidth="253.0" spacing="5.0" BorderPane.alignment="CENTER">
-            <Button fx:id="reloadPlatformsButton" mnemonicParsing="false" onAction="#reloadPlatformsButtonClick" text="Reload platforms" />
+        <VBox prefHeight="556.0" prefWidth="290.0" spacing="5.0" BorderPane.alignment="CENTER">
+         <Label text="Platforms queue">
+            <VBox.margin>
+               <Insets bottom="3.0" />
+            </VBox.margin>
+         </Label>
          <ListView fx:id="platformsQueueListView" prefHeight="356.0" prefWidth="253.0" />
          <Button fx:id="reloadGamesListButton" mnemonicParsing="false" onAction="#reloadGamesListButtonClick" text="Reload games list" />
-         <Button fx:id="reloadGamesButton" mnemonicParsing="false" onAction="#reloadGamesButtonClick" text="Reload games" />
+            <HBox alignment="CENTER_LEFT" prefHeight="11.0" prefWidth="290.0" spacing="5.0">
+                <Button fx:id="loadGamesButton" mnemonicParsing="false" onAction="#loadGamesButtonClick"
+                        text="Load games"/>
+                <CheckBox fx:id="useCacheCheckBox" mnemonicParsing="false" selected="true" text="use cached values if any"/>
+            </HBox>
+         <Button fx:id="validateImagesButton" mnemonicParsing="false" onAction="#validateImagesButtonClick" text="Validate images" />
          <Button fx:id="clearListButton" mnemonicParsing="false" onAction="#clearListButtonClick" text="Clear list" />
          <BorderPane.margin>
             <Insets left="5.0" right="5.0" />
@@ -36,8 +45,12 @@
             <HBox.margin>
                <Insets right="100.0" />
             </HBox.margin></Label>
-         <CheckBox mnemonicParsing="false" fx:id="showReadyPlatformsCheckBox" onAction="#showReadyPlatformsCheckBoxClick" selected="true" text="Show ready platforms" />
-         <CheckBox mnemonicParsing="false" fx:id="showEmptyPlatformsCheckBox" onAction="#showEmptyPlatformsCheckBoxClick" selected="true" text="Show empty platforms" />
+         <CheckBox fx:id="showReadyPlatformsCheckBox" mnemonicParsing="false" onAction="#showReadyPlatformsCheckBoxClick" selected="true" text="Show ready platforms" />
+         <CheckBox fx:id="showEmptyPlatformsCheckBox" mnemonicParsing="false" onAction="#showEmptyPlatformsCheckBoxClick" selected="true" text="Show empty platforms" />
+            <Button fx:id="reloadPlatformsButton" mnemonicParsing="false" onAction="#reloadPlatformsButtonClick" text="Reload platforms list">
+            <HBox.margin>
+               <Insets left="60.0" />
+            </HBox.margin></Button>
         </HBox>
     </top>
     <center>

@@ -3,10 +3,12 @@ package md.leonis.shingler.utils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,7 +22,7 @@ public class FileUtils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileUtils.class);
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     private static final String JSON = ".json";
 
@@ -39,12 +41,22 @@ public class FileUtils {
 
     public static <T> List<T> loadJsonList(Path path, String fileName, Class<T> clazz) {
         try {
-
             JavaType type = MAPPER.getTypeFactory().constructCollectionType(List.class, clazz);
             return MAPPER.readValue(path.resolve(fileName + JSON).normalize().toAbsolutePath().toFile(), type);
         } catch (Exception e) {
-            e.printStackTrace();
+            if (!(e instanceof FileNotFoundException)) {
+                e.printStackTrace();
+            }
             return new ArrayList<>();
+        }
+    }
+
+    public static <T> T loadAsJson(Path path, String fileName, Class<T> clazz) {
+        try{
+            return MAPPER.readValue(path.resolve(fileName + JSON).normalize().toAbsolutePath().toFile(), clazz);
+        } catch (Exception e) {
+            LOGGER.debug(e.getMessage());
+            return null;
         }
     }
 
@@ -83,6 +95,14 @@ public class FileUtils {
             Files.createDirectories(path);
         } catch (IOException e) {
             LOGGER.error("Can't create directory: {}", path.toString(), e);
+        }
+    }
+
+    public static void deleteJsonFile(Path path, String fileName) {
+        try {
+            Files.delete(path.resolve(fileName + JSON));
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

@@ -1,12 +1,10 @@
 package md.leonis.crawler.moby.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Data
 @NoArgsConstructor
@@ -80,10 +78,30 @@ public class GameEntry {
     private boolean hasRatings;
 
     private boolean completed;
+    @JsonIgnore
+    private int errorsCount = 0;
+    @JsonIgnore
+    private List<Throwable> exceptions = new ArrayList<>();
 
     public GameEntry(String platformId, String gameId, String title) {
         this.platformId = platformId;
         this.gameId = gameId;
         this.title = title;
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        GameEntry gameEntry = (GameEntry) o;
+        return Objects.equals(platformId, gameEntry.platformId) &&
+                Objects.equals(gameId, gameEntry.gameId) &&
+                Objects.equals(title, gameEntry.title);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(platformId, gameId, title);
     }
 }

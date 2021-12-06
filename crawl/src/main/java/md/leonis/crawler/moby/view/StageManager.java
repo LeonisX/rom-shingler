@@ -99,7 +99,8 @@ public class StageManager {
 
         if (scene == null) {
             scene = new Scene(rootNode);
-            scene.getStylesheets().add("log-view.css");
+            //TODO style if need
+            //scene.getStylesheets().add("log-view.css");
             return scene;
         }
 
@@ -129,7 +130,6 @@ public class StageManager {
         Platform.exit();
     }
 
-    //TODO use them!!!
     public void showInformationAlert(String title, String header, String content) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(title);
@@ -159,7 +159,17 @@ public class StageManager {
         if (elements.length > 15) {
             traces.add("...");
         }
-        showErrorAlert(title, header, String.join("\n", traces));
+        int length = traces.stream().map(String::length).max(Integer::compareTo).get();
+        String content = String.join("\n", traces);
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(header);
+        alert.setContentText(content);
+        alert.setResizable(true);
+        if (content.length() > 1000 || length > 56) {
+            alert.getDialogPane().setPrefSize(720, alert.getDialogPane().getPrefHeight());
+        }
+        alert.showAndWait();
     }
 
     public void showErrorAlert(String title, String header, String content) {

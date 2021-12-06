@@ -2,6 +2,9 @@ package md.leonis.crawler.moby;
 
 //import org.openimaj.image.ImageUtilities;
 
+import org.openimaj.image.ImageUtilities;
+
+import java.io.ByteArrayInputStream;
 import java.nio.file.Path;
 
 public class ImagesValidator {
@@ -45,8 +48,7 @@ public class ImagesValidator {
 
     public static boolean isBrokenImage(String path, byte[] bytes) {
         try {
-            //TODO RETURN
-            //ImageUtilities.readMBF(new ByteArrayInputStream(bytes));
+            ImageUtilities.readMBF(new ByteArrayInputStream(bytes));
             return false;
         } catch (Exception e) {
             System.out.println(path + ": " + e.getMessage());

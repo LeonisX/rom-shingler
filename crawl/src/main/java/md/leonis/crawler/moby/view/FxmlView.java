@@ -8,7 +8,8 @@ public enum FxmlView {
     DASHBOARD("dashboard.title", "dashboard"),
     SOURCES("sources.title", "sources"),
     PLATFORMS("platforms.title", "platforms"),
-    FAMILY("family.title", "family");
+    ACTIVITY("activity.title", "activity"),
+    ACTIVITY_ERRORS("activity.errors.title", "activityErrors");
 
     private static final String fxmlPath = "/fxml/%s.fxml";
 

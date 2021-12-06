@@ -1,6 +1,7 @@
 package md.leonis.crawler.moby;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import md.leonis.crawler.moby.view.FxmlView;
@@ -17,9 +18,9 @@ import org.springframework.context.ConfigurableApplicationContext;
 
 @SpringBootApplication
 @EnableAutoConfiguration(exclude={DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class})
-public class MainApp extends Application {
+public class CrawlerApp extends Application {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MainApp.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CrawlerApp.class);
 
     private ConfigurableApplicationContext springContext;
     private StageManager stageManager;
@@ -39,7 +40,7 @@ public class MainApp extends Application {
     public void init() {
         String[] args = this.getParameters().getRaw().toArray(new String[0]);
         // We run Spring context initialization at the time of JavaFX initialization:
-        SpringApplicationBuilder builder = new SpringApplicationBuilder(MainApp.class);
+        SpringApplicationBuilder builder = new SpringApplicationBuilder(CrawlerApp.class);
         builder.headless(false);
         springContext = builder.run(args);
         //springContext = SpringApplication.run(MainApp.class, args);
@@ -72,6 +73,8 @@ public class MainApp extends Application {
         }*/
 
         springContext.stop();
+        Platform.exit();
+        System.exit(0);
     }
 
     protected void displayInitialScene() {
