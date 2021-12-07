@@ -81,5 +81,6 @@ public class CrawlerApp extends Application {
         //TODO w/o borders https://stackoverflow.com/questions/14972199/how-to-create-splash-screen-with-transparent-background-in-javafx
         // Caused by: java.lang.IllegalStateException: Cannot set style once stage has been set visible
         stageManager.switchScene(FxmlView.SPLASH, StageStyle.UNDECORATED);
+        //stageManager.switchScene(FxmlView.TEST);
     }
 }

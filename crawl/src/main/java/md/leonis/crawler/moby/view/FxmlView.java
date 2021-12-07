@@ -9,7 +9,9 @@ public enum FxmlView {
     SOURCES("sources.title", "sources"),
     PLATFORMS("platforms.title", "platforms"),
     ACTIVITY("activity.title", "activity"),
-    ACTIVITY_ERRORS("activity.errors.title", "activityErrors");
+    ACTIVITY_ERRORS("activity.errors.title", "activityErrors"),
+    PLATFORMS_BINDING("platforms.binding.title", "platformsBinding"),
+    TEST("test.title", "test");
 
     private static final String fxmlPath = "/fxml/%s.fxml";
 

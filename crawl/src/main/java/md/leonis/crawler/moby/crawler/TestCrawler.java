@@ -7,6 +7,7 @@ import md.leonis.crawler.moby.model.Platform;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import static md.leonis.crawler.moby.config.ConfigHolder.gamesDir;
@@ -37,6 +38,16 @@ public class TestCrawler extends AbstractCrawler {
     @Override
     public void savePlatformsList(List<Platform> platforms) throws Exception {
         saveAsJson(sourceDir, "platforms", platforms);
+    }
+
+    @Override
+    public Map<String, List<String>> loadPlatformsBindingMap() throws Exception {
+        return null;
+    }
+
+    @Override
+    public void savePlatformsBindingMap(Map<String, List<String>> map) throws Exception {
+
     }
 
     @Override

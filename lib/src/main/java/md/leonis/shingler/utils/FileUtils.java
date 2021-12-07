@@ -35,6 +35,15 @@ public class FileUtils {
         }
     }
 
+    public static <T> Map<String, List<T>> loadJsonMapWithList(Path path, String fileName, Class<T> clazz) {
+        try {
+            return MAPPER.readValue(path.resolve(fileName + JSON).toFile(), new TypeReference<Map<String, List<T>>>() {
+            });
+        } catch (Exception e) {
+            return new HashMap<>();
+        }
+    }
+
     public static List<String> loadJsonList(Path path, String fileName) {
         return loadJsonList(path, fileName, String.class);
     }

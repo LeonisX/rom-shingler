@@ -13,7 +13,7 @@ import java.time.Instant;
 import java.util.Collection;
 
 // https://tech.chitgoks.com/2013/07/19/how-to-go-to-item-in-combobox-on-keypress-in-java-fx-2/
-class SearchComboBox<T> extends ComboBox<T> {
+public class SearchComboBox<T> extends ComboBox<T> {
 
     private static final int IDLE_INTERVAL_MILLIS = 1000;
 
@@ -61,7 +61,7 @@ class SearchComboBox<T> extends ComboBox<T> {
 
                     boolean found = false;
                     for (int i = 0; i < getItems().size(); i++) {
-                        if (event.getCode() != KeyCode.BACK_SPACE && getItems().get(i).toString().toLowerCase().startsWith(sb.toString())) {
+                        if (event.getCode() != KeyCode.BACK_SPACE && (null != getItems().get(i)) && getItems().get(i).toString().toLowerCase().startsWith(sb.toString())) {
                             ListView<?> listView = getListView();
                             listView.getSelectionModel().clearAndSelect(i);
                             scroll();

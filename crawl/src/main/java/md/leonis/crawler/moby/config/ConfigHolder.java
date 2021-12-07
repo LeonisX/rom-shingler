@@ -12,6 +12,9 @@ import md.leonis.crawler.moby.executor.TestExecutor;
 import md.leonis.crawler.moby.model.Activity;
 import md.leonis.crawler.moby.model.Platform;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -72,4 +75,20 @@ public class ConfigHolder {
     }
 
     public static Map<String, List<Throwable>> errorsMap;
+
+
+    public static String apiPath;
+    public static String sitePath;
+    public static String serverSecret;
+
+    public static void loadProtectedProperties() throws IOException {
+        try (InputStream inputStream = Files.newInputStream(home.resolve("protected.properties"))){
+            Properties prop = new Properties();
+            prop.load(inputStream);
+            String apiDir = prop.getProperty("api.dir") + "/";
+            sitePath = prop.getProperty("site.path") + "/";
+            serverSecret = prop.getProperty("server.secret");
+            apiPath = sitePath + apiDir;
+        }
+    }
 }

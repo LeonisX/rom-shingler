@@ -17,6 +17,11 @@ public class Platform {
     private long completed;
     private LocalDateTime date;
 
+    public Platform(String id, String title) {
+        this.id = id;
+        this.title = title;
+    }
+
     public void updateFrom(Platform platform) {
 
         if (platform != null) {
@@ -24,5 +29,10 @@ public class Platform {
             this.completed = platform.completed;
             this.date = platform.date;
         }
+    }
+
+    @Override
+    public String toString() {
+        return id;
     }
 }

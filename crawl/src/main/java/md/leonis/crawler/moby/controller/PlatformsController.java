@@ -54,6 +54,7 @@ public class PlatformsController {
 
     public CheckBox showReadyPlatformsCheckBox;
     public CheckBox showEmptyPlatformsCheckBox;
+    public Button platformsBindings;
 
     private Crawler crawler;
 
@@ -224,5 +225,9 @@ public class PlatformsController {
 
     public void addToQueueMenuItemClick() {
         platformsTableView.getSelectionModel().getSelectedItems().forEach(platform -> platformsQueueListView.getItems().add(platform));
+    }
+
+    public void platformsBindingsClick() {
+        stageManager.showPane(FxmlView.PLATFORMS_BINDING);
     }
 }

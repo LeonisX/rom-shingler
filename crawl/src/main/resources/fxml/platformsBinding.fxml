@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane prefHeight="614.0" prefWidth="1193.0" BorderPane.alignment="CENTER" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="md.leonis.crawler.moby.controller.PlatformsBindingController">
+   <top>
+      <HBox alignment="CENTER_LEFT" prefHeight="30.0" prefWidth="1009.0" spacing="5.0" BorderPane.alignment="CENTER">
+         <Button fx:id="closeButton" mnemonicParsing="false" onAction="#closeButtonClick" prefHeight="25.0" text="Save &amp; Close" />
+         <Button fx:id="rollbackButton" mnemonicParsing="false" onAction="#rollbackButtonClick" text="Rollback" visible="false" />
+         <Label text="Сопоставление платформ тиви и второго ресурса" />
+         <BorderPane.margin>
+            <Insets left="5.0" />
+         </BorderPane.margin>
+      </HBox>
+   </top>
+   <center>
+      <ScrollPane pannable="true" BorderPane.alignment="CENTER">
+         <content>
+            <VBox fx:id="diffVBox" alignment="CENTER" prefHeight="200.0" prefWidth="200.0">
+      </VBox>
+         </content>
+         <BorderPane.margin>
+            <Insets />
+         </BorderPane.margin>
+         <padding>
+            <Insets left="5.0" top="5.0" />
+         </padding>
+      </ScrollPane>
+   </center>
+</BorderPane>

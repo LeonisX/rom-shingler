@@ -9,21 +9,25 @@ import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public interface Crawler {
 
+    // Platforms
     List<Platform> parsePlatformsList() throws Exception;
 
     List<Platform> loadPlatformsList() throws Exception;
 
     void savePlatformsList(List<Platform> platforms) throws Exception;
 
+    Map<String, List<String>> loadPlatformsBindingMap() throws Exception;
 
-    void setProcessor(FilesProcessor processor);
+    void savePlatformsBindingMap(Map<String, List<String>> map) throws Exception;
 
+    // Games
     void parseGameEntry(GameEntry gameEntry) throws Exception;
 
     List<GameEntry> parseGamesList(String platformId) throws Exception;
@@ -32,13 +36,16 @@ public interface Crawler {
 
     void saveGamesList(String platformId, List<GameEntry> games) throws Exception;
 
-    void saveSupportData() throws IOException;
-
-    FilesProcessor getProcessor();
-
     List<GameEntry> getGamesList(List<String> platforms) throws Exception;
 
     void processGamesList(List<GameEntry> gameEntries) throws Exception;
+
+    void saveSupportData() throws IOException;
+
+    // Processor
+    void setProcessor(FilesProcessor processor);
+
+    FilesProcessor getProcessor();
 
     boolean isSuspended();
 
@@ -50,6 +57,8 @@ public interface Crawler {
 
     void setConsumers(Consumer<GameEntry> crawlerRefreshConsumer, Consumer<GameEntry> crawlerSuccessConsumer, Consumer<GameEntry> crawlerErrorConsumer);
 
+
+    // JSoup
 
     class A extends Element {
 
@@ -70,9 +79,6 @@ public interface Crawler {
             return href;
         }
     }
-
-
-
 
     default Element getByClass(Element element, String className) {
 
@@ -185,5 +191,4 @@ public interface Crawler {
         String[] chunks = url.split("/");
         return chunks[chunks.length - 2];
     }
-
 }

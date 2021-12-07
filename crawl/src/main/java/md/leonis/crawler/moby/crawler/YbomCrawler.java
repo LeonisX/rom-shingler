@@ -1328,6 +1328,16 @@ public class YbomCrawler extends AbstractCrawler {
         saveAsJson(sourceDir, "platforms", platforms);
     }
 
+    @Override
+    public Map<String, List<String>> loadPlatformsBindingMap() throws Exception {
+        return loadJsonMapWithList(sourceDir, "platformsBinding", String.class);
+    }
+
+    @Override
+    public void savePlatformsBindingMap(Map<String, List<String>> map) throws Exception {
+        saveAsJson(sourceDir, "platformsBinding", map);
+    }
+
     private String getGameMainReferrer(String gameId) {
         String formattedGameName = gameId.replace("-", " ").replace("_", " ").trim().replace(" ", "+");
         return String.format(GAME_MAIN_REFERRER, formattedGameName);

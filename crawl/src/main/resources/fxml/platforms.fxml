@@ -13,7 +13,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane prefHeight="594.0" prefWidth="1067.0" BorderPane.alignment="CENTER" xmlns="http://javafx.com/javafx/8.0.281" xmlns:fx="http://javafx.com/fxml/1" fx:controller="md.leonis.crawler.moby.controller.PlatformsController">
+<BorderPane prefHeight="594.0" prefWidth="1067.0" BorderPane.alignment="CENTER" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="md.leonis.crawler.moby.controller.PlatformsController">
     <right>
         <VBox prefHeight="556.0" prefWidth="290.0" spacing="5.0" BorderPane.alignment="CENTER">
          <Label text="Platforms queue">
@@ -24,9 +24,8 @@
          <ListView fx:id="platformsQueueListView" prefHeight="356.0" prefWidth="253.0" />
          <Button fx:id="reloadGamesListButton" mnemonicParsing="false" onAction="#reloadGamesListButtonClick" text="Reload games list" />
             <HBox alignment="CENTER_LEFT" prefHeight="11.0" prefWidth="290.0" spacing="5.0">
-                <Button fx:id="loadGamesButton" mnemonicParsing="false" onAction="#loadGamesButtonClick"
-                        text="Load games"/>
-                <CheckBox fx:id="useCacheCheckBox" mnemonicParsing="false" selected="true" text="use cached values if any"/>
+                <Button fx:id="loadGamesButton" mnemonicParsing="false" onAction="#loadGamesButtonClick" text="Load games" />
+                <CheckBox fx:id="useCacheCheckBox" mnemonicParsing="false" selected="true" text="use cached values if any" />
             </HBox>
          <Button fx:id="validateImagesButton" mnemonicParsing="false" onAction="#validateImagesButtonClick" text="Validate images" />
          <Button fx:id="clearListButton" mnemonicParsing="false" onAction="#clearListButtonClick" text="Clear list" />
@@ -51,6 +50,7 @@
             <HBox.margin>
                <Insets left="60.0" />
             </HBox.margin></Button>
+         <Button fx:id="platformsBindings" mnemonicParsing="false" onAction="#platformsBindingsClick" text="Platforms bindings" />
         </HBox>
     </top>
     <center>
