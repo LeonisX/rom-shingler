@@ -11,6 +11,8 @@ public enum FxmlView {
     ACTIVITY("activity.title", "activity"),
     ACTIVITY_ERRORS("activity.errors.title", "activityErrors"),
     PLATFORMS_BINDING("platforms.binding.title", "platformsBinding"),
+    GAMES_BINDING("games.binding.title", "gamesBinding"),
+    GAMES_INFO("games.info.title", "gamesInfo"),
     TEST("test.title", "test");
 
     private static final String fxmlPath = "/fxml/%s.fxml";

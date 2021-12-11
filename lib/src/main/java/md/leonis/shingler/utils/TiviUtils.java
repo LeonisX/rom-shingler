@@ -181,8 +181,7 @@ public class TiviUtils {
             sheet.autoSizeColumn(i);
         }
 
-        try {
-            FileOutputStream outputStream = new FileOutputStream(path.toFile());
+        try (FileOutputStream outputStream = new FileOutputStream(path.toFile())) {
             workbook.write(outputStream);
             workbook.close();
         } catch (Exception e) {
@@ -195,7 +194,8 @@ public class TiviUtils {
         int r = -1, c = -1;
 
         try {
-            FileInputStream excelFile = new FileInputStream(path.toFile());
+            File file = path.toFile();
+            FileInputStream excelFile = new FileInputStream(file);
             Workbook workbook = new XSSFWorkbook(excelFile);
             Sheet datatypeSheet = workbook.getSheetAt(0);
 
@@ -235,6 +235,8 @@ public class TiviUtils {
                 }
                 records.add(record);
             }
+            excelFile.close();
+            workbook.close();
             return records;
         } catch (Exception e) {
             LOGGER.error("[{}, {}]", r, c);

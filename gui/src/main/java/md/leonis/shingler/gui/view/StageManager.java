@@ -226,7 +226,7 @@ public class StageManager {
     public TextInputDialog getTextInputDialog(String title, String headerText, String contentText, String defaultValue) {
         DialogTexts dialogTexts = new DialogTexts(title, headerText, contentText);
         String value = (defaultValue == null) ? inputDialogTexts.get(dialogTexts) : defaultValue;
-        TextInputDialog dialog = new TextInputDialog(value);
+        TextInputDialog dialog = new TextInputDialog(value); //TODO add width
         dialog.setTitle(title);
         dialog.setHeaderText(title);
         dialog.setContentText(title);

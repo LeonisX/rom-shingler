@@ -11,8 +11,7 @@ import md.leonis.shingler.utils.FileUtils;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
 
-import static md.leonis.crawler.moby.config.ConfigHolder.activity;
-import static md.leonis.crawler.moby.config.ConfigHolder.sourceDir;
+import static md.leonis.crawler.moby.config.ConfigHolder.*;
 
 @Controller
 public class SourcesController {
@@ -44,9 +43,9 @@ public class SourcesController {
     private void loadActivityAndShowPane(String source) {
         try {
             ConfigHolder.setSource(source);
-            ConfigHolder.setPlatforms(FileUtils.loadJsonList(sourceDir, "platforms", Platform.class));
+            ConfigHolder.setPlatforms(FileUtils.loadJsonList(getSourceDir(getSource()), "platforms", Platform.class));
 
-            activity = FileUtils.loadAsJson(sourceDir, "activity", Activity.class);
+            activity = FileUtils.loadAsJson(getSourceDir(getSource()), "activity", Activity.class);
             if (null == activity) {
                 stageManager.showPane(FxmlView.PLATFORMS);
             } else {

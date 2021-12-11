@@ -95,7 +95,7 @@ public class FileUtils {
             if (Files.exists(backupFile)) {
                 Files.delete(backupFile);
             }
-            Files.move(path, backupFile);
+            Files.copy(path, backupFile);
         }
     }
 

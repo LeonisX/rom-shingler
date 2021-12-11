@@ -101,16 +101,16 @@ public class ActivityController {
 
                     if (crawler.isSuspended()) {
                         activity.setFileEntries(filesTableView.getItems().stream().filter(f -> !f.isCompleted()).collect(Collectors.toList()));
-                        FileUtils.saveAsJson(sourceDir, "activity", activity);
+                        FileUtils.saveAsJson(getSourceDir(getSource()), "activity", activity);
                         Platform.runLater(() -> stageManager.showInformationAlert("Suspended title", "Suspended header", ""));
 
                     } else if (crawler.isAborted()) {
-                        FileUtils.deleteJsonFile(sourceDir, "activity");
+                        FileUtils.deleteJsonFile(getSourceDir(getSource()), "activity");
                         Platform.runLater(() -> stageManager.showInformationAlert("Aborted title", "Aborted header", ""));
 
                     } else {
                         crawler.getProcessor().finalizeProcessors();
-                        FileUtils.deleteJsonFile(sourceDir, "activity");
+                        FileUtils.deleteJsonFile(getSourceDir(getSource()), "activity");
                         Platform.runLater(() -> {
                             errorsMap = new TreeMap<>();
                             gamesTableView.getItems().forEach(g -> errorsMap.put(g.getTitle(), g.getExceptions()));

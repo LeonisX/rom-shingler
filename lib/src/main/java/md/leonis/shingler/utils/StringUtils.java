@@ -40,23 +40,14 @@ public class StringUtils {
     }
 
     public static String normalize7z(String fileName) {
-        fileName = fileName.replace(" (SG-1000)", "");
-        fileName = fileName.replace(" (SC-3000)", "");
-        fileName = fileName.replace(" (SF-7000)", "");
-        fileName = fileName.replace(" (MV)", "");
-        fileName = fileName.replace(" (Unreleased)", "");
-        fileName = fileName.replace(" (Prototype)", "");
-        fileName = fileName.replace(" (Sample)", "");
-        fileName = fileName.replace(" (Beta)", "");
-        //fileName = fileName.replace(" (Unl)", "");
-        fileName = fileName.replace(" (Wxn)", "");
+        fileName = removeSpecialStatus(fileName);
         String result = StringUtils.removeSpecialChars(fileName.replace("_", " ")); // remove special symbols
         return StringUtils.force63(result).replace(" ", "_");
     }
 
     static String force63(String fileName) {
 
-        String name = fileName.replace(" The ", " ").replace(" The ", " ").replace(" the ", " ").replace(" The ", " ");
+        String name = removeThe(fileName);
 
         // [t1][a1][T-Port] -> [t1a1T-Port]
         // From tail consistently delete these substrings:
@@ -108,7 +99,43 @@ public class StringUtils {
         return name.substring(0, 21) + "-" + name.substring(name.length() - maxLength + 22) + ext;
     }
 
-    private static String removeSpecialChars(String fileName) {
+    //TODO [S] [C]
+    public static String removeSpecialStatus(String s) {
+        s = s.replace(" (SG-1000)", "");
+        s = s.replace(" (SC-3000)", "");
+        s = s.replace(" (SF-7000)", "");
+        s = s.replace(" (MV)", "");
+        s = s.replace(" (Unreleased)", "");
+        s = s.replace(" (Prototype)", "");
+        s = s.replace(" (Sample)", "");
+        s = s.replace(" (Beta)", "");
+        //s = fileName.replace(" (Unl)", "");
+        return s.replace(" (Wxn)", "");
+    }
+
+    public static String removeThe(String s) {
+        s = s.replace(" The ", " ").replace(" The ", " ").replace(" the ", " ").replace(" The ", " ");
+        s = removeFront(s, "The ");
+        return removeTail(s, ", The");
+    }
+
+    public static String removeFront(String s, String substr) {
+        if (s.startsWith(substr)) {
+            return s.substring(substr.length());
+        } else {
+            return s;
+        }
+    }
+
+    public static String removeTail(String s, String substr) {
+        if (s.endsWith(substr)) {
+            return s.substring(0, s.length() - substr.length());
+        } else {
+            return s;
+        }
+    }
+
+    public static String removeSpecialChars(String fileName) {
         for (char c : "'[!]\"<>;/\\`~@#$%^&*()".toCharArray()) {
             fileName = fileName.replace("" + c, "");
         }
@@ -116,6 +143,10 @@ public class StringUtils {
             fileName = fileName.replace("" + c, "-");
         }
         return fileName;
+    }
+
+    public static String replaceColon(String s) {
+        return s.replace(":", " - ").replace("  ", " ").replace("  ", " ");
     }
 
     private static String deleteSpaces(String name, int maxLength) {
@@ -201,6 +232,19 @@ public class StringUtils {
         return fileName;
     }
 
+    public static String stripArchiveExtension(String fileName) {
+        if (fileName == null) {
+            return null;
+        }
+        for (String ext : Arrays.asList(".7z", ".zip")) {
+            int lastIndexOf = fileName.lastIndexOf(ext);
+            if (lastIndexOf != -1 && lastIndexOf + ext.length() == fileName.length()) {
+                return fileName.substring(0, lastIndexOf);
+            }
+        }
+        return fileName;
+    }
+
     public static String getFileExtension(String fileName) {
         for (String ext : platformsByCpu.get(platform).getExts()) {
             int lastIndexOf = fileName.lastIndexOf(ext);
@@ -219,16 +263,22 @@ public class StringUtils {
         return fileName + (fileName.endsWith("." + ext) ? "" : "." + ext);
     }
 
-    public static String escapeChars(String s) {
-        s = s.replace("&", "&amp;");
+    public static String escapeChars(String s) { //todo
+        //s = s.replace("&", "&amp;");
         s = s.replace("'", "&rsquo;");
         s = s.replace("`", "&rsquo;");
-        return s;
+        return StringEscapeUtils.escapeHtml4(s);
+    }
+
+    public static String unescapeChars(String s) {
+        s = s.replace("&rsquo;", "'");
+        //s = s.replace("&amp;", "&");
+
+        return StringEscapeUtils.unescapeHtml4(s);
     }
 
     public static String cpu(String cpu) {
-        cpu = cpu.replace("&rsquo;", "'");
-        cpu = StringEscapeUtils.unescapeHtml4(cpu); // &amp;, ...
+        cpu = unescapeChars(cpu);
 
         String separators = " _+~";
         String restricted = "'\"().,&!?$@#%^*=/\\[];:|<>{}";
@@ -289,5 +339,4 @@ public class StringUtils {
         string = string.replaceAll("/[^a-zA-Z0-9_\\-]+/si", "");
         return string;
     }
-
 }

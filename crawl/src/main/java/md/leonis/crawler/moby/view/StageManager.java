@@ -8,6 +8,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.BorderPane;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import md.leonis.crawler.moby.controls.ListViewDialog;
@@ -94,6 +95,28 @@ public class StageManager {
         newWindow.show();
     }
 
+    public Stage showFloatWindow(final FxmlView view, double x, double y) {
+        Parent viewRootNodeHierarchy = loadViewNodeHierarchy(view.getFxmlFile());
+
+        Scene secondScene = new Scene(viewRootNodeHierarchy);
+        //Scene secondScene = new Scene(viewRootNodeHierarchy, 230, 100);
+
+        // New window (Stage)
+        Stage newWindow = new Stage();
+        newWindow.setTitle(view.getTitle());
+        newWindow.setScene(secondScene);
+
+        // Set position of second window, related to primary window.
+        newWindow.setX(x + 30);
+
+        newWindow.show();
+
+        double dy = (Screen.getPrimary().getBounds().getMaxY() - newWindow.getHeight()) / 2;
+
+        newWindow.setY(dy);
+        return newWindow;
+    }
+
     private Scene prepareScene(Parent rootNode) {
         Scene scene = primaryStage.getScene();
 
@@ -153,6 +176,7 @@ public class StageManager {
         alert.showAndWait();
     }
 
+    //TODO use e.getClass().getSimpleName() + e.getMessage(),  instead header
     public void showErrorAlert(String title, String header, Throwable throwable) {
         StackTraceElement[] elements = throwable.getStackTrace();
         List<String> traces = Arrays.stream(elements).map(StackTraceElement::toString).limit(15).collect(Collectors.toList());

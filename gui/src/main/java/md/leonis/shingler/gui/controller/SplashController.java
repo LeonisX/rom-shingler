@@ -35,6 +35,12 @@ public class SplashController {
                 Collections.singletonList("(Unl)"),
                 Collections.singletonList(0),
                 8));
+        platforms.put("Nintendo Famicom", new Platform("Nintendo Famicom", "famicom", "(.*\\(Hack\\).*|.*\\(Hack .*|.* Hack\\).*)",
+                "(.*\\[[bhot][0-9a-f]].*|.*\\[T[+\\-].*].*|.*\\[hM\\d{2}].*|.*\\[hFFE].*)", ".*\\(PD\\).*",
+                Arrays.asList(".nes", ".unf", ".unif", ".fds", ".bin", ".prg", ".nsf", ".nez", ".7z", ".zip"),
+                Collections.singletonList("(Unl)"),
+                Collections.singletonList(0),
+                8));
         platforms.put("Sega SG-1000", new Platform("Sega SG-1000", "sg1000", "(.*\\(Hack\\).*|.*\\(Hack .*|.* Hack\\).*)",
                 "(.*\\[[bhot][0-9a-f]].*|.*\\[T[+\\-].*].*|.*\\[hM\\d{2}].*|.*\\[hFFE].*)", ".*\\(PD\\).*",
                 Arrays.asList(".sg", ".sc", ".sf7", ".mv", ".sms", ".bin", ".7z", ".zip"),

@@ -9,7 +9,8 @@ import md.leonis.shingler.utils.FileUtils;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
 
-import static md.leonis.crawler.moby.config.ConfigHolder.sourceDir;
+import static md.leonis.crawler.moby.config.ConfigHolder.getSource;
+import static md.leonis.crawler.moby.config.ConfigHolder.getSourceDir;
 
 @Controller
 public class SplashController {
@@ -25,7 +26,7 @@ public class SplashController {
     private void initialize() {
 
         //TODO
-        FileUtils.createDirectories(sourceDir);
+        FileUtils.createDirectories(getSourceDir(getSource()));
 
         //TODO switch on
         //PauseTransition delay = new PauseTransition(Duration.seconds(1));

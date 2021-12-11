@@ -55,6 +55,7 @@ public class PlatformsController {
     public CheckBox showReadyPlatformsCheckBox;
     public CheckBox showEmptyPlatformsCheckBox;
     public Button platformsBindings;
+    public MenuItem bindGamesMenuItem;
 
     private Crawler crawler;
 
@@ -188,7 +189,7 @@ public class PlatformsController {
         if (!platforms.isEmpty()) {
             Activity.Task task = useCacheCheckBox.isSelected() ? Activity.Task.LOAD : Activity.Task.RELOAD;
             activity = new Activity(platforms, task);
-            FileUtils.saveAsJson(sourceDir, "activity", activity);
+            FileUtils.saveAsJson(getSourceDir(getSource()), "activity", activity);
             stageManager.showPane(FxmlView.ACTIVITY);
         } else {
             stageManager.showErrorAlert("No platforms selected!", "Please, select at once one platform", "");
@@ -200,7 +201,7 @@ public class PlatformsController {
         if (!platforms.isEmpty()) {
             List<String> platforms = platformsQueueListView.getItems().stream().map(Platform::getId).collect(Collectors.toList());
             activity = new Activity(platforms, Activity.Task.VALIDATE);
-            FileUtils.saveAsJson(sourceDir, "activity", activity);
+            FileUtils.saveAsJson(getSourceDir(getSource()), "activity", activity);
             stageManager.showPane(FxmlView.ACTIVITY);
         } else {
             stageManager.showErrorAlert("No platforms selected!", "Please, select at once one platform", "");
@@ -229,5 +230,20 @@ public class PlatformsController {
 
     public void platformsBindingsClick() {
         stageManager.showPane(FxmlView.PLATFORMS_BINDING);
+    }
+
+    public void bindGamesMenuItemClick() {
+        try {
+            platformsBindingMap = crawler.loadPlatformsBindingMap();
+            platformsBindingMapEntries = platformsBindingMap.entrySet().stream().filter(e -> e.getKey()
+                    .contains(platformsTableView.getSelectionModel().getSelectedItem().getId())).collect(Collectors.toList());
+            if (!platformsBindingMapEntries.isEmpty()) {
+                stageManager.showPane(FxmlView.GAMES_BINDING);
+            } else {
+                stageManager.showWarningAlert("Not allowed!", "Please, bind this platform first" , "");
+            }
+        } catch (Exception e) {
+            stageManager.showErrorAlert("No platforms bindings!", "Please, bind platforms first", e);
+        }
     }
 }

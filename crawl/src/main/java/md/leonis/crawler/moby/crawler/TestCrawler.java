@@ -10,8 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import static md.leonis.crawler.moby.config.ConfigHolder.gamesDir;
-import static md.leonis.crawler.moby.config.ConfigHolder.sourceDir;
+import static md.leonis.crawler.moby.config.ConfigHolder.*;
 import static md.leonis.crawler.moby.executor.Executor.RANDOM;
 import static md.leonis.shingler.utils.FileUtils.saveAsJson;
 
@@ -37,7 +36,7 @@ public class TestCrawler extends AbstractCrawler {
 
     @Override
     public void savePlatformsList(List<Platform> platforms) throws Exception {
-        saveAsJson(sourceDir, "platforms", platforms);
+        saveAsJson(getSourceDir(getSource()), "platforms", platforms);
     }
 
     @Override
@@ -47,6 +46,16 @@ public class TestCrawler extends AbstractCrawler {
 
     @Override
     public void savePlatformsBindingMap(Map<String, List<String>> map) throws Exception {
+
+    }
+
+    @Override
+    public Map<String, List<String>> loadGamesBindingMap(String platformId, String mobyPlatformId) throws Exception {
+        return null;
+    }
+
+    @Override
+    public void saveGamesBindingMap(String platformId, String mobyPlatformId, Map<String, List<String>> map) throws Exception {
 
     }
 
@@ -81,7 +90,7 @@ public class TestCrawler extends AbstractCrawler {
 
     @Override
     public void saveGamesList(String platformId, List<GameEntry> games) throws Exception {
-        saveAsJson(gamesDir, platformId, games);
+        saveAsJson(getGamesDir(getSource()), platformId, games);
     }
 
     @Override
@@ -92,6 +101,11 @@ public class TestCrawler extends AbstractCrawler {
     @Override
     public FilesProcessor getProcessor() {
         return processor;
+    }
+
+    @Override
+    public String getGamePage(String platformId, String gameId) {
+        return null;
     }
 
     @Override

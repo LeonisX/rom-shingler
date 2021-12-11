@@ -66,6 +66,7 @@
               <items>
                   <MenuItem fx:id="loadGamesListMenuItem" mnemonicParsing="false" onAction="#loadGamesListMenuItemClick" text="Load games list" />
                   <MenuItem fx:id="auditMenuItem" mnemonicParsing="false" onAction="#auditMenuItemClick" text="Audit" />
+                  <MenuItem fx:id="bindGamesMenuItem" mnemonicParsing="false" onAction="#bindGamesMenuItemClick" text="Bind games" />
                   <MenuItem fx:id="addToQueueMenuItem" mnemonicParsing="false" onAction="#addToQueueMenuItemClick" text="Add to queue" />
               </items>
             </ContextMenu>

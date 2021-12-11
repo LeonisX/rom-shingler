@@ -3,9 +3,9 @@ package md.leonis.crawler.moby.crawler;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import md.leonis.crawler.moby.FilesProcessor;
-import md.leonis.crawler.moby.executor.HttpExecutor;
 import md.leonis.crawler.moby.config.ConfigHolder;
 import md.leonis.crawler.moby.dto.FileEntry;
+import md.leonis.crawler.moby.executor.HttpExecutor;
 import md.leonis.crawler.moby.model.*;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
@@ -180,28 +180,28 @@ public class YbomCrawler extends AbstractCrawler {
 
     private void preload() {
 
-        companies = loadJsonMap(sourceDir, "companies");
-        sheets = loadJsonMap(sourceDir, "sheets");
-        gameGroups = loadJsonMap(sourceDir, "gameGroups");
-        developers = loadJsonMap(sourceDir, "developers");
-        sources = loadJsonMap(sourceDir, "sources");
-        users = loadJsonMap(sourceDir, "users");
-        attributes = loadJsonMap(sourceDir, "attributes");
+        companies = loadJsonMap(getSourceDir(getSource()), "companies");
+        sheets = loadJsonMap(getSourceDir(getSource()), "sheets");
+        gameGroups = loadJsonMap(getSourceDir(getSource()), "gameGroups");
+        developers = loadJsonMap(getSourceDir(getSource()), "developers");
+        sources = loadJsonMap(getSourceDir(getSource()), "sources");
+        users = loadJsonMap(getSourceDir(getSource()), "users");
+        attributes = loadJsonMap(getSourceDir(getSource()), "attributes");
 
-        brokenImages = loadJsonList(sourceDir, "brokenImages");
+        brokenImages = loadJsonList(getSourceDir(getSource()), "brokenImages");
     }
 
     @Override
     public void saveSupportData() throws IOException {
         System.out.println("Save in progress...");
-        saveAsJson(sourceDir, "companies", companies);
-        saveAsJson(sourceDir, "sheets", sheets);
-        saveAsJson(sourceDir, "gameGroups", gameGroups);
-        saveAsJson(sourceDir, "developers", developers);
-        saveAsJson(sourceDir, "sources", sources);
-        saveAsJson(sourceDir, "users", users);
-        saveAsJson(sourceDir, "attributes", attributes);
-        saveAsJson(sourceDir, "brokenImages", brokenImages);
+        saveAsJson(getSourceDir(getSource()), "companies", companies);
+        saveAsJson(getSourceDir(getSource()), "sheets", sheets);
+        saveAsJson(getSourceDir(getSource()), "gameGroups", gameGroups);
+        saveAsJson(getSourceDir(getSource()), "developers", developers);
+        saveAsJson(getSourceDir(getSource()), "sources", sources);
+        saveAsJson(getSourceDir(getSource()), "users", users);
+        saveAsJson(getSourceDir(getSource()), "attributes", attributes);
+        saveAsJson(getSourceDir(getSource()), "brokenImages", brokenImages);
         System.out.println("Saved.");
     }
 
@@ -1298,12 +1298,12 @@ public class YbomCrawler extends AbstractCrawler {
 
     @Override
     public List<GameEntry> loadGamesList(String platformId) {
-        return loadJsonList(gamesDir, platformId, GameEntry.class);
+        return loadJsonList(getGamesDir(getSource()), platformId, GameEntry.class);
     }
 
     @Override
     public void saveGamesList(String platformId, List<GameEntry> games) throws Exception {
-        saveAsJson(gamesDir, platformId, games);
+        saveAsJson(getGamesDir(getSource()), platformId, games.stream().filter(g -> !g.getGameId().isEmpty()).collect(Collectors.toList()));
     }
 
     @Override
@@ -1320,22 +1320,32 @@ public class YbomCrawler extends AbstractCrawler {
 
     @Override
     public List<Platform> loadPlatformsList() {
-        return loadJsonList(sourceDir, "platforms", Platform.class);
+        return loadJsonList(getSourceDir(getSource()), "platforms", Platform.class);
     }
 
     @Override
     public void savePlatformsList(List<Platform> platforms) throws Exception {
-        saveAsJson(sourceDir, "platforms", platforms);
+        saveAsJson(getSourceDir(getSource()), "platforms", platforms);
     }
 
     @Override
     public Map<String, List<String>> loadPlatformsBindingMap() throws Exception {
-        return loadJsonMapWithList(sourceDir, "platformsBinding", String.class);
+        return loadJsonMapWithList(getSourceDir(getSource()), "platformsBinding", String.class);
     }
 
     @Override
     public void savePlatformsBindingMap(Map<String, List<String>> map) throws Exception {
-        saveAsJson(sourceDir, "platformsBinding", map);
+        saveAsJson(getSourceDir(getSource()), "platformsBinding", map);
+    }
+
+    @Override
+    public Map<String, List<String>> loadGamesBindingMap(String platformId, String mobyPlatformId) throws Exception {
+        return loadJsonMapWithList(getGamesDir(getSource()), platformId + "-" + mobyPlatformId + "-binding", String.class);
+    }
+
+    @Override
+    public void saveGamesBindingMap(String platformId, String mobyPlatformId, Map<String, List<String>> map) throws Exception {
+        saveAsJson(getGamesDir(getSource()), platformId + "-" + mobyPlatformId + "-binding", map);
     }
 
     private String getGameMainReferrer(String gameId) {
@@ -1465,5 +1475,10 @@ public class YbomCrawler extends AbstractCrawler {
     @Override
     public FilesProcessor getProcessor() {
         return processor;
+    }
+
+    @Override
+    public String getGamePage(String platformId, String gameId) {
+        return String.format(GAME_MAIN, platformId, gameId);
     }
 }

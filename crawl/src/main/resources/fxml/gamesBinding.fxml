@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane prefHeight="614.0" prefWidth="1270.0" BorderPane.alignment="CENTER" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="md.leonis.crawler.moby.controller.GamesBindingController">
+    <top>
+        <HBox alignment="CENTER_LEFT" prefHeight="30.0" prefWidth="1009.0" spacing="5.0" BorderPane.alignment="CENTER">
+            <Button fx:id="closeButton" mnemonicParsing="false" onAction="#closeButtonClick" prefHeight="25.0" text="Save &amp; Close" />
+            <Button fx:id="saveButton" mnemonicParsing="false" onAction="#saveButtonClick" text="Save green" />
+         <CheckBox fx:id="showGreenCheckBox" mnemonicParsing="false" onAction="#showGreenCheckBoxAction" selected="true" text="Show green" />
+            <Button fx:id="rollbackButton" mnemonicParsing="false" onAction="#rollbackButtonClick" text="Rollback" visible="false" />
+            <Label fx:id="infoLabel" />
+         <Button fx:id="autoAssignButton" mnemonicParsing="false" onAction="#autoAssignButtonClick" text="Auto assign" />
+            <BorderPane.margin>
+                <Insets left="5.0" />
+            </BorderPane.margin>
+        </HBox>
+    </top>
+    <center>
+        <TableView fx:id="tableView" prefHeight="584.0" prefWidth="965.0" BorderPane.alignment="CENTER">
+            <columns>
+                <TableColumn fx:id="idTableColumn" prefWidth="38.0" text="id" />
+                <TableColumn fx:id="familyTableColumn" prefWidth="190.0" text="Family" />
+                <TableColumn fx:id="tiviTableColumn" prefWidth="300.0" text="Tivi" />
+                <TableColumn fx:id="sourceTableColumn" prefWidth="300.0" text="Other source" />
+                <TableColumn fx:id="plusButtonTableColumn" prefWidth="32.0" text="+" />
+            <TableColumn fx:id="deleteButtonTableColumn" prefWidth="30.0" text="x" />
+            </columns>
+        </TableView>
+    </center>
+   <right>
+       <VBox prefWidth="365.0" BorderPane.alignment="CENTER">
+           <TextField fx:id="searchTextField" />
+           <ListView fx:id="listView" prefHeight="584.0" prefWidth="336.0" />
+       </VBox>
+   </right>
+</BorderPane>

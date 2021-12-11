@@ -11,8 +11,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Random;
 
-import static md.leonis.crawler.moby.config.ConfigHolder.cacheDir;
-import static md.leonis.crawler.moby.config.ConfigHolder.pagesDir;
+import static md.leonis.crawler.moby.config.ConfigHolder.*;
 
 public interface Executor {
 
@@ -33,7 +32,7 @@ public interface Executor {
         if (uri.startsWith("/")) {
             uri = uri.substring(1);
         }
-        return pagesDir.resolve(uri).normalize().toAbsolutePath();
+        return getPagesDir(getSource()).resolve(uri).normalize().toAbsolutePath();
     }
 
     // TODO source specific, move to crawler
@@ -42,7 +41,7 @@ public interface Executor {
         if (uri.startsWith("/")) {
             uri = uri.substring(1);
         }
-        return cacheDir.resolve(uri).normalize().toAbsolutePath();
+        return getCacheDir(getSource()).resolve(uri).normalize().toAbsolutePath();
     }
 
     class HttpResponse {

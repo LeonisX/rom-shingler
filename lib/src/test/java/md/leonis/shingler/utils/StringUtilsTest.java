@@ -160,4 +160,14 @@ class StringUtilsTest {
         assertEquals("Schnurmanator 2011-08-05 SMW1 Hack.zip2", StringUtils.stripExtension("Schnurmanator 2011-08-05 SMW1 Hack.zip2"));
         assertEquals("Schnurmanator 2011-08-05.gg SMW1 Hack", StringUtils.stripExtension("Schnurmanator 2011-08-05.gg SMW1 Hack.zip"));
     }
+
+    @Test
+    void removeTail() {
+        assertEquals("Test", StringUtils.removeTail("Test, The", ", The"));
+    }
+
+    @Test
+    void removeFront() {
+        assertEquals("Test", StringUtils.removeFront("The Test", "The "));
+    }
 }

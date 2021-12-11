@@ -2,6 +2,12 @@
 
 Список задач
 
+генерить список игр, что надо создать, может есть смысл делать сразу SQL
+
+
+https://github.com/kwhat/jnativehook
+
+
 ### UI
 
 постараться переписать под https://github.com/AdamBien/afterburner.fx
@@ -14,17 +20,6 @@ https://stackoverflow.com/questions/48173320/javafx-fxml-parameter-passing-from-
 https://github.com/AdamBien/afterburner.fx
 https://github.com/AdamBien/followme.fx/tree/master/src/main/java/com/airhacks/followme/dashboard
 https://docs.oracle.com/javase/8/javafx/api/javafx/fxml/doc-files/introduction_to_fxml.html
-
-* страница сопоставления с тиви
-* читать CSV (экспортировано с сайта)
-* можно поставить ендпоинт - список таблиц, и CSV - хорошая идея кстати
-* сопоставлять по какому-то алгоритму
-* название, тиви название, % совпадения
-* статус - одобрен
-* фильтры: одобренные, не одобренные
-* сортировка
-
-* очередь на загрузку надо продумать.
 
 * нужно версионирование, сравнивать с существующими, при перечтении
 
@@ -46,11 +41,6 @@ https://docs.oracle.com/javase/8/javafx/api/javafx/fxml/doc-files/introduction_t
 // /stats/recent_entries/offset,0/so,2d/
 // /stats/recent_modifications
 // /stats/recent_reviews
-
-//TODO нужен UI где можно видеть прогресс, очереди.
-
-//TODO распараллелить обработку игр и сохранение картинок.
-//Пока код тестируется, есть смысл параллельно сохранять картинки.
 
 ## Алгоритмы сравнения текста
 

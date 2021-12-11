@@ -104,4 +104,9 @@ public class GameEntry {
     public int hashCode() {
         return Objects.hash(platformId, gameId, title);
     }
+
+    @Override
+    public String toString() {
+        return title;
+    }
 }

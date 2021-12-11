@@ -4,6 +4,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import md.leonis.crawler.moby.FilesProcessor;
 import md.leonis.crawler.moby.HttpProcessor;
+import md.leonis.crawler.moby.controller.GamesBindingController;
 import md.leonis.crawler.moby.crawler.Crawler;
 import md.leonis.crawler.moby.crawler.TestCrawler;
 import md.leonis.crawler.moby.crawler.YbomCrawler;
@@ -30,6 +31,9 @@ public class ConfigHolder {
     public static Map<String, Platform> platformsById = new LinkedHashMap<>();
     public static Activity activity;
 
+    public static Map<String, List<String>> platformsBindingMap;
+    public static List<Map.Entry<String, List<String>>> platformsBindingMapEntries;
+
     public static void setPlatforms(List<Platform> platforms) {
         ConfigHolder.platforms = platforms;
         platformsById = platforms.stream().collect(Collectors.toMap(Platform::getId, p -> p,
@@ -40,11 +44,6 @@ public class ConfigHolder {
 
     public static void setSource(String source) {
         ConfigHolder.source = source;
-
-        sourceDir = home.resolve(source);
-        gamesDir = sourceDir.resolve("games");
-        cacheDir = sourceDir.resolve("cache");
-        pagesDir = sourceDir.resolve("pages");
     }
 
     public static String getSource() {
@@ -52,10 +51,22 @@ public class ConfigHolder {
     }
 
     public static Path home = Paths.get(".");
-    public static Path sourceDir = home.resolve(source);
-    public static Path gamesDir = sourceDir.resolve("games");
-    public static Path cacheDir = sourceDir.resolve("cache");
-    public static Path pagesDir = sourceDir.resolve("pages");
+
+    public static Path getSourceDir(String source) {
+        return home.resolve(source);
+    }
+
+    public static Path getGamesDir(String source) {
+        return home.resolve(source).resolve("games");
+    }
+
+    public static Path getCacheDir(String source) {
+        return home.resolve(source).resolve("cache");
+    }
+
+    public static Path getPagesDir(String source) {
+        return home.resolve(source).resolve("pages");
+    }
 
     public static Crawler getCrawler() {
 
@@ -74,11 +85,15 @@ public class ConfigHolder {
         }
     }
 
+    public static GamesBindingController.Structure tiviStructure;
+    public static GamesBindingController.Structure mobyStructure;
+
     public static Map<String, List<Throwable>> errorsMap;
 
 
     public static String apiPath;
     public static String sitePath;
+    public static String localSitePath;
     public static String serverSecret;
 
     public static void loadProtectedProperties() throws IOException {
@@ -87,6 +102,7 @@ public class ConfigHolder {
             prop.load(inputStream);
             String apiDir = prop.getProperty("api.dir") + "/";
             sitePath = prop.getProperty("site.path") + "/";
+            localSitePath = prop.getProperty("local.site.path") + "/";
             serverSecret = prop.getProperty("server.secret");
             apiPath = sitePath + apiDir;
         }

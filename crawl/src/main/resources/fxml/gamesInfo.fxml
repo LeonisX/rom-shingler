@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.FlowPane?>
+
+<BorderPane prefHeight="760.0" prefWidth="800.0" BorderPane.alignment="CENTER" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="md.leonis.crawler.moby.controller.GamesInfoController">
+   <right>
+       <BorderPane fx:id="rightBorderPane" prefHeight="614.0" prefWidth="400.0" BorderPane.alignment="CENTER">
+           <top>
+               <ListView fx:id="mobyListView" prefHeight="290.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
+           </top>
+           <center>
+               <FlowPane fx:id="mobyFlowPane" hgap="5.0" prefHeight="200.0" prefWidth="200.0" vgap="5.0" BorderPane.alignment="CENTER" />
+           </center>
+       </BorderPane>
+   </right>
+   <center>
+      <BorderPane prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+         <top>
+            <ListView fx:id="tiviListView" prefHeight="290.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
+         </top>
+         <center>
+            <FlowPane fx:id="tiviFlowPane" hgap="5.0" prefHeight="200.0" prefWidth="200.0" vgap="5.0" BorderPane.alignment="CENTER" />
+         </center>
+      </BorderPane>
+   </center>
+</BorderPane>

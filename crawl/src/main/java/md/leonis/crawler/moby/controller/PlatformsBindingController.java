@@ -57,7 +57,6 @@ public class PlatformsBindingController {
 
         // read moby, tivi
         List<String> tiviList = TiViTest.readTables();
-        ConfigHolder.setSource("moby");
         crawler = ConfigHolder.getCrawler();
         platforms = crawler.loadPlatformsList();
 
@@ -149,7 +148,7 @@ public class PlatformsBindingController {
             }
         });
 
-        setComboboxItems(searchComboBox, platforms, cpu);
+        setComboboxItems(searchComboBox, cpu);
 
         searchComboBox.setEditable(true);
 
@@ -163,7 +162,7 @@ public class PlatformsBindingController {
         return hBox;
     }
 
-    private void setComboboxItems(ComboBox<Platform> comboBox, List<Platform> platforms, String cpu) {
+    private void setComboboxItems(ComboBox<Platform> comboBox, String cpu) {
 
         String solution = (comboBox.getUserData() != null) ? (String) comboBox.getUserData() : null;
 
@@ -261,7 +260,7 @@ public class PlatformsBindingController {
                 continue;
             }
             ComboBox<Platform> combo = (ComboBox<Platform>) pan.getChildren().get(1);
-            setComboboxItems(combo, platforms, cpu);
+            setComboboxItems(combo, cpu);
         }
         rollbackButton.setVisible(false);
     }

@@ -196,7 +196,8 @@ class MultipartUtility {
             if (responseCode < 300) {
                 reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
             } else {
-                reader = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
+                InputStream is = conn.getErrorStream() == null ? conn.getInputStream() : conn.getErrorStream();
+                reader = new BufferedReader(new InputStreamReader(is));
             }
         } catch (IOException e) {
             return e.getMessage();

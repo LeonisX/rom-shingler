@@ -27,6 +27,10 @@ public interface Crawler {
 
     void savePlatformsBindingMap(Map<String, List<String>> map) throws Exception;
 
+    Map<String, List<String>> loadGamesBindingMap(String platformId, String mobyPlatformId) throws Exception;
+
+    void saveGamesBindingMap(String platformId, String mobyPlatformId, Map<String, List<String>> map) throws Exception;
+
     // Games
     void parseGameEntry(GameEntry gameEntry) throws Exception;
 
@@ -56,6 +60,8 @@ public interface Crawler {
     void setAborted(boolean b);
 
     void setConsumers(Consumer<GameEntry> crawlerRefreshConsumer, Consumer<GameEntry> crawlerSuccessConsumer, Consumer<GameEntry> crawlerErrorConsumer);
+
+    String getGamePage(String platformId, String gameId);
 
 
     // JSoup

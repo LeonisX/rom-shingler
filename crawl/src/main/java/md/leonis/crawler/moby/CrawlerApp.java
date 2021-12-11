@@ -3,7 +3,6 @@ package md.leonis.crawler.moby;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import md.leonis.crawler.moby.view.FxmlView;
 import md.leonis.crawler.moby.view.StageManager;
 import md.leonis.shingler.utils.MeasureMethodTest;
@@ -80,7 +79,7 @@ public class CrawlerApp extends Application {
     protected void displayInitialScene() {
         //TODO w/o borders https://stackoverflow.com/questions/14972199/how-to-create-splash-screen-with-transparent-background-in-javafx
         // Caused by: java.lang.IllegalStateException: Cannot set style once stage has been set visible
-        stageManager.switchScene(FxmlView.SPLASH, StageStyle.UNDECORATED);
-        //stageManager.switchScene(FxmlView.TEST);
+        //stageManager.switchScene(FxmlView.SPLASH, StageStyle.UNDECORATED);
+        stageManager.switchScene(FxmlView.GAMES_BINDING);
     }
 }
