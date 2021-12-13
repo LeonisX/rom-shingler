@@ -9,7 +9,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
 import javafx.util.Pair;
-import md.leonis.crawler.moby.TiViTest;
+import md.leonis.shingler.utils.TiviApiUtils;
 import md.leonis.crawler.moby.config.ConfigHolder;
 import md.leonis.crawler.moby.controls.SearchComboBox;
 import md.leonis.crawler.moby.crawler.Crawler;
@@ -56,7 +56,7 @@ public class PlatformsBindingController {
         ConfigHolder.loadProtectedProperties();
 
         // read moby, tivi
-        List<String> tiviList = TiViTest.readTables();
+        List<String> tiviList = TiviApiUtils.readTables(ConfigHolder.apiPath, ConfigHolder.serverSecret);
         crawler = ConfigHolder.getCrawler();
         platforms = crawler.loadPlatformsList();
 

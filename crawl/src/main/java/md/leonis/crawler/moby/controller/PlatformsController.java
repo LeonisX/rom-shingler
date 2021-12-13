@@ -15,6 +15,7 @@ import md.leonis.crawler.moby.model.Platform;
 import md.leonis.crawler.moby.view.FxmlView;
 import md.leonis.crawler.moby.view.StageManager;
 import md.leonis.shingler.utils.FileUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
 
@@ -237,10 +238,12 @@ public class PlatformsController {
             platformsBindingMap = crawler.loadPlatformsBindingMap();
             platformsBindingMapEntries = platformsBindingMap.entrySet().stream().filter(e -> e.getKey()
                     .contains(platformsTableView.getSelectionModel().getSelectedItem().getId())).collect(Collectors.toList());
+            List<String> values = platformsBindingMapEntries.stream().flatMap(m -> m.getValue().stream()).distinct().collect(Collectors.toList());
+            platformsBindingMapEntries = platformsBindingMap.entrySet().stream().filter(e -> CollectionUtils.containsAny(e.getValue(), values)).collect(Collectors.toList());
             if (!platformsBindingMapEntries.isEmpty()) {
                 stageManager.showPane(FxmlView.GAMES_BINDING);
             } else {
-                stageManager.showWarningAlert("Not allowed!", "Please, bind this platform first" , "");
+                stageManager.showWarningAlert("Not allowed!", "Please, bind this platform first", "");
             }
         } catch (Exception e) {
             stageManager.showErrorAlert("No platforms bindings!", "Please, bind platforms first", e);

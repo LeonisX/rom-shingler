@@ -1,6 +1,4 @@
-package md.leonis.crawler.moby.utils;
-
-import md.leonis.crawler.moby.config.ConfigHolder;
+package md.leonis.shingler.utils;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -8,16 +6,18 @@ import java.net.URL;
 
 public class WebUtils {
 
-    public static String readFromUrl(String urlAddress) throws IOException {
+    public static String readFromUrl(String urlAddress, String serverSecret) throws IOException {
+
         URL url = new URL(urlAddress);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
-        conn.setRequestProperty("AuthToken", ConfigHolder.serverSecret);
+        conn.setRequestProperty("AuthToken", serverSecret);
         conn.setRequestProperty("User-Agent", "TiVi's admin client");
         return MultipartUtility.readResponse(conn);
     }
 
     public static void openWebPage(String url) {
+
         String os = System.getProperty("os.name").toLowerCase();
         Runtime rt = Runtime.getRuntime();
 

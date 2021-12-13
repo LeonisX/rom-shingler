@@ -2,13 +2,15 @@ package md.leonis.crawler.moby.controller;
 
 import com.sun.glass.ui.Application;
 import com.sun.glass.ui.Robot;
+import com.sun.javafx.scene.control.skin.TableViewSkin;
+import com.sun.javafx.scene.control.skin.VirtualFlow;
+import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
-import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.*;
 import javafx.stage.Stage;
@@ -16,15 +18,16 @@ import javafx.util.Pair;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import md.leonis.crawler.moby.TiViTest;
 import md.leonis.crawler.moby.config.ConfigHolder;
 import md.leonis.crawler.moby.crawler.Crawler;
 import md.leonis.crawler.moby.executor.Executor;
 import md.leonis.crawler.moby.model.GameEntry;
-import md.leonis.crawler.moby.utils.WebUtils;
 import md.leonis.crawler.moby.view.FxmlView;
 import md.leonis.crawler.moby.view.StageManager;
+import md.leonis.shingler.model.dto.TiviStructure;
 import md.leonis.shingler.utils.StringUtils;
+import md.leonis.shingler.utils.TiviApiUtils;
+import md.leonis.shingler.utils.WebUtils;
 import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
@@ -40,6 +43,10 @@ import static md.leonis.shingler.utils.StringUtils.*;
 
 @Controller
 public class GamesBindingController {
+
+
+    final DataFormat dataFormat = new DataFormat("title");
+
 
     public static final String TIVI = "tivi";
     private final StageManager stageManager;
@@ -199,6 +206,47 @@ public class GamesBindingController {
                 }
             });
 
+            row.setOnDragOver(event -> {
+                // data is dragged over the target
+                if (event.getDragboard().hasContent(dataFormat)) {
+                    event.acceptTransferModes(TransferMode.COPY_OR_MOVE);
+                }
+                event.consume();
+            });
+
+            row.setOnDragDropped(event -> {
+                Dragboard db = event.getDragboard();
+                boolean success = false;
+                if (event.getDragboard().hasContent(dataFormat)) {
+
+                    Cont dstCont = row.getItem();
+                    Cont srcCont = (Cont) db.getContent(dataFormat);
+                    // copy, delete
+                    if (dstCont.getTivi() == null && srcCont.getTivi() != null) {
+                        dstCont.setTivi(srcCont.getTivi());
+                        dstCont.setGreen(true);
+                        observableList.removeIf(c -> c.getTivi() == null && c.getMoby().getGameId().equals(srcCont.getMoby().getGameId()));
+                        rollbackButton.setVisible(true);
+                        rollbackList.add(dstCont);
+                        updateFamilies(dstCont);
+                    } else if (dstCont.getMoby() == null && srcCont.getMoby() != null) {
+                        dstCont.setMoby(srcCont.getMoby());
+                        dstCont.setGreen(true);
+                        observableList.removeIf(c -> c.getTivi() == null && c.getMoby().getGameId().equals(srcCont.getMoby().getGameId()));
+                        rollbackButton.setVisible(true);
+                        rollbackList.add(dstCont);
+                        updateFamilies(dstCont);
+                    } else {
+                        System.out.println(String.format("Can't copy %s to %s!", srcCont, dstCont));
+                    }
+                    tableView.refresh();
+                    success = true;
+                }
+                event.setDropCompleted(success);
+                event.consume();
+            });
+
+
             return row;
         });
 
@@ -216,6 +264,15 @@ public class GamesBindingController {
             if (stage != null) {
                 stage.close();
                 stage = null;
+            }
+            if (!event.getText().isEmpty()) {
+                for (int i = 0; i < tableView.getItems().size(); i++) {
+                    if (tableView.getItems().get(i).getTivi() != null && tableView.getItems().get(i).getTivi().getUnmodifiedTitle().toLowerCase().startsWith(event.getText())) {
+                        tableView.getSelectionModel().select(i);
+                        ((VirtualFlow<?>) ((TableViewSkin<?>) tableView.getSkin()).getChildren().get(1)).show(i);
+                        break;
+                    }
+                }
             }
             event.consume();
         });
@@ -237,8 +294,6 @@ public class GamesBindingController {
             }
             event.consume();
         });
-
-        final DataFormat dataFormat = new DataFormat("title");
 
         //drag
         tableView.setOnDragDetected(event -> {
@@ -267,49 +322,6 @@ public class GamesBindingController {
                 db.setContent(content);
                 event.consume();
             }
-        });
-
-        tableView.setOnDragOver(event -> {
-            // data is dragged over the target
-            if (event.getDragboard().hasContent(dataFormat)) {
-                event.acceptTransferModes(TransferMode.COPY_OR_MOVE);
-            }
-            event.consume();
-        });
-
-        tableView.setOnDragDropped(event -> {
-            Dragboard db = event.getDragboard();
-            boolean success = false;
-            if (event.getDragboard().hasContent(dataFormat)) {
-
-                TableCell<?, ?> targetCell = getCell(event.getPickResult().getIntersectedNode());
-                if (targetCell != null) {
-                    Cont dstCont = observableList.get(targetCell.getTableRow().getIndex());
-                    Cont srcCont = (Cont) db.getContent(dataFormat);
-                    // copy, delete
-                    if (dstCont.getTivi() == null && srcCont.getTivi() != null) {
-                        dstCont.setTivi(srcCont.getTivi());
-                        dstCont.setGreen(true);
-                        observableList.remove(srcCont);
-                        rollbackButton.setVisible(true);
-                        rollbackList.add(dstCont);
-                        updateFamilies(dstCont);
-                    } else if (dstCont.getMoby() == null && srcCont.getMoby() != null) {
-                        dstCont.setMoby(srcCont.getMoby());
-                        dstCont.setGreen(true);
-                        observableList.remove(srcCont);
-                        rollbackButton.setVisible(true);
-                        rollbackList.add(dstCont);
-                        updateFamilies(dstCont);
-                    } else {
-                        System.out.println(String.format("Can't copy %s to %s!", srcCont, dstCont));
-                    }
-                    tableView.refresh();
-                    success = true;
-                }
-            }
-            event.setDropCompleted(success);
-            event.consume();
         });
 
         tableView.getSelectionModel().selectedItemProperty().addListener((obs, oldCont, newCont) -> {
@@ -347,13 +359,9 @@ public class GamesBindingController {
                 }
             };
 
-            cell.setOnMouseEntered(event -> {
-                activeCont = new Cont(0, null, null, cell.getItem(), false);
-            });
+            cell.setOnMouseEntered(event -> activeCont = new Cont(0, null, null, cell.getItem(), false));
 
-            cell.setOnMouseExited(event -> {
-                activeCont = null;
-            });
+            cell.setOnMouseExited(event -> activeCont = null);
 
             return cell;
         });
@@ -372,28 +380,15 @@ public class GamesBindingController {
         loadProtectedProperties();
 
         // read moby, tivi
-
-        ///TODO remove
-        setSource("moby");
-
         crawler = getCrawler();
 
-
-        //TODO remove
-        platformsBindingMap = crawler.loadPlatformsBindingMap();
-        platformsBindingMapEntries = platformsBindingMap.entrySet().stream().filter(e -> e.getKey()
-                .equals("nes")).collect(Collectors.toList());
-
-
-        //List<String> bases = TiViTest.readTables();
-
-        List<TiViTest.TiviStructure> tiviList = platformsBindingMapEntries.stream().flatMap(e -> {
-            List<TiViTest.TiviStructure> data = loadTiviGames(e.getKey());
+        List<TiviStructure> tiviList = platformsBindingMapEntries.stream().flatMap(e -> {
+            List<TiviStructure> data = loadTiviGames(e.getKey());
             if (data.isEmpty()) {
-                data = TiViTest.readTable(e.getKey());
+                data = TiviApiUtils.readTable(ConfigHolder.apiPath, e.getKey(), serverSecret);
                 saveTiviGames(e.getKey(), data);
             }
-            return data.stream().sorted(Comparator.comparing(TiViTest.TiviStructure::getName));
+            return data.stream().sorted(Comparator.comparing(TiviStructure::getName));
         }).collect(Collectors.toList());
 
         // zamechanie-po-baze-dannyh
@@ -435,7 +430,7 @@ public class GamesBindingController {
                 Binding binding = gamesBinding.stream().filter(g -> g.getPlatformId().equals(s.getPlatformId()) && g.getGameId().equals(s.getGameId())).findFirst().orElse(null);
                 if (binding != null) {
                     for (String id : binding.getMobyGameIds()) {
-                        observableList.add(new Cont(observableList.size(), s.getNeutralFamily(), s, mobyMap.stream().filter(g -> g.getGameId().equals(id)).findFirst().get(), true));
+                        observableList.add(new Cont(observableList.size(), s.getNeutralFamily(), s, mobyMap.stream().filter(g -> g.getPlatformId().equals(binding.mobyPlatformId) && g.getGameId().equals(id)).findFirst().get(), true));
                     }
                 } else {
                     observableList.add(new Cont(observableList.size(), s.getNeutralFamily(), s, null, false));
@@ -448,11 +443,11 @@ public class GamesBindingController {
         });
     }
 
-    private List<TiViTest.TiviStructure> loadTiviGames(String platformId) {
-        return loadJsonList(getGamesDir(TIVI), platformId, TiViTest.TiviStructure.class);
+    private List<TiviStructure> loadTiviGames(String platformId) {
+        return loadJsonList(getGamesDir(TIVI), platformId, TiviStructure.class);
     }
 
-    private void saveTiviGames(String platformId, List<TiViTest.TiviStructure> list) {
+    private void saveTiviGames(String platformId, List<TiviStructure> list) {
         try {
             saveAsJson(getGamesDir(TIVI), platformId, list);
         } catch (Exception e) {
@@ -492,38 +487,35 @@ public class GamesBindingController {
         tableView.refresh();
     }
 
-
-    private static TableCell<?, ?> getCell(Node node) {
-        // traverse to parent until TableCell is reached
-        // or it's clear there's no TableCell in the hierarchy above node (root visited)
-        while (node != null && !(node instanceof TableCell)) {
-            node = node.getParent();
-        }
-
-        return (TableCell<?, ?>) node;
-    }
-
     private void updateFamilies(Cont cont) {
 
-        if (cont.getTivi().getFamily().trim().isEmpty()) {
+        String family = cont.getTivi().getFamily();
+
+        if (family.trim().isEmpty()) {
             return;
         }
 
         // семья не должна начинаться "Multicarts, Public_Domain, в ней не должно быть более
+        if (family.contains("Multicarts") || family.contains("Public_Domain")) {
+            return;
+        }
+
+        String platformId = cont.getTivi().getPlatformId();
+
+        long familySize = observableList.stream().filter(i -> i.getTivi() != null && i.getTivi().getFamily().equals(family) && platformId.equals(i.getTivi().getPlatformId())).count();
+        if (familySize > 10) {
+            return;
+        }
+
         for (Cont nextCont : observableList) {
-            if (nextCont == cont) {
+            if (cont.getTivi().equals(nextCont.getTivi())) {
                 continue;
             }
-            String family = cont.getTivi().getFamily();
-            if (nextCont.getMoby() == null && nextCont.getTivi() != null && family.equals(nextCont.getTivi().getFamily())) {
-                if (!family.contains("Multicarts") && !family.contains("Public_Domain")) {
-                    long familySize = observableList.stream().filter(i -> i.getTivi() != null && i.getTivi().getFamily().equals(family)).count();
-                    if (familySize <= 10) {
-                        nextCont.setMoby(cont.getMoby());
-                        nextCont.setGreen(true);
-                        rollbackList.add(nextCont);
-                    }
-                }
+
+            if (nextCont.getMoby() == null && nextCont.getTivi() != null && family.equals(nextCont.getTivi().getFamily()) && platformId.equals(nextCont.getTivi().getPlatformId())) {
+                nextCont.setMoby(cont.getMoby());
+                nextCont.setGreen(true);
+                rollbackList.add(nextCont);
             }
         }
     }
@@ -563,20 +555,13 @@ public class GamesBindingController {
 
         try {
             List<Cont> conts = observableList.stream().filter(Cont::isGreen).collect(Collectors.toList());
-            //observableList.removeAll(conts);
             gamesBinding = new ArrayList<>();
             conts.forEach(cont -> {
                 String gameId = cont.getTivi().getGameId();
                 String platformId = cont.getTivi().getPlatformId();
                 String mobyGameId = cont.getMoby().getGameId();
                 String mobyPlatformId = cont.getMoby().getPlatformId();
-/*            List<String> list = gamesBinding.stream().filter(g -> g.getGameId().equals(gameId) && g.getPlatformId().equals(platformId)
-            && g.getMobyPlatformId().equals(mobyPlatformId)).findFirst().map(Binding::getMobyGameIds).orElse(new ArrayList<>());
-            if (!list.isEmpty() && !list.contains(mobyGameId)) {
-                list.add(mobyGameId);
-            } else {*/
                 gamesBinding.add(new Binding(platformId, gameId, mobyPlatformId, new ArrayList<>(Collections.singletonList(mobyGameId))));
-                //}
             });
 
             Map<String, List<Binding>> bindingMap = gamesBinding.stream().distinct().collect(Collectors.groupingBy(Binding::getPlatformId)); // by platformId
@@ -624,7 +609,31 @@ public class GamesBindingController {
     }
 
     public void showGreenCheckBoxAction() {
+
+        Cont cont = tableView.getSelectionModel().getSelectedItem();
+        int index = tableView.getSelectionModel().getSelectedIndex();
+        TableViewSkin<?> ts = (TableViewSkin<?>) tableView.getSkin();
+        VirtualFlow<?> vf = (VirtualFlow<?>) ts.getChildren().get(1);
+
+        if (cont == null) {
+            int first = vf.getFirstVisibleCellWithinViewPort().getIndex();
+            int last = vf.getLastVisibleCellWithinViewPort().getIndex();
+            index = (last + first) / 2;
+        }
+
+        for (int i = index; i < tableView.getItems().size(); i++) {
+            if (!tableView.getItems().get(i).isGreen()) {
+                cont = tableView.getItems().get(i);
+                break;
+            }
+        }
+
         filteredList.setPredicate(t -> !t.isGreen() || showGreenCheckBox.isSelected());
+        tableView.refresh();
+        if (cont != null) {
+            tableView.getSelectionModel().select(cont);
+            Platform.runLater(() -> vf.show(tableView.getSelectionModel().getSelectedIndex()));
+        }
     }
 
     @Data
@@ -664,7 +673,7 @@ public class GamesBindingController {
 
         private boolean left;
 
-        public Structure(TiViTest.TiviStructure structure) {
+        public Structure(TiviStructure structure) {
             this.platformId = structure.getSys();
             this.gameId = structure.getCpu();
             this.unmodifiedTitle = unescapeChars(structure.getName());

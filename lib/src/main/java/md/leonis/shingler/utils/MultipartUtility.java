@@ -1,6 +1,4 @@
-package md.leonis.crawler.moby.utils;
-
-import md.leonis.crawler.moby.config.ConfigHolder;
+package md.leonis.shingler.utils;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -15,6 +13,7 @@ import java.net.URLConnection;
  *
  */
 class MultipartUtility {
+
     private final String boundary;
     private static final String LINE_FEED = "\r\n";
     private final HttpURLConnection httpConn;
@@ -29,7 +28,7 @@ class MultipartUtility {
      * @param charset charset
      * @throws IOException .
      */
-    MultipartUtility(String requestURL, String charset) throws IOException {
+    MultipartUtility(String requestURL, String charset, String serverSecret) throws IOException {
         this.charset = charset;
 
         // creates a unique boundary based on time stamp
@@ -43,7 +42,7 @@ class MultipartUtility {
         httpConn.setRequestProperty("Content-Type",
                 "multipart/form-data; boundary=" + boundary);
         httpConn.setRequestProperty("User-Agent", "CodeJava Agent");
-        httpConn.setRequestProperty("AuthToken", ConfigHolder.serverSecret);
+        httpConn.setRequestProperty("AuthToken", serverSecret);
         outputStream = httpConn.getOutputStream();
         writer = new PrintWriter(new OutputStreamWriter(outputStream, charset),
                 true);
