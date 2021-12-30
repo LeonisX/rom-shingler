@@ -3,12 +3,16 @@ package md.leonis.crawler.moby;
 import lombok.Data;
 import md.leonis.crawler.moby.dto.FileEntry;
 import md.leonis.crawler.moby.executor.Executor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Queue;
 import java.util.function.Consumer;
 
 @Data
 public class HttpProcessor implements Runnable {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpProcessor.class);
 
     private final int id;
     private boolean cancelled = false;
@@ -28,17 +32,20 @@ public class HttpProcessor implements Runnable {
     private Consumer<FileEntry> errorConsumer;
     private Consumer<FileEntry> successConsumer;
 
-    public HttpProcessor(int id, Queue<FileEntry> httpQueue, Executor executor) {
-        this(id, httpQueue, executor, 15, 2);
+    private Consumer<FileEntry> fileEntryConsumer; // to save/validate file
+
+    public HttpProcessor(int id, Queue<FileEntry> httpQueue, Executor executor, Consumer<FileEntry> fileEntryConsumer) {
+        this(id, httpQueue, executor, 15, 2, fileEntryConsumer);
     }
 
-    public HttpProcessor(int id, Queue<FileEntry> httpQueue, Executor executor, int sleepInterval, int sleepMultiplier) {
+    public HttpProcessor(int id, Queue<FileEntry> httpQueue, Executor executor, int sleepInterval, int sleepMultiplier, Consumer<FileEntry> fileEntryConsumer) {
         this.id = id;
         this.httpQueue = httpQueue;
         this.executor = executor;
         this.sleepInterval = sleepInterval;
         this.sleepMultiplier = sleepMultiplier;
         this.sleep = sleepInterval;
+        this.fileEntryConsumer = fileEntryConsumer;
     }
 
     @Override
@@ -61,7 +68,7 @@ public class HttpProcessor implements Runnable {
                         file = fileEntry.getHost() + fileEntry.getUri();
                         refreshConsumer.accept(fileEntry);
                         try {
-                            executor.saveFile(fileEntry);
+                            fileEntryConsumer.accept(fileEntry);
                             fileEntry.setCompleted(true);
                             successConsumer.accept(fileEntry);
                             sleep = sleepInterval;

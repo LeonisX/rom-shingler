@@ -5,6 +5,7 @@ import md.leonis.crawler.moby.dto.FileEntry;
 import md.leonis.crawler.moby.model.GameEntry;
 import md.leonis.crawler.moby.model.Platform;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -105,6 +106,21 @@ public class TestCrawler extends AbstractCrawler {
 
     @Override
     public String getGamePage(String platformId, String gameId) {
+        return null;
+    }
+
+    @Override
+    public void fileConsumer(FileEntry fileEntry) throws Exception {
+
+    }
+
+    @Override
+    public Path getFilePath(FileEntry fileEntry) {
+        return null;
+    }
+
+    @Override
+    public Path getFilePath(String platformId, String uri) {
         return null;
     }
 

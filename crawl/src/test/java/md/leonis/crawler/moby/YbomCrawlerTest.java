@@ -51,7 +51,7 @@ class YbomCrawlerTest {
 
     @BeforeEach
     void setUp() {
-        crawler = new YbomCrawler(new FilesProcessor(0));
+        crawler = new YbomCrawler(new FilesProcessor(0, (f) -> {}));
         crawler.setDevelopers(new LinkedHashMap<>());
     }
 

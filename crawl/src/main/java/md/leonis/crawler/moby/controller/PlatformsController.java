@@ -164,13 +164,13 @@ public class PlatformsController {
                 Map<String, GameEntry> gamesMap = prevGames.stream().collect(Collectors.toMap(GameEntry::getGameId, Function.identity()));
                 newGames.forEach(ng -> {
                     GameEntry current = gamesMap.get(ng.getGameId());
-                    if (null != current) {
+                    if (null == current) {
                         prevGames.add(ng);
                     }
                 });
                 platformsById.get(platform.getId()).setTotal(newGames.size());
                 platformsById.get(platform.getId()).setCompleted(newGames.stream().filter(GameEntry::isCompleted).count());
-                crawler.savePlatformsList(platforms);
+                //crawler.savePlatformsList(platforms);
                 crawler.saveGamesList(platform.getId(), prevGames.stream().sorted(Comparator.comparing(GameEntry::getTitle)).collect(Collectors.toList()));
             }
             crawler.savePlatformsList(platforms);

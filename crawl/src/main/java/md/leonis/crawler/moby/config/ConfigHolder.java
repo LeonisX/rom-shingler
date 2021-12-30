@@ -77,7 +77,7 @@ public class ConfigHolder {
                 Queue<FileEntry> queue = new ConcurrentLinkedQueue<>();
                 List<HttpProcessor> processors = new ArrayList<>();
                 for (int i = 0; i < 4; i++) {
-                    processors.add(new HttpProcessor(i, queue, new TestExecutor(), 1, 1));
+                    processors.add(new HttpProcessor(i, queue, new TestExecutor(), 1, 1, (f) -> {}));
                 }
                 return new TestCrawler(new FilesProcessor(processors));
             default:

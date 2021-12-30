@@ -1,6 +1,5 @@
 package md.leonis.crawler.moby.executor;
 
-import md.leonis.crawler.moby.ImagesValidator;
 import md.leonis.crawler.moby.Proxy;
 import md.leonis.crawler.moby.dto.FileEntry;
 import org.apache.hc.client5.http.auth.AuthScope;
@@ -13,7 +12,6 @@ import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
-import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.HttpHost;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.message.BasicHeader;
@@ -22,8 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -37,8 +33,6 @@ public class HttpExecutor implements Executor {
     private static final Random RANDOM = new Random();
 
     private final List<Proxy> proxies;
-
-    public static boolean validate = false;
 
     private volatile int index;
 
@@ -98,18 +92,6 @@ public class HttpExecutor implements Executor {
         try {
             LOGGER.info(host + uri);
 
-            Path path = Executor.getPath(uri);
-
-            if (Files.exists(path)) { // TODO if read from cache
-                if (Files.isDirectory(path)) {
-                    path = path.resolve("default.htm");
-                }
-                if (Files.exists(path)) {
-                    LOGGER.info("Use cached page: " + path.toAbsolutePath());
-                    return new HttpResponse(new String(Files.readAllBytes(path)), 200, new Header[0]);
-                }
-            }
-
             String[] chunks = host.split("://");
             HttpHost targetHost = new HttpHost(chunks[0], chunks[1]);
 
@@ -148,23 +130,6 @@ public class HttpExecutor implements Executor {
 
             updateProxy(proxy, httpResponse);
 
-            if (httpResponse.getCode() != 200) {
-                throw new RuntimeException(httpResponse.getCode() + ": " + httpResponse.getBody());
-            }
-
-            System.out.println("trying to save: " + path);
-            Path dir = path.getParent();
-            //при записи проверять и если есть такой файл, то копировать в дефолт.
-            if (Files.isRegularFile(dir)) {
-                Files.move(dir, dir.getParent().resolve("defaultTmp.htm"));
-                Files.createDirectories(dir);
-                Files.move(dir.getParent().resolve("defaultTmp.htm"), dir.resolve("default.htm"));
-            }
-
-            Files.createDirectories(dir);
-            Files.write(path, httpResponse.getBody().getBytes());
-            System.out.println("saved: " + path);
-
             return httpResponse;
         } catch (Exception e) {
 
@@ -175,52 +140,31 @@ public class HttpExecutor implements Executor {
         }
     }
 
-    public void saveFile(String platformId, String fullUri, String referrer) throws Exception {
+    public HttpResponse getFile(String fullUri, String referrer) throws Exception {
         URL url = new URL(fullUri);
         try {
-            saveFile(platformId, url.getProtocol() + "://" + url.getHost(), url.getPath(), referrer, getProxy());
+            return getFile(url.getProtocol() + "://" + url.getHost(), url.getPath(), referrer, getProxy());
         } catch (Exception e) {
             throw new RuntimeException("Can't save file " + fullUri, e);
         }
     }
 
-    public void saveFile(FileEntry file) throws Exception {
-        doSaveFile(file.getPlatformId(), file.getHost(), file.getUri(), file.getReferrer(), getProxy(), new HttpGet(file.getUri()));
+    public HttpResponse getFile(FileEntry file) throws Exception {
+        return doGetFile(file.getHost(), file.getUri(), file.getReferrer(), getProxy(), new HttpGet(file.getUri()));
     }
 
-    public void saveFile(String platformId, String host, String uri, String referrer) throws Exception {
-        doSaveFile(platformId, host, uri, referrer, getProxy(), new HttpGet(uri));
+    public HttpResponse getFile(String host, String uri, String referrer) throws Exception {
+        return doGetFile(host, uri, referrer, getProxy(), new HttpGet(uri));
     }
 
-    public void saveFile(String platformId, String host, String uri, String referrer, Proxy proxy) throws Exception {
-        doSaveFile(platformId, host, uri, referrer, proxy, new HttpGet(uri));
+    public HttpResponse getFile(String host, String uri, String referrer, Proxy proxy) throws Exception {
+        return doGetFile(host, uri, referrer, proxy, new HttpGet(uri));
     }
 
-    private void doSaveFile(String platformId, String host, String uri, String referrer, Proxy proxy, HttpUriRequestBase httpUriRequestBase) throws Exception {
+    private HttpResponse doGetFile(String host, String uri, String referrer, Proxy proxy, HttpUriRequestBase httpUriRequestBase) throws Exception {
 
         try {
             LOGGER.info(host + uri);
-
-            Path path = Executor.getPath(platformId, uri);
-
-            if (Files.exists(path)) { // TODO if read from cache
-
-                //TODO remove this validation, use in the specific validation task only
-                if (validate) {
-
-                    if (ImagesValidator.isBrokenImage(path)) {
-                        LOGGER.info("BrokenImage: " + path.toAbsolutePath());
-                        Files.delete(path);
-                        //throw new RuntimeException("Invalid image: " + path);
-                    } else {
-                        LOGGER.info("Already cached: " + path.toAbsolutePath());
-                        return;
-                    }
-                } else {
-                    LOGGER.info("Already cached: " + path.toAbsolutePath());
-                    return;
-                }
-            }
 
             HttpResponse httpResponse = getHttpResponse(host, referrer, proxy, httpUriRequestBase);
 
@@ -235,16 +179,7 @@ public class HttpExecutor implements Executor {
 
             updateProxy(proxy, httpResponse);
 
-            if (httpResponse.getCode() == 404) {
-                //YbomCrawler.brokenImages.add(host + uri);
-            } else if (httpResponse.getCode() != 200) {
-                throw new RuntimeException(httpResponse.getCode() + ": " + host + uri);
-            } else {
-                //System.out.println("trying to save: " + path);
-                Path dir = path.getParent();
-                Files.createDirectories(dir);
-                Files.write(path, httpResponse.getBytes());
-            }
+            return httpResponse;
 
         } catch (Exception e) {
 

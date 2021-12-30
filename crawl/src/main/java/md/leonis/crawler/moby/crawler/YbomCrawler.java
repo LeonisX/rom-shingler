@@ -3,19 +3,27 @@ package md.leonis.crawler.moby.crawler;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import md.leonis.crawler.moby.FilesProcessor;
+import md.leonis.crawler.moby.ImagesValidator;
 import md.leonis.crawler.moby.config.ConfigHolder;
 import md.leonis.crawler.moby.dto.FileEntry;
+import md.leonis.crawler.moby.executor.Executor;
 import md.leonis.crawler.moby.executor.HttpExecutor;
 import md.leonis.crawler.moby.model.*;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hc.core5.http.Header;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -25,6 +33,8 @@ import static md.leonis.shingler.utils.FileUtils.*;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class YbomCrawler extends AbstractCrawler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(YbomCrawler.class);
 
     private static final String ROOT = new StringBuilder("moc.semagybom.www//:sptth").reverse().toString();
 
@@ -55,6 +65,7 @@ public class YbomCrawler extends AbstractCrawler {
     public static final String GAME_SPECS = ROOT + "/game/%s/%s/techinfo";
     public static final String GAME_ADS = ROOT + "/game/%s/%s/adblurbs";
     public static final String GAME_RATING_SYSTEMS = ROOT + "/game/%s/%s/rating-systems";
+    private final Executor executor = new HttpExecutor();
 
     public static void main(String[] args) throws Exception {
 
@@ -72,13 +83,13 @@ public class YbomCrawler extends AbstractCrawler {
         /*String[] pl2 = new String[]{"nintendo-dsi", "nintendo-ds", "pet", "vic-20", "c64", "c128", "commodore-16-plus4", "trs-80", "trs-80-coco", "trs-80-mc-10",
                 "msx", "amiga", "amiga-cd32", "cpc", "amstrad-pcw", "apple-i", "apple2", "apple2g", "atari-st", "bbc-micro_", "electron", "enterprise", "dos"};*/
 
-        List<Platform> platforms = Arrays.stream(pl).map(p -> new Platform(p, p, 0,0, null)).collect(Collectors.toList());
+        List<Platform> platforms = Arrays.stream(pl).map(p -> new Platform(p, p, 0, 0, null)).collect(Collectors.toList());
         //ConfigHolder.setPlatforms(FileUtils.loadJsonList(ConfigHolder.sourceDir, "platforms", Platform.class));
         ConfigHolder.setPlatforms(platforms);
         ConfigHolder.setSource("moby");
 
         YbomCrawler crawler = new YbomCrawler();
-        crawler.setProcessor(new FilesProcessor(4));
+        crawler.setProcessor(new FilesProcessor(4, crawler::getFilePath));
 
         for (Platform p : platforms) {
             List<GameEntry> gameEntries = crawler.parseGamesList(p.getId());
@@ -103,11 +114,11 @@ public class YbomCrawler extends AbstractCrawler {
     public Map<String, String> attributes;
     public List<String> brokenImages;
 
+    private boolean validate = false;
+
     public YbomCrawler() {
 
         preload();
-
-        HttpExecutor.validate = false;
     }
 
     public YbomCrawler(FilesProcessor processor) {
@@ -117,7 +128,7 @@ public class YbomCrawler extends AbstractCrawler {
 
     public YbomCrawler(int processors) {
         this();
-        this.processor = new FilesProcessor(processors);
+        this.processor = new FilesProcessor(processors, this::fileConsumer);
     }
 
     @Override
@@ -478,7 +489,7 @@ public class YbomCrawler extends AbstractCrawler {
             return;
         }
 
-        HttpExecutor.HttpResponse response = processor.getExecutor().getPage(String.format(GAME_CREDITS, entry.getPlatformId(), entry.getGameId()), getGameLink(entry));
+        HttpExecutor.HttpResponse response = getAndSavePage(String.format(GAME_CREDITS, entry.getPlatformId(), entry.getGameId()), getGameLink(entry));
         Element container = getContainer(response);
         Element divColMd12 = getByClass(container, "col-md-12");
         // Все метаданные по игре + обложка
@@ -545,7 +556,7 @@ public class YbomCrawler extends AbstractCrawler {
         }
 
         String thisLink = String.format(GAME_SCREENSHOTS, entry.getPlatformId(), entry.getGameId());
-        HttpExecutor.HttpResponse response = processor.getExecutor().getPage(thisLink, getGameLink(entry));
+        HttpExecutor.HttpResponse response = getAndSavePage(thisLink, getGameLink(entry));
         Element container = getContainer(response);
         Element divColMd12 = getByClass(container, "col-md-12");
 
@@ -587,7 +598,7 @@ public class YbomCrawler extends AbstractCrawler {
     private void parseGameScreenshotsImage(GameEntry entry, MobyImage mobyImage) throws Exception {
 
         String thisLink = String.format(GAME_SCREENSHOTS_IMAGE, entry.getPlatformId(), entry.getGameId(), mobyImage.getId());
-        HttpExecutor.HttpResponse response = processor.getExecutor().getPage(thisLink, getGameLink(entry));
+        HttpExecutor.HttpResponse response = getAndSavePage(thisLink, getGameLink(entry));
         Element container = getContainer(response);
 
         // <div class="screenshot">
@@ -610,7 +621,7 @@ public class YbomCrawler extends AbstractCrawler {
             return;
         }
 
-        HttpExecutor.HttpResponse response = processor.getExecutor().getPage(String.format(GAME_REVIEWS, entry.getPlatformId(), entry.getGameId()), getGameLink(entry));
+        HttpExecutor.HttpResponse response = getAndSavePage(String.format(GAME_REVIEWS, entry.getPlatformId(), entry.getGameId()), getGameLink(entry));
         Element container = getContainer(response);
         Element divColMd12 = getByClass(container, "col-md-12");
         // Все метаданные по игре + обложка
@@ -720,7 +731,7 @@ public class YbomCrawler extends AbstractCrawler {
         }
 
         String thisLink = String.format(GAME_COVER_ART, entry.getPlatformId(), entry.getGameId());
-        HttpExecutor.HttpResponse response = processor.getExecutor().getPage(thisLink, getGameLink(entry));
+        HttpExecutor.HttpResponse response = getAndSavePage(thisLink, getGameLink(entry));
         Element container = getContainer(response);
 
         Element current = select(container, "div.coverHeading");
@@ -793,7 +804,7 @@ public class YbomCrawler extends AbstractCrawler {
     private void parseGameCoverArtImage(GameEntry entry, MobyArtImage mobyImage) throws Exception {
 
         String thisLink = String.format(GAME_COVER_ART_IMAGE, entry.getPlatformId(), entry.getGameId(), mobyImage.getId());
-        HttpExecutor.HttpResponse response = processor.getExecutor().getPage(thisLink, getGameLink(entry));
+        HttpExecutor.HttpResponse response = getAndSavePage(thisLink, getGameLink(entry));
         Element container = getContainer(response);
         Element div = getByClass(container, "col-md-12 col-lg-12");
         // <center><img class="img-responsive" alt="Shenmue Dreamcast Front Cover"
@@ -814,7 +825,7 @@ public class YbomCrawler extends AbstractCrawler {
         }
 
         String thisLink = String.format(GAME_PROMO_ART, entry.getPlatformId(), entry.getGameId());
-        HttpExecutor.HttpResponse response = processor.getExecutor().getPage(thisLink, getGameLink(entry));
+        HttpExecutor.HttpResponse response = getAndSavePage(thisLink, getGameLink(entry));
         Element container = getContainer(response);
 
         // в цикле читать дивы:
@@ -886,7 +897,7 @@ public class YbomCrawler extends AbstractCrawler {
     private void parseGamePromoArtImage(GameEntry entry, PromoImage promoImage) throws Exception {
 
         String thisLink = String.format(GAME_PROMO_ART_IMAGE, entry.getPlatformId(), entry.getGameId(), promoImage.getId());
-        HttpExecutor.HttpResponse response = processor.getExecutor().getPage(thisLink, getGameLink(entry));
+        HttpExecutor.HttpResponse response = getAndSavePage(thisLink, getGameLink(entry));
         Element container = getContainer(response);
 
         Element figure = select(container, "figure.promoImage");
@@ -926,7 +937,7 @@ public class YbomCrawler extends AbstractCrawler {
             return;
         }
 
-        HttpExecutor.HttpResponse response = processor.getExecutor().getPage(String.format(GAME_RELEASES, entry.getPlatformId(), entry.getGameId()), getGameLink(entry));
+        HttpExecutor.HttpResponse response = getAndSavePage(String.format(GAME_RELEASES, entry.getPlatformId(), entry.getGameId()), getGameLink(entry));
         Element container = getContainer(response);
         Element divColMd12 = getByClass(container, "col-md-12");
         // Все метаданные по игре + обложка
@@ -985,7 +996,7 @@ public class YbomCrawler extends AbstractCrawler {
             return;
         }
 
-        HttpExecutor.HttpResponse response = processor.getExecutor().getPage(String.format(GAME_TRIVIA, entry.getPlatformId(), entry.getGameId()), getGameLink(entry));
+        HttpExecutor.HttpResponse response = getAndSavePage(String.format(GAME_TRIVIA, entry.getPlatformId(), entry.getGameId()), getGameLink(entry));
         Element container = getContainer(response);
         Element divColMd12 = getByClass(container, "col-md-12 col-lg-12");
 
@@ -1038,7 +1049,7 @@ public class YbomCrawler extends AbstractCrawler {
             return;
         }
 
-        HttpExecutor.HttpResponse response = processor.getExecutor().getPage(String.format(GAME_HINTS, entry.getPlatformId(), entry.getGameId()), getGameLink(entry));
+        HttpExecutor.HttpResponse response = getAndSavePage(String.format(GAME_HINTS, entry.getPlatformId(), entry.getGameId()), getGameLink(entry));
         Element table = select(getContainer(response), "table[summary]");
 
         if (table == null) {
@@ -1076,7 +1087,7 @@ public class YbomCrawler extends AbstractCrawler {
 
     private List<String> parseGameHintsPage(GameEntry entry, String hintId) throws Exception {
 
-        HttpExecutor.HttpResponse response = processor.getExecutor().getPage(String.format(GAME_HINTS_PAGE, entry.getPlatformId(), entry.getGameId(), hintId), getGameLink(entry));
+        HttpExecutor.HttpResponse response = getAndSavePage(String.format(GAME_HINTS_PAGE, entry.getPlatformId(), entry.getGameId(), hintId), getGameLink(entry));
         Element table = select(getContainer(response), "table[summary]");
 
         if (table == null) {
@@ -1108,7 +1119,7 @@ public class YbomCrawler extends AbstractCrawler {
             return;
         }
 
-        HttpExecutor.HttpResponse response = processor.getExecutor().getPage(String.format(GAME_ADS, entry.getPlatformId(), entry.getGameId()), getGameLink(entry));
+        HttpExecutor.HttpResponse response = getAndSavePage(String.format(GAME_ADS, entry.getPlatformId(), entry.getGameId()), getGameLink(entry));
         Element container = getContainer(response);
         Element divColMd12 = getByClass(container, "col-md-12 col-lg-12");
 
@@ -1179,7 +1190,7 @@ public class YbomCrawler extends AbstractCrawler {
             return;
         }
 
-        HttpExecutor.HttpResponse response = processor.getExecutor().getPage(String.format(GAME_SPECS, entry.getPlatformId(), entry.getGameId()), getGameLink(entry));
+        HttpExecutor.HttpResponse response = getAndSavePage(String.format(GAME_SPECS, entry.getPlatformId(), entry.getGameId()), getGameLink(entry));
         Element table = select(getContainer(response), "table.techInfo");
 
         Elements trs = getTrs(table);
@@ -1210,7 +1221,7 @@ public class YbomCrawler extends AbstractCrawler {
             return;
         }
 
-        HttpExecutor.HttpResponse response = processor.getExecutor().getPage(String.format(GAME_RATING_SYSTEMS, entry.getPlatformId(), entry.getGameId()), getGameLink(entry));
+        HttpExecutor.HttpResponse response = getAndSavePage(String.format(GAME_RATING_SYSTEMS, entry.getPlatformId(), entry.getGameId()), getGameLink(entry));
         Element container = getContainer(response);
         Element divColMd12 = getByClass(container, "col-md-12 col-lg-12");
 
@@ -1241,7 +1252,7 @@ public class YbomCrawler extends AbstractCrawler {
 
         List<GameEntry> games = new ArrayList<>();
 
-        HttpExecutor.HttpResponse response = processor.getExecutor().getPage(String.format(GAMES_PAGES, platformId, 0), ROOT);
+        HttpExecutor.HttpResponse response = getAndSavePage(String.format(GAMES_PAGES, platformId, 0), ROOT);
         Document doc = Jsoup.parse(response.getBody());
 
         // <td class="mobHeaderPage" width="33%">Viewing Page 1 of 56</td>
@@ -1275,7 +1286,7 @@ public class YbomCrawler extends AbstractCrawler {
         // 2 - 25
         // 3 - 50
         for (int i = 1; i < pagesCount; i++) {
-            response = processor.getExecutor().getPage(String.format(GAMES_PAGES, platformId, i * 25), String.format(GAMES_PAGES, platformId, 0));
+            response = getAndSavePage(String.format(GAMES_PAGES, platformId, i * 25), String.format(GAMES_PAGES, platformId, 0));
             parseGamesList(platformId, games, response.getBody());
         }
 
@@ -1311,7 +1322,7 @@ public class YbomCrawler extends AbstractCrawler {
 
         List<Platform> platforms = new ArrayList<>();
 
-        HttpExecutor.HttpResponse response = processor.getExecutor().getPage(PLATFORMS, ROOT);
+        HttpExecutor.HttpResponse response = getAndSavePage(PLATFORMS, ROOT);
         Document doc = Jsoup.parse(response.getBody());
         getAs(getByClass(doc, "browseTable")).forEach(a -> platforms.add(new Platform(getLastChunk(a), a.text(), 0, 0, null)));
 
@@ -1346,6 +1357,109 @@ public class YbomCrawler extends AbstractCrawler {
     @Override
     public void saveGamesBindingMap(String platformId, String mobyPlatformId, Map<String, List<String>> map) throws Exception {
         saveAsJson(getGamesDir(getSource()), platformId + "-" + mobyPlatformId + "-binding", map);
+    }
+
+    public Path getPagePath(String uri) {
+        if (uri.startsWith("/")) {
+            uri = uri.substring(1);
+        }
+        return getPagesDir(getSource()).resolve(uri).normalize().toAbsolutePath();
+    }
+
+    private HttpExecutor.HttpResponse getAndSavePage(String uri, String referrer) throws Exception {
+
+        URL url = new URL(uri);
+
+        Path path = getPagePath(url.getPath());
+
+        if (Files.exists(path)) { // TODO if read from cache
+            if (Files.isDirectory(path)) {
+                path = path.resolve("default.htm");
+            }
+            if (Files.exists(path)) {
+                LOGGER.info("Use cached page: " + path.toAbsolutePath());
+                return new Executor.HttpResponse(new String(Files.readAllBytes(path)), 200, new Header[0]);
+            }
+        }
+
+        HttpExecutor.HttpResponse response = executor.getPage(uri, referrer);
+
+        if (response.getCode() != 200) {
+            throw new RuntimeException(response.getCode() + ": " + response.getBody());
+        }
+
+        System.out.println("trying to save page: " + path);
+        Path dir = path.getParent();
+        //при записи проверять и если есть такой файл, то копировать в дефолт.
+        if (Files.isRegularFile(dir)) {
+            Files.move(dir, dir.getParent().resolve("defaultTmp.htm"));
+            Files.createDirectories(dir);
+            Files.move(dir.getParent().resolve("defaultTmp.htm"), dir.resolve("default.htm"));
+        }
+
+        Files.createDirectories(dir);
+        Files.write(path, response.getBody().getBytes());
+        System.out.println("saved page: " + path);
+
+        return response;
+    }
+
+    @Override
+    public Path getFilePath(FileEntry fileEntry) {
+        return getFilePath(fileEntry.getPlatformId(), fileEntry.getUri());
+    }
+
+    @Override
+    public Path getFilePath(String platformId, String uri) {
+        if (uri.startsWith("/")) {
+            uri = uri.substring(1);
+        }
+        return getCacheDir(getSource()).resolve(platformId).resolve(uri).normalize().toAbsolutePath();
+    }
+
+    @Override
+    public void fileConsumer(FileEntry fileEntry) {
+
+        Path path = getFilePath(fileEntry);
+
+        try {
+
+            if (Files.exists(path)) { // TODO if read from cache
+
+                //TODO remove this validation, use in the specific validation task only
+                if (validate) {
+
+                    if (ImagesValidator.isBrokenImage(path)) {
+                        LOGGER.info("BrokenImage: " + path.toAbsolutePath());
+                        Files.delete(path);
+                        //throw new RuntimeException("Invalid image: " + path);
+                    } else {
+                        LOGGER.info("Already cached: " + path.toAbsolutePath());
+                        return;
+                    }
+                } else {
+                    LOGGER.info("Already cached: " + path.toAbsolutePath());
+                    return;
+                }
+            }
+
+            Executor.HttpResponse response = executor.getFile(fileEntry);
+
+            //TODO
+            if (response.getCode() == 404) {
+                //YbomCrawler.brokenImages.add(host + uri);
+            } else if (response.getCode() != 200) {
+                throw new RuntimeException(response.getCode() + ": " + fileEntry.getHost() + fileEntry.getUri());
+            } else {
+                //System.out.println("trying to save: " + path);
+                Path dir = path.getParent();
+                Files.createDirectories(dir);
+                Files.write(path, response.getBytes());
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private String getGameMainReferrer(String gameId) {

@@ -1,6 +1,7 @@
 package md.leonis.crawler.moby.crawler;
 
 import md.leonis.crawler.moby.FilesProcessor;
+import md.leonis.crawler.moby.dto.FileEntry;
 import md.leonis.crawler.moby.model.GameEntry;
 import md.leonis.crawler.moby.model.Platform;
 import org.jsoup.nodes.Element;
@@ -8,6 +9,7 @@ import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -62,6 +64,14 @@ public interface Crawler {
     void setConsumers(Consumer<GameEntry> crawlerRefreshConsumer, Consumer<GameEntry> crawlerSuccessConsumer, Consumer<GameEntry> crawlerErrorConsumer);
 
     String getGamePage(String platformId, String gameId);
+
+    // Files
+
+    void fileConsumer(FileEntry fileEntry) throws Exception;
+
+    Path getFilePath(FileEntry fileEntry);
+
+    Path getFilePath(String platformId, String uri);
 
 
     // JSoup

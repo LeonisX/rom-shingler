@@ -20,7 +20,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import md.leonis.crawler.moby.config.ConfigHolder;
 import md.leonis.crawler.moby.crawler.Crawler;
-import md.leonis.crawler.moby.executor.Executor;
 import md.leonis.crawler.moby.model.GameEntry;
 import md.leonis.crawler.moby.view.FxmlView;
 import md.leonis.crawler.moby.view.StageManager;
@@ -679,7 +678,7 @@ public class GamesBindingController {
             this.left = false;
             this.year = String.join(", ", gameEntry.getDates());
             this.alternativeTitles = gameEntry.getAlternateTitles().stream().map(a -> a.split("\"")[1]).collect(Collectors.toList());
-            this.images = gameEntry.getScreens().stream().map(s -> Executor.getPath(gameEntry.getPlatformId(), s.getLarge()).toAbsolutePath().toString()).collect(Collectors.toList());
+            this.images = gameEntry.getScreens().stream().map(s -> getCrawler().getFilePath(gameEntry.getPlatformId(), s.getLarge()).toAbsolutePath().toString()).collect(Collectors.toList());
         }
 
         // "alternateTitles" : [ "\"Alien 3\" -- Alternative spelling" ],
@@ -693,7 +692,7 @@ public class GamesBindingController {
             this.left = false;
             this.year = String.join(", ", gameEntry.getDates());
             this.alternativeTitles = gameEntry.getAlternateTitles().stream().map(a -> a.split("\"")[1]).collect(Collectors.toList());
-            this.images = gameEntry.getScreens().stream().map(s -> Executor.getPath(gameEntry.getPlatformId(), s.getLarge()).toAbsolutePath().toString()).collect(Collectors.toList());
+            this.images = gameEntry.getScreens().stream().map(s -> getCrawler().getFilePath(gameEntry.getPlatformId(), s.getLarge()).toAbsolutePath().toString()).collect(Collectors.toList());
         }
 
         private String normalize(String s) {

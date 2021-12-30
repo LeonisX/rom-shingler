@@ -21,23 +21,26 @@ public class TestExecutor implements Executor {
     }
 
     @Override
-    public void saveFile(FileEntry file) {
+    public HttpResponse getFile(FileEntry file) {
         sleep(sleep);
         boolean err = RANDOM.nextBoolean();
         boolean err2 = RANDOM.nextBoolean();
         if (err || err2) {
             throw new RuntimeException(file.getUri());
         }
+        return null;
     }
 
     @Override
-    public void saveFile(String platformId, String host, String uri, String referrer) {
+    public HttpResponse getFile(String host, String uri, String referrer) {
         sleep(sleep);
+        return null;
     }
 
     @Override
-    public void saveFile(String platformId, String host, String uri, String referrer, Proxy proxy) {
+    public HttpResponse getFile(String host, String uri, String referrer, Proxy proxy) {
         sleep(sleep);
+        return null;
     }
 
     private void sleep(long millis) {

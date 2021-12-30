@@ -28,13 +28,13 @@ public class FilesProcessor {
     private Consumer<FileEntry> addFileConsumer = (s) -> {
     };
 
-    public FilesProcessor(int processorsCount) {
+    public FilesProcessor(int processorsCount, Consumer<FileEntry> fileEntryConsumer) {
 
         this.service = Executors.newCachedThreadPool();
 
         this.processors = new ArrayList<>();
         for (int i = 1; i <= processorsCount; i++) {
-            processors.add(new HttpProcessor(i, httpQueue, new HttpExecutor()));
+            processors.add(new HttpProcessor(i, httpQueue, new HttpExecutor(), fileEntryConsumer));
         }
         processors.forEach(service::execute);
         this.executor = processors.get(0).getExecutor();

@@ -8,10 +8,7 @@ import org.apache.hc.core5.http.ParseException;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.Random;
-
-import static md.leonis.crawler.moby.config.ConfigHolder.*;
 
 public interface Executor {
 
@@ -21,28 +18,11 @@ public interface Executor {
 
     HttpResponse getPage(String host, String uri, String referrer, Proxy proxy) throws Exception;
 
-    void saveFile(FileEntry file) throws Exception;
+    HttpResponse getFile(FileEntry file) throws Exception;
 
-    void saveFile(String platformId, String host, String uri, String referrer) throws Exception;
+    HttpResponse getFile(String host, String uri, String referrer) throws Exception;
 
-    void saveFile(String platformId, String host, String uri, String referrer, Proxy proxy) throws Exception;
-
-    // TODO source specific, move to crawler
-    static Path getPath(String uri) {
-        if (uri.startsWith("/")) {
-            uri = uri.substring(1);
-        }
-        return getPagesDir(getSource()).resolve(uri).normalize().toAbsolutePath();
-    }
-
-    // TODO source specific, move to crawler
-    static Path getPath(String platformId, String uri) {
-        uri = platformId + uri;
-        if (uri.startsWith("/")) {
-            uri = uri.substring(1);
-        }
-        return getCacheDir(getSource()).resolve(uri).normalize().toAbsolutePath();
-    }
+    HttpResponse getFile(String host, String uri, String referrer, Proxy proxy) throws Exception;
 
     class HttpResponse {
 
