@@ -11,6 +11,7 @@ import md.leonis.shingler.model.ConfigHolder;
 import md.leonis.shingler.model.Family;
 import md.leonis.shingler.model.FamilyType;
 import md.leonis.shingler.model.Name;
+import md.leonis.shingler.model.dto.TiviStructure;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.poi.hssf.util.HSSFColor;
 import org.apache.poi.ss.usermodel.*;
@@ -31,6 +32,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static md.leonis.shingler.model.ConfigHolder.*;
+import static md.leonis.shingler.utils.TiviApiUtils.loadTiviGames;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -56,9 +58,9 @@ public class TiviUtils {
 
     public static boolean isIO = true;
 
-    private static List<CSV.MySqlStructure> readCsv() {
+    private static List<CSV.MySqlStructure> readCsv(boolean force) {
 
-        try {
+        /*try {
             File file = getInputPath().resolve("lists").resolve("base_" + platform + ".csv").toFile(); // Already escaped to &amp;, ...
             if (!file.exists()) {
                 //createGamesList(file);
@@ -71,6 +73,14 @@ public class TiviUtils {
             return iter.readAll().stream().peek(s -> s.setOldName(s.getName())).collect(Collectors.toList());
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }*/
+
+        try {
+            List<TiviStructure> structure = loadTiviGames(platform, force);
+            return structure.stream().map(s -> new CSV.MySqlStructure(s.getSid(), s.getName(), s.getName(), s.getCpu(), s.getGame(), s.getRom())).collect(Collectors.toList());
+        } catch (Exception e) {
+            LOGGER.warn("Can't read table from TiVi: " + platform, e);
+            return new ArrayList<>();
         }
     }
 
@@ -262,7 +272,7 @@ public class TiviUtils {
         FileUtils.createDirectories(getInputPath());
 
         // import CSV original
-        List<CSV.MySqlStructure> records = readCsv();
+        List<CSV.MySqlStructure> records = readCsv(true);
 
         // clean name, rom; calc cpu if not
         records.forEach(r -> {
@@ -873,7 +883,7 @@ public class TiviUtils {
         List<String> screenWarnings = new ArrayList<>();
         List<CSV.RenamedStructure> renamed = new ArrayList<>();
 
-        List<CSV.MySqlStructure> originRecords = readCsv();
+        List<CSV.MySqlStructure> originRecords = readCsv(false);
         List<CSV.MySqlStructure> records = readXls(xlsUpdatePath());
 
         Set<String> copied = new HashSet<>();

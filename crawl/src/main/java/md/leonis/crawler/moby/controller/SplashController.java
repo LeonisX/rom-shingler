@@ -9,8 +9,9 @@ import md.leonis.shingler.utils.FileUtils;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
 
-import static md.leonis.crawler.moby.config.ConfigHolder.getSource;
-import static md.leonis.crawler.moby.config.ConfigHolder.getSourceDir;
+import java.io.IOException;
+
+import static md.leonis.crawler.moby.config.ConfigHolder.*;
 
 @Controller
 public class SplashController {
@@ -23,10 +24,13 @@ public class SplashController {
     }
 
     @FXML
-    private void initialize() {
+    private void initialize() throws IOException {
 
         //TODO
         FileUtils.createDirectories(getSourceDir(getSource()));
+
+        loadProtectedProperties();
+        md.leonis.shingler.model.ConfigHolder.loadProtectedProperties();
 
         //TODO switch on
         //PauseTransition delay = new PauseTransition(Duration.seconds(1));

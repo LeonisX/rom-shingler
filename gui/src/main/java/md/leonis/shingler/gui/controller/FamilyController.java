@@ -554,6 +554,7 @@ public class FamilyController {
     }
 
     public void expandAllButtonClick() {
+        lastNameView = lastNameView == null ? familyRootItem : lastNameView;
         toggleAllItems(getRoot(lastNameView).getChildren(), true);
     }
 

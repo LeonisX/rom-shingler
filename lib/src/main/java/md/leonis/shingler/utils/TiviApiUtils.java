@@ -11,7 +11,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static md.leonis.shingler.model.ConfigHolder.*;
+import static md.leonis.shingler.utils.FileUtils.loadJsonList;
+import static md.leonis.shingler.utils.FileUtils.saveAsJson;
+
 public class TiviApiUtils {
+
+    public static final String TIVI = "tivi";
 
     //TODO
     private static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
@@ -28,6 +34,24 @@ public class TiviApiUtils {
             System.out.println("Error in readTables");
         }
         return tables.stream().map(t -> t.getTableName().replace("base_", "")).collect(Collectors.toList());
+    }
+
+    public static List<TiviStructure> loadTiviGames(String platformId, boolean force) throws IOException {
+        List<TiviStructure> data = loadTiviGames(platformId);
+        if (data.isEmpty() || force) {
+            data = TiviApiUtils.readTable(apiPath, platformId, serverSecret);
+            saveTiviGames(platformId, data);
+        }
+        return data;
+    }
+
+
+    public static List<TiviStructure> loadTiviGames(String platformId) {
+        return loadJsonList(getGamesDir(TIVI), platformId, TiviStructure.class);
+    }
+
+    public static void saveTiviGames(String platformId, List<TiviStructure> list) throws IOException {
+            saveAsJson(getGamesDir(TIVI), platformId, list);
     }
 
     public static List<TiviStructure> readTable(String apiPath, String platform, String serverSecret) {
@@ -54,6 +78,4 @@ public class TiviApiUtils {
         }
         return tables;
     }
-
-
 }

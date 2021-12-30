@@ -53,8 +53,6 @@ public class PlatformsBindingController {
     @FXML
     private void initialize() throws Exception {
 
-        ConfigHolder.loadProtectedProperties();
-
         // read moby, tivi
         List<String> tiviList = TiviApiUtils.readTables(ConfigHolder.apiPath, ConfigHolder.serverSecret);
         crawler = ConfigHolder.getCrawler();

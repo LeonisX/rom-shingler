@@ -236,10 +236,11 @@ public class PlatformsController {
     public void bindGamesMenuItemClick() {
         try {
             platformsBindingMap = crawler.loadPlatformsBindingMap();
-            platformsBindingMapEntries = platformsBindingMap.entrySet().stream().filter(e -> e.getKey()
-                    .contains(platformsTableView.getSelectionModel().getSelectedItem().getId())).collect(Collectors.toList());
-            List<String> values = platformsBindingMapEntries.stream().flatMap(m -> m.getValue().stream()).distinct().collect(Collectors.toList());
-            platformsBindingMapEntries = platformsBindingMap.entrySet().stream().filter(e -> CollectionUtils.containsAny(e.getValue(), values)).collect(Collectors.toList());
+            platformsBindingMapEntries = platformsBindingMap.entrySet().stream().filter(e -> CollectionUtils.containsAny(e.getValue(),
+                    platformsTableView.getSelectionModel().getSelectedItems().stream().map(Platform::getId).collect(Collectors.toList()))).collect(Collectors.toList());
+            List<String> keys = platformsBindingMapEntries.stream().map(Map.Entry::getKey).collect(Collectors.toList());
+            platformsBindingMapEntries.addAll(platformsBindingMap.entrySet().stream().filter(e -> keys.contains(e.getKey())).collect(Collectors.toList()));
+            platformsBindingMapEntries = platformsBindingMapEntries.stream().distinct().collect(Collectors.toList());
             if (!platformsBindingMapEntries.isEmpty()) {
                 stageManager.showPane(FxmlView.GAMES_BINDING);
             } else {

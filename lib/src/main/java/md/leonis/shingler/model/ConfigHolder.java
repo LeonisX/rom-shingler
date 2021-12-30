@@ -5,6 +5,9 @@ import javafx.beans.property.SimpleBooleanProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -133,4 +136,33 @@ public class ConfigHolder {
 
     public static int candidates = 48;
     public static int showCandidates = 8;
+
+
+
+    public static Path home = Paths.get(".");
+
+    public static Path getSourceDir(String source) {
+        return home.resolve(source);
+    }
+
+    public static Path getGamesDir(String source) {
+        return home.resolve(source).resolve("games");
+    }
+
+    public static String apiPath;
+    public static String sitePath;
+    public static String localSitePath;
+    public static String serverSecret;
+
+    public static void loadProtectedProperties() throws IOException {
+        try (InputStream inputStream = Files.newInputStream(home.resolve("protected.properties"))){
+            Properties prop = new Properties();
+            prop.load(inputStream);
+            String apiDir = prop.getProperty("api.dir") + "/";
+            sitePath = prop.getProperty("site.path") + "/";
+            localSitePath = prop.getProperty("local.site.path") + "/";
+            serverSecret = prop.getProperty("server.secret");
+            apiPath = sitePath + apiDir;
+        }
+    }
 }

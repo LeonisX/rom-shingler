@@ -26,7 +26,6 @@ import md.leonis.crawler.moby.view.FxmlView;
 import md.leonis.crawler.moby.view.StageManager;
 import md.leonis.shingler.model.dto.TiviStructure;
 import md.leonis.shingler.utils.StringUtils;
-import md.leonis.shingler.utils.TiviApiUtils;
 import md.leonis.shingler.utils.WebUtils;
 import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.springframework.context.annotation.Lazy;
@@ -37,9 +36,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static md.leonis.crawler.moby.config.ConfigHolder.*;
-import static md.leonis.shingler.utils.FileUtils.loadJsonList;
-import static md.leonis.shingler.utils.FileUtils.saveAsJson;
 import static md.leonis.shingler.utils.StringUtils.*;
+import static md.leonis.shingler.utils.TiviApiUtils.loadTiviGames;
 
 @Controller
 public class GamesBindingController {
@@ -48,7 +46,7 @@ public class GamesBindingController {
     final DataFormat dataFormat = new DataFormat("title");
 
 
-    public static final String TIVI = "tivi";
+
     private final StageManager stageManager;
     private final ConfigHolder configHolder;
 
@@ -73,7 +71,6 @@ public class GamesBindingController {
 
     List<Binding> gamesBinding;
     List<GameEntry> gameEntries = new ArrayList<>();
-    Map<String, List<GameEntry>> gameEntriesByPlatformId = new HashMap<>();
 
     Deque<Cont> rollbackList = new ArrayDeque<>();
 
@@ -256,8 +253,8 @@ public class GamesBindingController {
                 mobyStructure = activeCont.getMoby();
 
                 stage = stageManager.showFloatWindow(FxmlView.GAMES_INFO, robot.getMouseX(), robot.getMouseY());
+                event.consume();
             }
-            event.consume();
         });
 
         tableView.addEventFilter(KeyEvent.KEY_RELEASED, (KeyEvent event) -> {
@@ -273,8 +270,8 @@ public class GamesBindingController {
                         break;
                     }
                 }
+                event.consume();
             }
-            event.consume();
         });
 
         listView.addEventFilter(KeyEvent.KEY_PRESSED, (KeyEvent event) -> {
@@ -377,27 +374,24 @@ public class GamesBindingController {
             }
         });
 
-        loadProtectedProperties();
-
         // read moby, tivi
         crawler = getCrawler();
 
         List<TiviStructure> tiviList = platformsBindingMapEntries.stream().flatMap(e -> {
-            List<TiviStructure> data = loadTiviGames(e.getKey());
-            if (data.isEmpty()) {
-                data = TiviApiUtils.readTable(ConfigHolder.apiPath, e.getKey(), serverSecret);
-                saveTiviGames(e.getKey(), data);
+            List<TiviStructure> data = new ArrayList<>();
+            try {
+                data = loadTiviGames(e.getKey(), false);
+            } catch (Exception ex) {
+                stageManager.showErrorAlert("Error saving Tivi Games", ex.getClass().getSimpleName() + ex.getMessage(), ex);
             }
-            return data.stream().sorted(Comparator.comparing(TiviStructure::getName));
+            return data.stream().filter(t -> !t.getSid().equals("hak")).sorted(Comparator.comparing(TiviStructure::getName));
         }).collect(Collectors.toList());
 
         // zamechanie-po-baze-dannyh
         // Замечание по базе данных
 
         for (String p : platformsBindingMapEntries.stream().flatMap(e -> e.getValue().stream()).collect(Collectors.toList())) {
-            List<GameEntry> gamesList = crawler.loadGamesList(p);
-            gameEntries.addAll(gamesList);
-            gameEntriesByPlatformId.put(p, gamesList);
+            gameEntries.addAll(crawler.loadGamesList(p));
         }
 
         //List<Structure> tivi = tiviList.stream().map(Structure::new).collect(Collectors.toList());
@@ -443,17 +437,7 @@ public class GamesBindingController {
         });
     }
 
-    private List<TiviStructure> loadTiviGames(String platformId) {
-        return loadJsonList(getGamesDir(TIVI), platformId, TiviStructure.class);
-    }
 
-    private void saveTiviGames(String platformId, List<TiviStructure> list) {
-        try {
-            saveAsJson(getGamesDir(TIVI), platformId, list);
-        } catch (Exception e) {
-            stageManager.showErrorAlert("Error saving Tivi Games", e.getClass().getSimpleName() + e.getMessage(), e);
-        }
-    }
 
     public void autoAssignButtonClick() {
 
@@ -727,7 +711,7 @@ public class GamesBindingController {
             s = s.replace("-", " ");
             s = s.replace("-", " ");
             s = s.replace("  ", " ").replace("  ", " ").replace("  ", " ").trim();
-            s = s.replace("³", "3").replace("é", "e").replace("ü", "u").replace("ū", "uu")
+            s = s.replace("²", " 2").replace("³", " 3").replace("é", "e").replace("ü", "u").replace("ū", "uu")
                     .replace("ō", "ou").replace("ä", "a");
 
             return s.toLowerCase();

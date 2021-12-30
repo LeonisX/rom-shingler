@@ -17,9 +17,9 @@ import org.springframework.context.ConfigurableApplicationContext;
 import static md.leonis.shingler.model.ConfigHolder.*;
 
 @SpringBootApplication
-public class MainApp extends Application {
+public class ShinglerApp extends Application {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MainApp.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ShinglerApp.class);
 
     private ConfigurableApplicationContext springContext;
     private StageManager stageManager;
@@ -39,7 +39,7 @@ public class MainApp extends Application {
     public void init() {
         String[] args = this.getParameters().getRaw().toArray(new String[0]);
         // We run Spring context initialization at the time of JavaFX initialization:
-        SpringApplicationBuilder builder = new SpringApplicationBuilder(MainApp.class);
+        SpringApplicationBuilder builder = new SpringApplicationBuilder(ShinglerApp.class);
         builder.headless(false);
         springContext = builder.run(args);
         //springContext = SpringApplication.run(MainApp.class, args);
