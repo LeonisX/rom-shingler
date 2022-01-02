@@ -6,6 +6,7 @@ import org.apache.hc.client5.http.auth.AuthScope;
 import org.apache.hc.client5.http.auth.CredentialsStore;
 import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpHead;
 import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
@@ -19,7 +20,9 @@ import org.apache.hc.core5.util.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -38,7 +41,10 @@ public class HttpExecutor implements Executor {
 
     public HttpExecutor() {
 
-        this.proxies = DIRECT_LIST;
+        this.proxies = new ArrayList<>();
+        for (int i = 0; i < 16; i++) {
+            proxies.add(DIRECT_LIST.get(0));
+        }
         this.index = proxies.isEmpty() ? 0 : RANDOM.nextInt(proxies.size());
     }
 
@@ -79,6 +85,7 @@ public class HttpExecutor implements Executor {
     }
 
     public Executor.HttpResponse getPage(String fullUri, String referrer) throws Exception {
+        //System.out.println("getPage: " + fullUri + " <-- " + referrer);
         URL url = new URL(fullUri);
         return getPage(url.getProtocol() + "://" + url.getHost(), url.getPath(), referrer, getProxy());
     }
@@ -90,7 +97,7 @@ public class HttpExecutor implements Executor {
     private HttpResponse doGetPage(String host, String uri, String referrer, Proxy proxy, HttpUriRequestBase httpUriRequestBase) throws Exception {
 
         try {
-            LOGGER.info(host + uri);
+            //LOGGER.info((host + uri + " <- " + referrer));
 
             String[] chunks = host.split("://");
             HttpHost targetHost = new HttpHost(chunks[0], chunks[1]);
@@ -133,9 +140,9 @@ public class HttpExecutor implements Executor {
             return httpResponse;
         } catch (Exception e) {
 
-            proxy.setStatus(Proxy.ProxyStatus.UNAVAILABLE);
-            proxy.setRetryAfterSec(60);
-            LOGGER.error("REST request exception. Proxy host: " + proxy.getHost(), e);
+            //proxy.setStatus(Proxy.ProxyStatus.UNAVAILABLE); //TODO
+            //proxy.setRetryAfterSec(60);
+            //LOGGER.error("REST request exception. Proxy host: " + proxy.getHost(), e);
             throw e;
         }
     }
@@ -164,7 +171,7 @@ public class HttpExecutor implements Executor {
     private HttpResponse doGetFile(String host, String uri, String referrer, Proxy proxy, HttpUriRequestBase httpUriRequestBase) throws Exception {
 
         try {
-            LOGGER.info(host + uri);
+            //LOGGER.info(host + uri);
 
             HttpResponse httpResponse = getHttpResponse(host, referrer, proxy, httpUriRequestBase);
 
@@ -232,6 +239,65 @@ public class HttpExecutor implements Executor {
         return response;
     }
 
+    public HttpResponse doHead(String uri, String referrer, Proxy proxy) throws Exception {
+
+        try {
+            //LOGGER.info(uri);
+            HttpResponse httpResponse = getHttpResponse2(uri, referrer, proxy, new HttpHead(uri));
+
+            updateProxy(proxy, httpResponse);
+            return httpResponse;
+
+        } catch (Exception e) {
+
+            //TODO тут неверно. ошибка не всегда из-за прокси, надо разбираться
+            e.printStackTrace();
+            /*proxy.setStatus(Proxy.ProxyStatus.UNAVAILABLE); //TODO
+            proxy.setRetryAfterSec(60);*/
+            //LOGGER.error("REST request exception. Proxy host: " + proxy.getHost(), e);
+            throw e;
+        }
+    }
+
+    private HttpResponse getHttpResponse2(String host, String referrer, Proxy proxy, HttpUriRequestBase httpUriRequestBase) throws Exception {
+
+        HttpHost targetHost = HttpHost.create(new URI(host).getHost()); // TODO optimize
+
+        referrer = (referrer == null) ? "https://www.google.com/" : referrer;
+
+        // httpUriRequestBase.addHeader(new BasicHeader("Host", host.replace("http://", "").replace("https://", "")));
+        // httpUriRequestBase.addHeader(new BasicHeader("Accept", "image/avif,image/webp,*/*"));
+        // addBrowserHeaders(httpUriRequestBase, referrer);
+
+        //Prepare the CloseableHttpClient
+        CloseableHttpClient closeableHttpClient;
+
+        if (null != proxy && null != proxy.getHost()) {
+            HttpHost proxyHost = new HttpHost(proxy.getScheme(), proxy.getHost(), proxy.getPort());
+            httpUriRequestBase.setConfig(RequestConfig.custom().setProxy(proxyHost).build());
+
+            CredentialsStore credentialsProvider = new BasicCredentialsProvider();
+            credentialsProvider.setCredentials(new AuthScope(proxy.getHost(), proxy.getPort()),
+                    new UsernamePasswordCredentials(proxy.getUserName(), proxy.getPasswordArray()));
+
+            RequestConfig config = RequestConfig.custom()
+                    // Determines the timeout until a new connection is fully established. This may also include transport security negotiation exchanges such as SSL or TLS protocol negotiation).
+                    .setConnectTimeout(Timeout.ofSeconds(5)).build();
+
+            closeableHttpClient = HttpClients.custom().setDefaultCredentialsProvider(credentialsProvider).setDefaultRequestConfig(config).build();
+        } else {
+            closeableHttpClient = HttpClients.createDefault();
+        }
+
+        //Get the result
+        CloseableHttpResponse closeableHttpResponse = closeableHttpClient.execute(targetHost, httpUriRequestBase);
+        byte[] bytes = new byte[0];
+        HttpResponse response = new HttpResponse(bytes, closeableHttpResponse.getCode(), closeableHttpResponse.getHeaders());
+        EntityUtils.consume(closeableHttpResponse.getEntity());
+
+        return response;
+    }
+
     private void addBrowserHeaders(HttpUriRequestBase httpUriRequestBase, String referrer) {
 
         httpUriRequestBase.addHeader(new BasicHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0"));
@@ -252,7 +318,7 @@ public class HttpExecutor implements Executor {
         if (response.getCode() == 200) {//status = Proxy.ProxyStatus.NORMAL;
             //retryAfterSec = null;
         } else {
-            LOGGER.warn("Unexpected response code from proxy: " + response.getCode());
+            //LOGGER.warn("Unexpected response code from proxy: " + response.getCode());
             //TODO proxy.setStatus(status);
             //TODO proxy.setRetryAfterSec(retryAfterSec);
         }

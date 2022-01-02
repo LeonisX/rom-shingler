@@ -29,6 +29,8 @@ import java.util.stream.Collectors;
 
 import static md.leonis.crawler.moby.config.ConfigHolder.*;
 import static md.leonis.shingler.utils.FileUtils.*;
+import static md.leonis.shingler.utils.StringUtils.escapePathChars;
+import static md.leonis.shingler.utils.StringUtils.unescapeUriChars;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -218,7 +220,7 @@ public class YbomCrawler extends AbstractCrawler {
 
     private void parseGameMain(GameEntry entry) throws Exception {
 
-        HttpExecutor.HttpResponse response = processor.getExecutor().getPage(getGameLink(entry), getGameMainReferrer(entry.getGameId()));
+        HttpExecutor.HttpResponse response = getAndSavePage(getGameLink(entry), getGameMainReferrer(entry.getGameId()));
 
         Element container = getContainer(response);
 
@@ -1363,6 +1365,7 @@ public class YbomCrawler extends AbstractCrawler {
         if (uri.startsWith("/")) {
             uri = uri.substring(1);
         }
+        uri = escapePathChars(unescapeUriChars(uri));
         return getPagesDir(getSource()).resolve(uri).normalize().toAbsolutePath();
     }
 
@@ -1414,7 +1417,8 @@ public class YbomCrawler extends AbstractCrawler {
         if (uri.startsWith("/")) {
             uri = uri.substring(1);
         }
-        return getCacheDir(getSource()).resolve(platformId).resolve(uri).normalize().toAbsolutePath();
+        uri = escapePathChars(unescapeUriChars(uri));
+        return getPagesDir(getSource()).resolve(platformId).resolve(uri).normalize().toAbsolutePath();
     }
 
     @Override
@@ -1423,7 +1427,6 @@ public class YbomCrawler extends AbstractCrawler {
         Path path = getFilePath(fileEntry);
 
         try {
-
             if (Files.exists(path)) { // TODO if read from cache
 
                 //TODO remove this validation, use in the specific validation task only

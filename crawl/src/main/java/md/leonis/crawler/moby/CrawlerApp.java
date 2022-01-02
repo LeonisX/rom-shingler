@@ -15,7 +15,7 @@ import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfigurat
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 
-@SpringBootApplication(scanBasePackages = "md.leonis.crawler.moby", exclude={DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class})
+@SpringBootApplication(scanBasePackages = "md.leonis.crawler.moby", exclude = {DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class})
 public class CrawlerApp extends Application {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CrawlerApp.class);
@@ -29,9 +29,9 @@ public class CrawlerApp extends Application {
     }
 
     /* We need to initialize the Spring context and this can be done in two different places:
-     * If we need to create instances of types Scene, Stage, open popup,
+     * If we need to create instances of types Scene, Stage, open popup,
      * then we need to do this in the start() method, because It is called in the UI thread.
-     * Otherwise, we can use the init() method (as in the example below),
+     * Otherwise, we can use the init() method (as in the example below),
      * which is not called in the UI thread before the start() method is called.
      */
     @Override
