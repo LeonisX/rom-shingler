@@ -20,7 +20,7 @@ public class FormatsConverter {
 
         //bin2s19();
 
-        st2ToBin("C:\\Users\\user\\Downloads\\_bysys\\studio2\\RCA Studio II files [ST2]");
+        st2ToBin("C:\\Users\\user\\Downloads\\_bysys\\_other\\studio2\\rca-s2-brews\\rca-s2-brews");
 
         /*bin2ToSt2(Paths.get("C:\\Users\\user\\Downloads\\_bysys\\studio2\\RCA Studio II files [BIN] [ST2]\\TV School House I (USA).bin"),
                 "??", "PT", "18V500", "TV SCHOOL HOUSE");*/
