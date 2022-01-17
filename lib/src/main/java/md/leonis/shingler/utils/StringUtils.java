@@ -32,7 +32,6 @@ public class StringUtils {
         return StringUtils.force63(result).replace(" ", "_");
     }
 
-
     /// SNES Columns (Unl) problem
 
     public static String normalize7z(String fileName, String ext) {
@@ -338,5 +337,63 @@ public class StringUtils {
 
         string = string.replaceAll("/[^a-zA-Z0-9_\\-]+/si", "");
         return string;
+    }
+
+    //TODO https://perishablepress.com/stop-using-unsafe-characters-in-urls/
+    //TODO https://stackoverflow.com/questions/1547899/which-characters-make-a-url-invalid
+    private static final String[] ESCAPE_URI_CHARS = {" ", "[", "]", "&", "\\", "<", ">", "{", "}", "?", "=", "\"", ",", "#", "|"};
+    private static final String[] UNESCAPE_URI_CHARS = {"%20", "%5B", "%5D", "%26", "%5C", "%3C", "%3E", "%7B", "%7D", "%3F", "%3D", "%22", "%2C", "%23", "%7C"};
+
+    public static String escapeUriChars(String str) {
+        //System.out.println("Before escape: " + str);
+        if (str.equals("#")) {
+            return "";
+        }
+
+        String href = str.trim();
+
+        for (int i = 0; i < ESCAPE_URI_CHARS.length; i++) {
+            href = href.replace(ESCAPE_URI_CHARS[i], UNESCAPE_URI_CHARS[i]);
+        }
+
+        StringBuilder res = new StringBuilder();
+
+        boolean isFirst = false;
+
+        for (int i = 0; i < href.length(); i++) {
+            char chr = href.charAt(i);
+            if (chr == ':') {
+                if (!isFirst) {
+                    isFirst = true;
+                    res.append(chr);
+                } else {
+                    res.append("%3A");
+                }
+            } else {
+                res.append(chr);
+            }
+        }
+
+        href = res.toString().split("#")[0];
+        return href;
+    }
+
+    public static String unescapeUriChars(String str) {
+        //System.out.println("Before unescape: " + str);
+
+        String href = str.trim();
+
+        for (int i = 0; i < ESCAPE_URI_CHARS.length; i++) {
+            href = href.replace(UNESCAPE_URI_CHARS[i], ESCAPE_URI_CHARS[i]);
+        }
+
+        href = href.replace("%3A", ":");
+        href = href.replace("%2F", "/");
+
+        return href;
+    }
+
+    public static String escapePathChars(String path) {
+        return path.replace("://", "@").replace("?", "@").replace(":", "@");
     }
 }

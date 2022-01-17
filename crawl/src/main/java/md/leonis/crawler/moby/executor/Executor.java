@@ -80,5 +80,17 @@ public interface Executor {
         public void setHeaders(Header[] headers) {
             this.headers = headers;
         }
+
+        @Override
+        public String toString() {
+
+            String str = body == null ? "" : body;
+            str = str.replace("\n", "").replace("\r", "");
+
+            return "HttpResponse{" +
+                    "body='" + str.substring(0, Math.min(str.length(), 180)) + '\'' +
+                    ", code=" + code +
+                    '}';
+        }
     }
 }
