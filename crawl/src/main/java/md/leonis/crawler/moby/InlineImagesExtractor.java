@@ -11,18 +11,26 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Base64;
-import java.util.HashSet;
-import java.util.Set;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class InlineImagesExtractor {
 
-    private static final boolean PREPEND_INDEX = true;
+    private static final boolean PREPEND_INDEX = false;
+    private static final File HTML_FILE = new File("C:\\Users\\user\\Downloads\\Live A Live. - TiVi форум.html");
+    private static final String BASE_URI = "http://tv-games.ru/forum/blog.php?b=1562";
 
-    public static void main(String[] args) throws IOException, URISyntaxException {
+    public static void main(String[] args) throws Exception {
 
-        File file = new File("C:\\Users\\user\\Documents\\gata\\src\\books-add\\baidu.html");
-        Document doc = Jsoup.parse(file, null, "http://tv-games.ru/forum/blog.php?b=1562");
+        extractImages();
+
+        //renameFiles();
+    }
+
+    private static void extractImages() throws IOException, URISyntaxException {
+
+        Document doc = Jsoup.parse(HTML_FILE, null, BASE_URI);
 
         Set<String> b64 = new HashSet<>();
 
@@ -46,7 +54,7 @@ public class InlineImagesExtractor {
 
                 if (!b64.contains(chunks[1])) {
                     byte[] base64 = Base64.getDecoder().decode(chunks[1]);
-                    Path dir = file.toPath().getParent().resolve("im");
+                    Path dir = HTML_FILE.toPath().getParent().resolve("im");
 
                     name = getNextAvailableFilename(dir, name);
 
@@ -79,5 +87,21 @@ public class InlineImagesExtractor {
         String plainName = FileNameUtils.getBaseName(filename);
         String extension = FileNameUtils.getExtension(filename);
         return String.format("%s-%s.%s", plainName, number, extension);
+    }
+
+    private static void renameFiles() throws IOException {
+        Path path = Paths.get("C:\\Users\\user\\Downloads\\im");
+        Path out = path.resolve("out");
+        Files.createDirectories(out);
+
+        List<Path> files = Files.list(path).map(Path::toFile)
+                .sorted(Comparator.comparing(File::lastModified))
+                .map(File::toPath)  // remove this line if you would rather work with a List<File> instead of List<Path>
+                .collect(Collectors.toList());
+
+        for (int i = 1; i <= files.size(); i++) {
+            Path file = files.get(i - 1);
+            Files.copy(file, out.resolve(i + "." + FileNameUtils.getExtension(file.getFileName().toString())));
+        }
     }
 }
