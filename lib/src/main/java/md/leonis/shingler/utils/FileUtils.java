@@ -61,7 +61,7 @@ public class FileUtils {
     }
 
     public static <T> T loadAsJson(Path path, String fileName, Class<T> clazz) {
-        try{
+        try {
             return MAPPER.readValue(path.resolve(fileName + JSON).normalize().toAbsolutePath().toFile(), clazz);
         } catch (Exception e) {
             LOGGER.debug(e.getMessage());
@@ -74,7 +74,6 @@ public class FileUtils {
     }
 
     public static void saveAsJson(Path path, Object object) throws IOException {
-
         backupFile(path);
 
         String result = MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(object);

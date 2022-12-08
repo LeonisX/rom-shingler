@@ -30,16 +30,14 @@ public abstract class AbstractCrawler implements Crawler {
     }
 
 
-    public void processGamesList(List<GameEntry> gameEntries) throws Exception {
-
+    public void processGamesList(List<GameEntry> gameEntries, boolean dieNow) throws Exception {
         if (platformGamesMap.isEmpty()) {
             platformGamesMap = gameEntries.stream().collect(Collectors.groupingBy(GameEntry::getPlatformId));
         }
-        cycle(gameEntries);
+        cycle(gameEntries, dieNow);
     }
 
-    private void cycle(List<GameEntry> gameEntries) throws Exception {
-
+    private void cycle(List<GameEntry> gameEntries, boolean dieNow) throws Exception {
         Set<String> affectedPlatforms = new HashSet<>();
 
         boolean completed = true;
@@ -61,6 +59,9 @@ public abstract class AbstractCrawler implements Crawler {
                     continue;
                 }
             } catch (Exception e) {
+                if (dieNow) {
+                    throw e;
+                }
                 if (gameEntry.getErrorsCount() < 5) {
                     completed = false;
                     gameEntry.setErrorsCount(gameEntry.getErrorsCount() + 1);
@@ -89,7 +90,7 @@ public abstract class AbstractCrawler implements Crawler {
 
         if (!completed && !aborted && !suspended) {
             getProcessor().resetProcessors();
-            cycle(gameEntries);
+            cycle(gameEntries, dieNow);
         }
     }
 

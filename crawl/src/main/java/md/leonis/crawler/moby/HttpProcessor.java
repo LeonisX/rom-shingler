@@ -62,7 +62,7 @@ public class HttpProcessor implements Runnable {
                     if (fileEntry == null) {
                         file = "";
                         refreshConsumer.accept(null);
-                        System.out.println("===============File is null"); //TODO use another queue
+                        System.out.println("DEBUG (not error) HttpQueue is empty."); //TODO use another queue
                         sleep(51);
                     } else {
                         file = fileEntry.getHost() + fileEntry.getUri();

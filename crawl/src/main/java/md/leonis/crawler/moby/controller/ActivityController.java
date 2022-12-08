@@ -5,6 +5,7 @@ import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -14,15 +15,18 @@ import md.leonis.crawler.moby.config.ConfigHolder;
 import md.leonis.crawler.moby.crawler.Crawler;
 import md.leonis.crawler.moby.dto.FileEntry;
 import md.leonis.crawler.moby.model.GameEntry;
+import md.leonis.crawler.moby.model.GameInitialEntry;
 import md.leonis.crawler.moby.view.FxmlView;
 import md.leonis.crawler.moby.view.StageManager;
 import md.leonis.shingler.utils.FileUtils;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -53,6 +57,11 @@ public class ActivityController {
     public TableView<String> logsTableView;
     public TableColumn<String, String> logsTableColumn;
 
+    private List<GameEntry> gameEntries;
+    private ObservableList<GameEntry> gameEntryOList;
+    private ObservableList<FileEntry> fileEntryOList;
+    private ObservableList<String> logsOList;
+
     private Crawler crawler;
 
     @Lazy
@@ -62,22 +71,19 @@ public class ActivityController {
     }
 
     @FXML
-    private void initialize() {
+    private void initialize() throws Exception {
 
         crawler = getCrawler();
 
         platformTableColumn.setCellValueFactory(new PropertyValueFactory<>("platformId"));
         //gameTableColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
         gameTableColumn.setCellValueFactory(g -> new SimpleStringProperty(g.getValue().getTitle() + "\t\t" + g.getValue().getErrorsCount()));
-        gamesTableView.setItems(FXCollections.observableArrayList(new ArrayList<>()));
 
         platformFileTableColumn.setCellValueFactory(new PropertyValueFactory<>("platformId"));
         fileTableColumn.setCellValueFactory(f -> new SimpleStringProperty(f.getValue().getHost() + f.getValue().getUri() + "\t\t" + f.getValue().getErrorsCount()));
-        filesTableView.setItems(FXCollections.observableArrayList(activity.getFileEntries()));
 
         processorTableColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
         processorFileTableColumn.setCellValueFactory(new PropertyValueFactory<>("file"));
-        processorsTableView.setItems(FXCollections.observableArrayList(crawler.getProcessor().getProcessors()));
 
         logsTableColumn.setCellValueFactory(l -> new ReadOnlyStringWrapper(l.getValue()));
         logsTableView.setItems(FXCollections.observableArrayList(new ArrayList<>()));
@@ -86,21 +92,31 @@ public class ActivityController {
 
         //TODO show diff
 
+        gameEntries = crawler.getGamesList(activity.getPlatforms());
+        gameEntryOList = FXCollections.observableList(gameEntries);
+        gamesTableView.setItems(gameEntryOList);
+
+        fileEntryOList = FXCollections.observableList(activity.getFileEntries());
+        filesTableView.setItems(fileEntryOList);
+
+        ObservableList<HttpProcessor> processorOList = FXCollections.observableList(crawler.getProcessor().getProcessors());
+        processorsTableView.setItems(processorOList);
+
+        logsOList = FXCollections.observableArrayList();
+        logsTableView.setItems(logsOList);
 
         Task<Void> task = new Task<Void>() {
             @Override
             public Void call() {
                 try {
-                    List<GameEntry> gameEntries = crawler.getGamesList(activity.getPlatforms());
-                    gamesTableView.getItems().addAll(gameEntries);
                     crawler.setConsumers(crawlerRefreshConsumer, crawlerSuccessConsumer, crawlerErrorConsumer);
                     crawler.getProcessor().setAddFileConsumer(addFileConsumer);
                     crawler.getProcessor().getProcessors().forEach(p -> p.setConsumers(httpProcessorRefreshConsumer, httpProcessorSuccessConsumer, httpProcessorErrorConsumer));
 
-                    crawler.processGamesList(gameEntries);
+                    crawler.processGamesList(new ArrayList<>(gameEntries), false);
 
                     if (crawler.isSuspended()) {
-                        activity.setFileEntries(filesTableView.getItems().stream().filter(f -> !f.isCompleted()).collect(Collectors.toList()));
+                        activity.setFileEntries(fileEntryOList.stream().filter(f -> !f.isCompleted()).collect(Collectors.toList()));
                         FileUtils.saveAsJson(getSourceDir(getSource()), "activity", activity);
                         Platform.runLater(() -> stageManager.showInformationAlert("Suspended title", "Suspended header", ""));
 
@@ -113,16 +129,25 @@ public class ActivityController {
                         FileUtils.deleteJsonFile(getSourceDir(getSource()), "activity");
                         Platform.runLater(() -> {
                             errorsMap = new TreeMap<>();
-                            gamesTableView.getItems().forEach(g -> errorsMap.put(g.getTitle(), g.getExceptions()));
-                            filesTableView.getItems().forEach(f -> errorsMap.put(f.getHost() + f.getUri(), f.getExceptions()));
+                            gameEntryOList.stream().filter(Objects::nonNull).forEach(g -> errorsMap.put(g.getTitle(), g.getExceptions()));
+                            fileEntryOList.stream().filter(Objects::nonNull).forEach(f -> errorsMap.put(f.getHost() + f.getUri(), f.getExceptions()));
                             if (errorsMap.isEmpty()) {
                                 stageManager.showInformationAlert("Congratulations!", "You have successfully processed all the data!", "");
                             } else {
+                                List<GameInitialEntry> entries = gameEntryOList.stream()
+                                        .filter(g -> !g.getExceptions().isEmpty()).map(GameInitialEntry::new).collect(Collectors.toList());
+                                try {
+                                    FileUtils.saveAsJson(getSourceDir(getSource()), "brokenGames", entries);
+                                    FileUtils.saveAsJson(getSourceDir(getSource()), "brokenImages",
+                                            fileEntryOList.stream().filter(Objects::nonNull).map(f -> f.getHost() + f.getUri()).collect(Collectors.toList()));
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
                                 stageManager.showNewWindow(FxmlView.ACTIVITY_ERRORS);
                             }
                         });
                     }
-                    updatePlatforms(gameEntries);
+                    updatePlatforms(gameEntryOList);
                     activity = null;
                     Platform.runLater(() -> stageManager.showPane(FxmlView.PLATFORMS));
 
@@ -142,7 +167,7 @@ public class ActivityController {
         public void accept(GameEntry gameEntry) {
             try {
                 Platform.runLater(() -> {
-                    gamesTableView.getSelectionModel().select(gameEntry);
+                        gamesTableView.getSelectionModel().select(gameEntry);
                     //refresh();
                 });
             } catch (Exception ignored) {
@@ -156,7 +181,7 @@ public class ActivityController {
         public void accept(GameEntry gameEntry) {
             try {
                 Platform.runLater(() -> {
-                    gamesTableView.getItems().remove(gameEntry);
+                        gameEntryOList.remove(gameEntry);
                     //refresh();
                 });
             } catch (Exception ignored) {
@@ -171,8 +196,10 @@ public class ActivityController {
             Platform.runLater(() -> {
                 Throwable throwable = gameEntry.getExceptions().get(gameEntry.getExceptions().size() - 1);
                 addLog(String.format("%s:%s: %s", gameEntry.getPlatformId(), gameEntry.getTitle(), throwable.getMessage()));
-                gamesTableView.getItems().remove(gameEntry);
-                gamesTableView.getItems().add(gameEntry);
+                synchronized (this) {
+                    gameEntryOList.remove(gameEntry);
+                    gameEntryOList.add(gameEntry);
+                }
                 //refresh();
             });
         }
@@ -181,38 +208,48 @@ public class ActivityController {
     private final Consumer<FileEntry> addFileConsumer = new Consumer<FileEntry>() {
         @Override
         public void accept(FileEntry file) {
-            filesTableView.getItems().add(file);
+                fileEntryOList.add(file);
         }
     };
 
     private final Consumer<FileEntry> httpProcessorRefreshConsumer = new Consumer<FileEntry>() {
         @Override
         public void accept(FileEntry file) {
-            if (file != null) {
-                Platform.runLater(() -> filesTableView.getSelectionModel().select(file));
-            }
-            refresh();
+                if (file != null) {
+                    Platform.runLater(() -> {
+                        //try {
+                            filesTableView.getSelectionModel().select(file);
+                        //} catch (Exception ignored) {
+                        //}
+                    });
+                }
+                refresh();
         }
     };
 
     private final Consumer<FileEntry> httpProcessorSuccessConsumer = new Consumer<FileEntry>() {
         @Override
         public void accept(FileEntry file) {
-            if (file != null) {
-                Platform.runLater(() -> filesTableView.getItems().remove(file));
+                if (file != null) {
+                    Platform.runLater(() -> {
+                        //try {
+                            fileEntryOList.remove(file);
+                        //} catch (Exception ignored) {
+                        //}
+                    });
+                }
+                refresh();
             }
-            refresh();
-        }
     };
 
     private final Consumer<FileEntry> httpProcessorErrorConsumer = new Consumer<FileEntry>() {
         @Override
         public void accept(FileEntry file) {
             Platform.runLater(() -> {
-                filesTableView.getItems().remove(file);
-                filesTableView.getItems().add(file);
-                addLog(String.format("%s:%s: %s", file.getPlatformId(), file.getHost() + file.getUri(),
-                        file.getExceptions().get(file.getExceptions().size() - 1)));
+                    fileEntryOList.remove(file);
+                    fileEntryOList.add(file);
+                    addLog(String.format("%s:%s: %s", file.getPlatformId(), file.getHost() + file.getUri(),
+                            file.getExceptions().get(file.getExceptions().size() - 1)));
             });
             refresh();
         }
@@ -241,7 +278,7 @@ public class ActivityController {
 
     private void addLog(String message) {
         Platform.runLater(() -> {
-            logsTableView.getItems().add(message);
+            logsOList.add(message);
             logsTableView.scrollTo(logsTableView.getItems().size() - 1);
         });
     }
@@ -250,7 +287,7 @@ public class ActivityController {
 
         activity.getPlatforms().forEach(p -> {
             List<GameEntry> entries = gameEntries.stream().filter(g -> g.getPlatformId().equals(p)).collect(Collectors.toList());
-            long brokenImages = filesTableView.getItems().stream().filter(f -> f.getPlatformId().equals(p)).count();
+            long brokenImages = fileEntryOList.stream().filter(f -> f != null && f.getPlatformId().equals(p)).count();
             platformsById.get(p).setTotal(entries.size());
             platformsById.get(p).setCompleted(entries.stream().filter(GameEntry::isCompleted).count() - brokenImages);
             platformsById.get(p).setDate(LocalDateTime.now());

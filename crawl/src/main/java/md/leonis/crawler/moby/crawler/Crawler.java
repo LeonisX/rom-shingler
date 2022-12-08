@@ -44,7 +44,7 @@ public interface Crawler {
 
     List<GameEntry> getGamesList(List<String> platforms) throws Exception;
 
-    void processGamesList(List<GameEntry> gameEntries) throws Exception;
+    void processGamesList(List<GameEntry> gameEntries, boolean dieNow) throws Exception;
 
     void saveSupportData() throws IOException;
 

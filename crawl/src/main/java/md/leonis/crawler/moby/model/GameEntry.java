@@ -89,6 +89,11 @@ public class GameEntry {
         this.title = title;
     }
 
+    public GameEntry(GameInitialEntry entry) {
+        this.platformId = entry.getPlatformId();
+        this.gameId = entry.getGameId();
+        this.title = entry.getTitle();
+    }
 
     @Override
     public boolean equals(Object o) {

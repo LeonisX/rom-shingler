@@ -150,6 +150,9 @@ public class PlatformsController {
 
     // buttons
     public void reloadGamesListButtonClick() {
+        if (platformsQueueListView.getItems().isEmpty() && !platformsTableView.getSelectionModel().getSelectedItems().isEmpty()) {
+            platformsQueueListView.getItems().addAll(platformsTableView.getSelectionModel().getSelectedItems());
+        }
 
         try {
             List<Pair<String, String>> allTitles = new ArrayList<>();
@@ -185,6 +188,9 @@ public class PlatformsController {
     }
 
     public void loadGamesButtonClick() throws IOException {
+        if (platformsQueueListView.getItems().isEmpty() && !platformsTableView.getSelectionModel().getSelectedItems().isEmpty()) {
+            platformsQueueListView.getItems().addAll(platformsTableView.getSelectionModel().getSelectedItems());
+        }
 
         List<String> platforms = platformsQueueListView.getItems().stream().map(Platform::getId).collect(Collectors.toList());
         if (!platforms.isEmpty()) {
@@ -198,6 +204,9 @@ public class PlatformsController {
     }
 
     public void validateImagesButtonClick() throws IOException {
+        if (platformsQueueListView.getItems().isEmpty() && !platformsTableView.getSelectionModel().getSelectedItems().isEmpty()) {
+            platformsQueueListView.getItems().addAll(platformsTableView.getSelectionModel().getSelectedItems());
+        }
 
         if (!platforms.isEmpty()) {
             List<String> platforms = platformsQueueListView.getItems().stream().map(Platform::getId).collect(Collectors.toList());

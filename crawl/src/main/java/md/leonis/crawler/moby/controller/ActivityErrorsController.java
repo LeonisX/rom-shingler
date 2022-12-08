@@ -36,7 +36,6 @@ public class ActivityErrorsController {
 
     @FXML
     private void initialize() {
-
         gameOrFileTreeTableView.setRoot(rootItem);
         gameOrFileTreeTableView.setShowRoot(false);
         errorsMap.forEach((key, value) -> {

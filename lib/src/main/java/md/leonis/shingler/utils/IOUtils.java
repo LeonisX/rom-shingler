@@ -254,7 +254,6 @@ public class IOUtils {
 
     @Measured
     public static void serializeAsJson(File file, Object object) {
-
         try {
             backupFile(file);
             new ObjectMapper().writeValue(file, object);
@@ -265,7 +264,6 @@ public class IOUtils {
 
     @Measured
     public static void serializeFamiliesAsJson(File file, Map<String, Family> families) {
-
         try {
             backupFile(file);
             Map<Integer, Name> names = new HashMap<>();
@@ -295,7 +293,6 @@ public class IOUtils {
 
     @Measured
     public static void serializeFamilyRelationsAsJson(File file, Map<Family, Map<Family, Double>> familyRelations) {
-
         try {
             backupFile(file);
             Map<String, Map<String, Double>> model = new LinkedHashMap<>();
@@ -314,7 +311,6 @@ public class IOUtils {
 
     @Measured
     public static Map<String, Family> loadFamiliesAsJson(File file) {
-
         try {
             FamiliesDto familiesDto = new ObjectMapper().readValue(file, FamiliesDto.class);
             Map<Integer, Name> names = familiesDto.getNames().stream().collect(Collectors.toMap(Name::hashCode, Function.identity()));
@@ -332,7 +328,6 @@ public class IOUtils {
 
     @Measured
     public static Map<Family, Map<Family, Double>> loadFamilyRelationsAsJson(File file) {
-
         try {
             TypeReference<LinkedHashMap<String, LinkedHashMap<String, Double>>> typeRef = new TypeReference<LinkedHashMap<String, LinkedHashMap<String, Double>>>() {
             };
@@ -373,7 +368,6 @@ public class IOUtils {
 
     @Measured
     public static byte[] loadBytesFromArchive(Path file, String fileName) {
-
         try (SevenZFile sevenZFile = new SevenZFile(file.toFile())) {
             SevenZArchiveEntry entry = sevenZFile.getNextEntry();
             while (entry != null) {

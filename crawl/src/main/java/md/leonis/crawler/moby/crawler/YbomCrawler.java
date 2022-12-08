@@ -9,6 +9,7 @@ import md.leonis.crawler.moby.dto.FileEntry;
 import md.leonis.crawler.moby.executor.Executor;
 import md.leonis.crawler.moby.executor.HttpExecutor;
 import md.leonis.crawler.moby.model.*;
+import md.leonis.shingler.utils.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.core5.http.Header;
 import org.jsoup.Jsoup;
@@ -69,6 +70,8 @@ public class YbomCrawler extends AbstractCrawler {
     public static final String GAME_RATING_SYSTEMS = ROOT + "/game/%s/%s/rating-systems";
     private final Executor executor = new HttpExecutor();
 
+    private static boolean useCache = true;
+
     public static void main(String[] args) throws Exception {
 
         String[] pl = new String[]{"nes", "sg-1000", "sega-master-system", "game-gear", "sega-32x", "genesis",
@@ -80,7 +83,7 @@ public class YbomCrawler extends AbstractCrawler {
                 "cd-i", "fred-cosmac", "colecoadam", "supervision", "vectrex", "sega-saturn", "playstation",
                 "neo-geo", "neo-geo-cd", "neo-geo-x", "dreamcast"};
 
-        pl = new String[]{"odyssey", "fred-cosmac"};
+        pl = new String[]{/*"odyssey", "fred-cosmac",*/ "pc-booter", "dos"};
 
         /*String[] pl2 = new String[]{"nintendo-dsi", "nintendo-ds", "pet", "vic-20", "c64", "c128", "commodore-16-plus4", "trs-80", "trs-80-coco", "trs-80-mc-10",
                 "msx", "amiga", "amiga-cd32", "cpc", "amstrad-pcw", "apple-i", "apple2", "apple2g", "atari-st", "bbc-micro_", "electron", "enterprise", "dos"};*/
@@ -91,15 +94,22 @@ public class YbomCrawler extends AbstractCrawler {
         ConfigHolder.setSource("moby");
 
         YbomCrawler crawler = new YbomCrawler();
-        crawler.setProcessor(new FilesProcessor(4, crawler::getFilePath));
+        crawler.setProcessor(new FilesProcessor(1, crawler::getFilePath));
 
-        for (Platform p : platforms) {
+        /*for (Platform p : platforms) {
             List<GameEntry> gameEntries = crawler.parseGamesList(p.getId());
             crawler.saveGamesList(p.getId(), gameEntries.stream().sorted(Comparator.comparing(GameEntry::getTitle)).collect(Collectors.toList()));
         }
 
-        crawler.processGamesList(crawler.getGamesList(Arrays.asList(pl)));
+        crawler.processGamesList(crawler.getGamesList(Arrays.asList(pl)), false);
+        */
 
+        //!!!!!!!!!!!!!!
+        useCache = false;
+
+        List<GameEntry> entries = FileUtils.loadJsonList(getSourceDir(getSource()), "brokenGames", GameEntry.class);
+
+        crawler.processGamesList(entries, true);
 
         //crawler.go();
         System.out.println("Gata!!!!!!");
@@ -858,39 +868,41 @@ public class YbomCrawler extends AbstractCrawler {
             //    figure
             for (Element li : lis) {
                 Element figure = getByTag(li, "figure");
-                //      a - <a href=".../game/snes/contra-iii-the-alien-wars/promo/promoImageId,92195/">
-                //       img - screenshot <img alt="Contra III: The Alien Wars Screenshot" src="/images/promo/s/92195-contra-iii-the-alien-wars-screenshot.jpg">
-                a = getA(figure);
-                String promoImageId = getLastChunk(a).split(",")[1];
-                String promoImage = removeHost(a.child(0).attr("src"));
-                //      figcaption
-                //        span - imageTypeName
-                //        [br]
-                //        текст - описание источника. Может быть линк со ссылкой на источник
-                //        <a href=".../mobyrank/source/sourceId,106/">VideoGame...</a>
-                Element figcaption = getByTag(figure, "figcaption");
-                Element span = figcaption.child(0);
-                String imageTypeName = span.text();
-                List<String> sourceDescr = new ArrayList<>();
-                Node node = span.nextSibling();
-                while (node != null) {
-                    if (node instanceof TextNode) {
-                        sourceDescr.add(((TextNode) node).text());
-                    } else {
-                        sourceDescr.add(node.outerHtml());
+                if (figure != null) { // wrong li from figcaption
+                    //      a - <a href=".../game/snes/contra-iii-the-alien-wars/promo/promoImageId,92195/">
+                    //       img - screenshot <img alt="Contra III: The Alien Wars Screenshot" src="/images/promo/s/92195-contra-iii-the-alien-wars-screenshot.jpg">
+                    a = getA(figure);
+                    String promoImageId = getLastChunk(a).split(",")[1];
+                    String promoImage = removeHost(a.child(0).attr("src"));
+                    //      figcaption
+                    //        span - imageTypeName
+                    //        [br]
+                    //        текст - описание источника. Может быть линк со ссылкой на источник
+                    //        <a href=".../mobyrank/source/sourceId,106/">VideoGame...</a>
+                    Element figcaption = getByTag(figure, "figcaption");
+                    Element span = figcaption.child(0);
+                    String imageTypeName = span.text();
+                    List<String> sourceDescr = new ArrayList<>();
+                    Node node = span.nextSibling();
+                    while (node != null) {
+                        if (node instanceof TextNode) {
+                            sourceDescr.add(((TextNode) node).text());
+                        } else {
+                            sourceDescr.add(node.outerHtml());
+                        }
+                        node = getNextNode(node);
                     }
-                    node = getNextNode(node);
+
+                    PromoImage pi = new PromoImage(promoImageId, promoImage, imageTypeName, sourceDescr);
+
+                    parseGamePromoArtImage(entry, pi);
+
+                    processor.add(new FileEntry(entry.getPlatformId(), ROOT, pi.getSmall(), thisLink));
+                    processor.add(new FileEntry(entry.getPlatformId(), ROOT, pi.getLarge(), thisLink));
+                    processor.add(new FileEntry(entry.getPlatformId(), ROOT, pi.getOriginal(), thisLink));
+
+                    promo.getImages().add(pi);
                 }
-
-                PromoImage pi = new PromoImage(promoImageId, promoImage, imageTypeName, sourceDescr);
-
-                parseGamePromoArtImage(entry, pi);
-
-                processor.add(new FileEntry(entry.getPlatformId(), ROOT, pi.getSmall(), thisLink));
-                processor.add(new FileEntry(entry.getPlatformId(), ROOT, pi.getLarge(), thisLink));
-                processor.add(new FileEntry(entry.getPlatformId(), ROOT, pi.getOriginal(), thisLink));
-
-                promo.getImages().add(pi);
             }
             entry.getPromos().add(promo);
         }
@@ -1370,24 +1382,29 @@ public class YbomCrawler extends AbstractCrawler {
     }
 
     private HttpExecutor.HttpResponse getAndSavePage(String uri, String referrer) throws Exception {
-
         URL url = new URL(uri);
 
         Path path = getPagePath(url.getPath());
 
-        if (Files.exists(path)) { // TODO if read from cache
-            if (Files.isDirectory(path)) {
-                path = path.resolve("default.htm");
-            }
-            if (Files.exists(path)) {
+        if (Files.isDirectory(path)) {
+            path = path.resolve("default.htm");
+        }
+
+        if (Files.exists(path)) {
+            if (useCache) { // TODO if read from cache - beatify way
                 LOGGER.info("Use cached page: " + path.toAbsolutePath());
                 return new Executor.HttpResponse(new String(Files.readAllBytes(path)), 200, new Header[0]);
+            }
+        } else {
+            try {
+                Files.delete(path);
+            } catch (Exception ignored) {
             }
         }
 
         HttpExecutor.HttpResponse response = executor.getPage(uri, referrer);
 
-        if (response.getCode() != 200) {
+        if (response.getCode() != 200 || response.getBody().isEmpty()) {
             throw new RuntimeException(response.getCode() + ": " + response.getBody());
         }
 
@@ -1441,7 +1458,8 @@ public class YbomCrawler extends AbstractCrawler {
                         return;
                     }
                 } else {
-                    LOGGER.info("Already cached: " + path.toAbsolutePath());
+                    //TODO уметь выключать, чтобы не спамило
+                    //LOGGER.info("Already cached: " + path.toAbsolutePath());
                     return;
                 }
             }
@@ -1475,7 +1493,6 @@ public class YbomCrawler extends AbstractCrawler {
     }
 
     private Element getContainer(HttpExecutor.HttpResponse response) {
-
         Document doc = Jsoup.parse(response.getBody());
         Element container = Objects.requireNonNull(doc.getElementById("wrapper")).getElementsByClass("container").first();
         assert container != null;

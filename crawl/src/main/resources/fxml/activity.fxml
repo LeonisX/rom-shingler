@@ -8,7 +8,7 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 
-<BorderPane prefHeight="614.0" prefWidth="1193.0" BorderPane.alignment="CENTER" xmlns="http://javafx.com/javafx/8.0.281" xmlns:fx="http://javafx.com/fxml/1" fx:controller="md.leonis.crawler.moby.controller.ActivityController">
+<BorderPane prefHeight="700.0" prefWidth="1400.0" BorderPane.alignment="CENTER" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="md.leonis.crawler.moby.controller.ActivityController">
     <top>
         <HBox alignment="CENTER_LEFT" prefHeight="38.0" prefWidth="920.0" spacing="5.0" BorderPane.alignment="CENTER">
             <BorderPane.margin>
@@ -21,8 +21,8 @@
    <center>
        <HBox prefHeight="100.0" prefWidth="200.0" BorderPane.alignment="CENTER">
            <SplitPane dividerPositions="0.29797979797979796">
-               <HBox minWidth="600.0">
-                   <TableView fx:id="filesTableView" prefHeight="396.0" prefWidth="609.0">
+               <HBox minWidth="600.0" prefWidth="1380.0">
+                   <TableView fx:id="filesTableView" prefHeight="396.0" prefWidth="800.0">
                        <columns>
                            <TableColumn fx:id="platformFileTableColumn" prefWidth="137.0" text="Platform" />
                            <TableColumn fx:id="fileTableColumn" minWidth="450.0" prefWidth="460.0" text="File" />
@@ -30,7 +30,7 @@
                    </TableView>
                </HBox>
                <HBox minWidth="600.0">
-                   <TableView fx:id="gamesTableView" prefHeight="396.0" prefWidth="635.0">
+                   <TableView fx:id="gamesTableView" prefHeight="396.0" prefWidth="640.0">
                        <columns>
                            <TableColumn fx:id="platformTableColumn" prefWidth="134.0" text="Platform" />
                            <TableColumn fx:id="gameTableColumn" minWidth="65.0" prefWidth="460.0" style="-fx-alignment: CENTER;" text="Game" />
@@ -43,8 +43,8 @@
     <bottom>
         <SplitPane dividerPositions="0.29797979797979796">
             <HBox minWidth="600.0">
-                <HBox prefHeight="167.0" prefWidth="1183.0">
-                    <TableView fx:id="processorsTableView" prefHeight="167.0" prefWidth="617.0">
+                <HBox prefHeight="167.0" prefWidth="1380.0">
+                    <TableView fx:id="processorsTableView" prefHeight="167.0" prefWidth="850.0">
                         <columns>
                             <TableColumn fx:id="processorTableColumn" prefWidth="84.0" text="Processor #" />
                             <TableColumn fx:id="processorFileTableColumn" prefWidth="510.0" text="File" />
