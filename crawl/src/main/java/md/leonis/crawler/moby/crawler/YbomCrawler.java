@@ -1411,6 +1411,8 @@ public class YbomCrawler extends AbstractCrawler {
         HttpExecutor.HttpResponse response = executor.getPage(uri, referrer);
 
         if (response.getCode() != 200 || response.getBody().isEmpty()) {
+            System.out.println(response.getCode());
+            System.out.println(response.getBody().substring(0, Math.min(response.getBody().length(), 128)));
             throw new RuntimeException(response.getCode() + ": " + response.getBody());
         }
 

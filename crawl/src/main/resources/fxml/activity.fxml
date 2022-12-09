@@ -16,6 +16,7 @@
             </BorderPane.margin>
             <Button fx:id="suspendButton" mnemonicParsing="false" onAction="#suspendButtonClick" text="Suspend" />
          <Button fx:id="abortButton" mnemonicParsing="false" onAction="#abortButtonClick" text="Abort" />
+            <Button fx:id="closeButton" mnemonicParsing="false" onAction="#closeButtonClick" disable="true" text="Close" />
         </HBox>
     </top>
    <center>

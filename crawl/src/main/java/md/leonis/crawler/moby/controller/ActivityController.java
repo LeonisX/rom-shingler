@@ -41,6 +41,7 @@ public class ActivityController {
 
     public Button suspendButton;
     public Button abortButton;
+    public Button closeButton;
 
     public TableView<GameEntry> gamesTableView;
     public TableColumn<GameEntry, String> platformTableColumn;
@@ -72,6 +73,10 @@ public class ActivityController {
 
     @FXML
     private void initialize() throws Exception {
+
+        suspendButton.setDisable(false);
+        abortButton.setDisable(false);
+        closeButton.setDisable(true);
 
         crawler = getCrawler();
 
@@ -128,11 +133,12 @@ public class ActivityController {
                         crawler.getProcessor().finalizeProcessors();
                         FileUtils.deleteJsonFile(getSourceDir(getSource()), "activity");
                         Platform.runLater(() -> {
+                            refresh();
                             errorsMap = new TreeMap<>();
                             gameEntryOList.stream().filter(Objects::nonNull).forEach(g -> errorsMap.put(g.getTitle(), g.getExceptions()));
                             fileEntryOList.stream().filter(Objects::nonNull).forEach(f -> errorsMap.put(f.getHost() + f.getUri(), f.getExceptions()));
                             if (errorsMap.isEmpty()) {
-                                stageManager.showInformationAlert("Congratulations!", "You have successfully processed all the data!", "");
+                                stageManager.showInformationAlert("Congratulations!", "You have successfully processed all games!", "");
                             } else {
                                 List<GameInitialEntry> entries = gameEntryOList.stream()
                                         .filter(g -> !g.getExceptions().isEmpty()).map(GameInitialEntry::new).collect(Collectors.toList());
@@ -149,7 +155,9 @@ public class ActivityController {
                     }
                     updatePlatforms(gameEntryOList);
                     activity = null;
-                    Platform.runLater(() -> stageManager.showPane(FxmlView.PLATFORMS));
+                    suspendButton.setDisable(true);
+                    abortButton.setDisable(true);
+                    closeButton.setDisable(false);
 
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -162,105 +170,80 @@ public class ActivityController {
         new Thread(task).start();
     }
 
-    private final Consumer<GameEntry> crawlerRefreshConsumer = new Consumer<GameEntry>() {
-        @Override
-        public void accept(GameEntry gameEntry) {
-            try {
-                Platform.runLater(() -> {
-                        gamesTableView.getSelectionModel().select(gameEntry);
-                    //refresh();
-                });
-            } catch (Exception ignored) {
-
-            }
-        }
-    };
-
-    private final Consumer<GameEntry> crawlerSuccessConsumer = new Consumer<GameEntry>() {
-        @Override
-        public void accept(GameEntry gameEntry) {
-            try {
-                Platform.runLater(() -> {
-                        gameEntryOList.remove(gameEntry);
-                    //refresh();
-                });
-            } catch (Exception ignored) {
-
-            }
-        }
-    };
-
-    private final Consumer<GameEntry> crawlerErrorConsumer = new Consumer<GameEntry>() {
-        @Override
-        public void accept(GameEntry gameEntry) {
+    private final Consumer<GameEntry> crawlerRefreshConsumer = gameEntry -> {
+        /*try {
             Platform.runLater(() -> {
-                Throwable throwable = gameEntry.getExceptions().get(gameEntry.getExceptions().size() - 1);
-                addLog(String.format("%s:%s: %s", gameEntry.getPlatformId(), gameEntry.getTitle(), throwable.getMessage()));
-                synchronized (this) {
-                    gameEntryOList.remove(gameEntry);
-                    gameEntryOList.add(gameEntry);
-                }
+                    gamesTableView.getSelectionModel().select(gameEntry);
                 //refresh();
             });
-        }
+        } catch (Exception ignored) {
+
+        }*/
     };
 
-    private final Consumer<FileEntry> addFileConsumer = new Consumer<FileEntry>() {
-        @Override
-        public void accept(FileEntry file) {
-                fileEntryOList.add(file);
-        }
+    private final Consumer<GameEntry> crawlerSuccessConsumer = gameEntry -> gameEntryOp(false, gameEntry);
+
+    private final Consumer<GameEntry> crawlerErrorConsumer = gameEntry -> {
+        Throwable throwable = gameEntry.getExceptions().get(gameEntry.getExceptions().size() - 1);
+        addLog(String.format("%s:%s: %s", gameEntry.getPlatformId(), gameEntry.getTitle(), throwable.getMessage()));
+        gameEntryOp(false, gameEntry);
+        gameEntryOp(true, gameEntry);
+        //refresh();
     };
 
-    private final Consumer<FileEntry> httpProcessorRefreshConsumer = new Consumer<FileEntry>() {
-        @Override
-        public void accept(FileEntry file) {
-                if (file != null) {
-                    Platform.runLater(() -> {
-                        //try {
-                            filesTableView.getSelectionModel().select(file);
-                        //} catch (Exception ignored) {
-                        //}
-                    });
-                }
-                refresh();
-        }
-    };
-
-    private final Consumer<FileEntry> httpProcessorSuccessConsumer = new Consumer<FileEntry>() {
-        @Override
-        public void accept(FileEntry file) {
-                if (file != null) {
-                    Platform.runLater(() -> {
-                        //try {
-                            fileEntryOList.remove(file);
-                        //} catch (Exception ignored) {
-                        //}
-                    });
-                }
-                refresh();
+    synchronized private void gameEntryOp(boolean add, GameEntry gameEntry) {
+        Platform.runLater(() -> {
+            if (add) {
+                gameEntryOList.add(gameEntry);
+            } else {
+                gameEntryOList.remove(gameEntry);
             }
+        });
+    }
+
+    private final Consumer<FileEntry> addFileConsumer = file -> fileEntryOp(true, file);
+
+    private final Consumer<FileEntry> httpProcessorRefreshConsumer = file -> {
+            /*if (file != null) {
+                Platform.runLater(() -> {
+                    //try {
+                        filesTableView.getSelectionModel().select(file);
+                    //} catch (Exception ignored) {
+                    //}
+                });
+            }
+            refresh();*/
     };
 
-    private final Consumer<FileEntry> httpProcessorErrorConsumer = new Consumer<FileEntry>() {
-        @Override
-        public void accept(FileEntry file) {
-            Platform.runLater(() -> {
-                    fileEntryOList.remove(file);
-                    fileEntryOList.add(file);
-                    addLog(String.format("%s:%s: %s", file.getPlatformId(), file.getHost() + file.getUri(),
-                            file.getExceptions().get(file.getExceptions().size() - 1)));
-            });
-            refresh();
-        }
+    private final Consumer<FileEntry> httpProcessorSuccessConsumer = file -> {
+        fileEntryOp(false, file);
+        refresh();
     };
+
+    private final Consumer<FileEntry> httpProcessorErrorConsumer = file -> {
+        fileEntryOp(false, file);
+        fileEntryOp(true, file);
+        addLog(String.format("%s:%s: %s", file.getPlatformId(), file.getHost() + file.getUri(),
+                file.getExceptions().get(file.getExceptions().size() - 1)));
+        refresh();
+    };
+
+    synchronized private void fileEntryOp(boolean add, FileEntry file) {
+        Platform.runLater(() -> {
+            if (add) {
+                fileEntryOList.add(file);
+            } else {
+                fileEntryOList.remove(file);
+            }
+        });
+    }
 
     private void refresh() {
         logsTableView.refresh();
         processorsTableView.refresh();
         gamesTableView.refresh();
         filesTableView.refresh();
-        showSelected();
+        //showSelected();
     }
 
     private void showSelected() {
@@ -284,7 +267,6 @@ public class ActivityController {
     }
 
     private void updatePlatforms(List<GameEntry> gameEntries) {
-
         activity.getPlatforms().forEach(p -> {
             List<GameEntry> entries = gameEntries.stream().filter(g -> g.getPlatformId().equals(p)).collect(Collectors.toList());
             long brokenImages = fileEntryOList.stream().filter(f -> f != null && f.getPlatformId().equals(p)).count();
@@ -305,5 +287,9 @@ public class ActivityController {
 
     public void abortButtonClick() {
         crawler.setAborted(true);
+    }
+
+    public void closeButtonClick() {
+        Platform.runLater(() -> stageManager.showPane(FxmlView.PLATFORMS));
     }
 }
