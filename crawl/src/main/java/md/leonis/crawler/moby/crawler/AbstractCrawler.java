@@ -73,7 +73,7 @@ public abstract class AbstractCrawler implements Crawler {
             if (++index == 50) {
                 saveSupportData();
                 for (String platform : affectedPlatforms) {
-                    saveGamesList(platform, platformGamesMap.get(platform));
+                    saveGamesList(platform, platformGamesMap.get(platform), gameEntry);
                 }
                 affectedPlatforms.clear();
 
@@ -84,7 +84,7 @@ public abstract class AbstractCrawler implements Crawler {
         if (!aborted) {
             saveSupportData();
             for (String platform : affectedPlatforms) {
-                saveGamesList(platform, platformGamesMap.get(platform));
+                saveGamesList(platform, platformGamesMap.get(platform), null);
             }
         }
 

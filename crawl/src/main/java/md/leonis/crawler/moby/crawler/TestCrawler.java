@@ -90,7 +90,7 @@ public class TestCrawler extends AbstractCrawler {
     }
 
     @Override
-    public void saveGamesList(String platformId, List<GameEntry> games) throws Exception {
+    public void saveGamesList(String platformId, List<GameEntry> games, GameEntry currentGame) throws Exception {
         saveAsJson(getGamesDir(getSource()), platformId, games);
     }
 

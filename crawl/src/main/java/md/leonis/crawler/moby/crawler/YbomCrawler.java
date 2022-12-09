@@ -165,14 +165,14 @@ public class YbomCrawler extends AbstractCrawler {
 
                 if (++i == 50) {
                     saveSupportData();
-                    saveGamesList(platform.getId(), games);
+                    saveGamesList(platform.getId(), games, gameEntry);
                     // TODO save position, return to position later
                     i = 0;
                 }
             }
 
             saveSupportData();
-            saveGamesList(platform.getId(), games);
+            saveGamesList(platform.getId(), games, null);
         }
 
         processor.finalizeProcessors();
@@ -216,7 +216,7 @@ public class YbomCrawler extends AbstractCrawler {
 
     @Override
     public void saveSupportData() throws IOException {
-        System.out.println("Save in progress...");
+        //System.out.println("Save in progress...");
         saveAsJson(getSourceDir(getSource()), "companies", companies);
         saveAsJson(getSourceDir(getSource()), "sheets", sheets);
         saveAsJson(getSourceDir(getSource()), "gameGroups", gameGroups);
@@ -225,7 +225,7 @@ public class YbomCrawler extends AbstractCrawler {
         saveAsJson(getSourceDir(getSource()), "users", users);
         saveAsJson(getSourceDir(getSource()), "attributes", attributes);
         saveAsJson(getSourceDir(getSource()), "brokenImages", brokenImages);
-        System.out.println("Saved.");
+        //System.out.println("Saved.");
     }
 
     private void parseGameMain(GameEntry entry) throws Exception {
@@ -420,6 +420,10 @@ public class YbomCrawler extends AbstractCrawler {
                     // <a href=".../genre/sheet/regional-differences/">Regional&nbsp;differences</a>
                     entry.setMiscs(getSheets(divs.get(i + 1)));
                     break;
+                case "Amazon Rating":
+                    // <a href=".../attribute/sheet/attributeId,2618/">Guidance Suggested</a>
+                    entry.setAmazonRatings(getSheets(divs.get(i + 1)));
+                    break;
                 default:
                     throw new RuntimeException(title.text());
             }
@@ -454,7 +458,7 @@ public class YbomCrawler extends AbstractCrawler {
                 int index = -1;
                 for (int i = 0; i < element.childNodes().size(); i++) {
                     if (element.childNode(i) instanceof Element) {
-                        System.out.println("element.childNode(i): " + element.childNode(i));
+                        //System.out.println("element.childNode(i): " + element.childNode(i));
                         Element el = (Element) element.childNode(i);
                         if (el.tagName().equals("div") && el.className().equals("sideBarLinks")) {
                             index = i;
@@ -1327,7 +1331,8 @@ public class YbomCrawler extends AbstractCrawler {
     }
 
     @Override
-    public void saveGamesList(String platformId, List<GameEntry> games) throws Exception {
+    public void saveGamesList(String platformId, List<GameEntry> games, GameEntry currentGame) throws Exception {
+        System.out.println("Save at: " + ((currentGame == null) ? "" : currentGame.getTitle()));
         saveAsJson(getGamesDir(getSource()), platformId, games.stream().filter(g -> !g.getGameId().isEmpty()).collect(Collectors.toList()));
     }
 
@@ -1392,7 +1397,8 @@ public class YbomCrawler extends AbstractCrawler {
 
         if (Files.exists(path)) {
             if (useCache) { // TODO if read from cache - beatify way
-                LOGGER.info("Use cached page: " + path.toAbsolutePath());
+                //TODO уметь выключать, чтобы не спамило
+                //LOGGER.info("Use cached page: " + path.toAbsolutePath());
                 return new Executor.HttpResponse(new String(Files.readAllBytes(path)), 200, new Header[0]);
             }
         } else {
@@ -1435,7 +1441,7 @@ public class YbomCrawler extends AbstractCrawler {
             uri = uri.substring(1);
         }
         uri = escapePathChars(unescapeUriChars(uri));
-        return getPagesDir(getSource()).resolve(platformId).resolve(uri).normalize().toAbsolutePath();
+        return getCacheDir(getSource()).resolve(platformId).resolve(uri).normalize().toAbsolutePath();
     }
 
     @Override

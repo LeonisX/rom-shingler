@@ -36,6 +36,7 @@ public class GameEntry {
     private List<String> specialEditions = new ArrayList<>();
     private List<String> addons = new ArrayList<>();
     private List<String> miscs = new ArrayList<>();
+    private List<String> amazonRatings = new ArrayList<>();
 
     private List<String> description = new ArrayList<>();
     private List<String> alternateTitles = new ArrayList<>();

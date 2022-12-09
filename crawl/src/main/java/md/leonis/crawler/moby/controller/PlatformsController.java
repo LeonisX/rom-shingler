@@ -174,7 +174,7 @@ public class PlatformsController {
                 platformsById.get(platform.getId()).setTotal(newGames.size());
                 platformsById.get(platform.getId()).setCompleted(newGames.stream().filter(GameEntry::isCompleted).count());
                 //crawler.savePlatformsList(platforms);
-                crawler.saveGamesList(platform.getId(), prevGames.stream().sorted(Comparator.comparing(GameEntry::getTitle)).collect(Collectors.toList()));
+                crawler.saveGamesList(platform.getId(), prevGames.stream().sorted(Comparator.comparing(GameEntry::getTitle)).collect(Collectors.toList()), null);
             }
             crawler.savePlatformsList(platforms);
             updatePlatformsList();

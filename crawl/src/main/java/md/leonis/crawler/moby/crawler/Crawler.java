@@ -40,7 +40,7 @@ public interface Crawler {
 
     List<GameEntry> loadGamesList(String platformId) throws Exception;
 
-    void saveGamesList(String platformId, List<GameEntry> games) throws Exception;
+    void saveGamesList(String platformId, List<GameEntry> games, GameEntry currentGame) throws Exception;
 
     List<GameEntry> getGamesList(List<String> platforms) throws Exception;
 

@@ -18,15 +18,13 @@ import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static md.leonis.crawler.moby.config.ConfigHolder.getPagesDir;
-import static md.leonis.crawler.moby.config.ConfigHolder.getSource;
+import static md.leonis.crawler.moby.config.ConfigHolder.*;
 import static md.leonis.shingler.utils.StringUtils.*;
 
 //TODO сохранять и парсить всё, даже если ошибки
@@ -418,7 +416,7 @@ public class BrokenLinksVerifier {
             uri = uri.substring(1);
         }
         uri = escapePathChars(unescapeUriChars(uri));
-        return getPagesDir(getSource()).resolve(uri).normalize().toAbsolutePath();
+        return getCacheDir(getSource()).resolve(uri).normalize().toAbsolutePath();
     }
 
     private static HttpExecutor.HttpResponse getAndSavePage(URI uri, String referrer) throws Exception {
@@ -444,7 +442,8 @@ public class BrokenLinksVerifier {
 
         if (response.getCode() == 200) {
             //System.out.println("trying to save page: " + path);
-            createDirectories(path);
+            Path rootPath = getPagesDir(getSource()).normalize().toAbsolutePath();
+            createDirectories(rootPath, path);
             Files.write(path, response.getBody().getBytes());
             //System.out.println("saved page: " + path);
         }
@@ -487,7 +486,6 @@ public class BrokenLinksVerifier {
     }
 
     private static HttpExecutor.HttpResponse getAndSaveFile(URI uri, URI referrer) throws Exception {
-
         //System.out.println("getAndSaveFile: " + uri + " <-- " + referrer);
         Path path = getFilePath(uri.toString());
 
@@ -500,7 +498,8 @@ public class BrokenLinksVerifier {
 
         if (response.getCode() == 200) {
             //System.out.println("trying to save file: " + path);
-            createDirectories(path);
+            Path rootPath = getCacheDir(getSource()).normalize().toAbsolutePath();
+            createDirectories(rootPath, path);
             Files.write(path, response.getBytes());
             //System.out.println("saved file: " + path);
         }
@@ -508,10 +507,7 @@ public class BrokenLinksVerifier {
         return response;
     }
 
-    private static void createDirectories(Path path) throws IOException {
-
-        Path rootPath = getPagesDir(getSource()).normalize().toAbsolutePath();
-
+    private static void createDirectories(Path rootPath, Path path) throws IOException {
         //System.out.println("rootPath: " + rootPath);
         //System.out.println("path: " + path);
 

@@ -81,7 +81,8 @@ public class FileUtils {
 
         Files.createDirectories(path.getParent());
         Files.write(path, result.getBytes());
-        LOGGER.debug("Saved: " + path.getFileName().toString());
+        //TODO revert
+        //LOGGER.debug("Saved: " + path.getFileName().toString());
     }
 
     public static void backupFile(File file) throws IOException {
