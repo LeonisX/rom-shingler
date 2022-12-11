@@ -78,7 +78,6 @@ public class PlatformsController {
 
     @FXML
     private void initialize() {
-
         crawler = getCrawler();
 
         updatePlatformsList();
@@ -120,7 +119,6 @@ public class PlatformsController {
     }
 
     public void reloadPlatformsButtonClick() {
-
         try {
             List<Platform> platforms = crawler.parsePlatformsList();
             platforms.forEach(p -> p.updateFrom(platformsById.get(p.getId())));
@@ -135,7 +133,7 @@ public class PlatformsController {
             ConfigHolder.setPlatforms(platforms);
             updatePlatformsList();
         } catch (Exception e) {
-            stageManager.showErrorAlert("Error reading platforms list", "Stack trace", e);
+            stageManager.showErrorAlert("Error reading platforms list", e.getMessage(), e);
         }
     }
 
@@ -183,7 +181,7 @@ public class PlatformsController {
                 stageManager.showInformationAlert("New games", allTitles.size() + " new game(s) found:", text);
             }
         } catch (Exception e) {
-            stageManager.showErrorAlert("Error reading games list", "Stack trace", e);
+            stageManager.showErrorAlert("Error reading games list", e.getMessage(), e);
         }
     }
 

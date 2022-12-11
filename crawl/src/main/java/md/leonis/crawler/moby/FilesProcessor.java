@@ -29,7 +29,6 @@ public class FilesProcessor {
     };
 
     public FilesProcessor(int processorsCount, Consumer<FileEntry> fileEntryConsumer) {
-
         this.service = Executors.newCachedThreadPool();
 
         this.processors = new ArrayList<>();
@@ -41,7 +40,6 @@ public class FilesProcessor {
     }
 
     public FilesProcessor(List<HttpProcessor> processors) {
-
         this.service = Executors.newCachedThreadPool();
         this.processors = processors;
         this.executor = processors.get(0).getExecutor();
@@ -50,7 +48,6 @@ public class FilesProcessor {
     }
 
     public void stopProcessors() {
-
         processors.forEach(p -> {
             p.setCancelled(true);
             p.setCanStop(true);
@@ -63,7 +60,6 @@ public class FilesProcessor {
     }
 
     public void finalizeProcessors() throws Exception {
-
         processors.forEach(p -> p.setCanStop(true));
 
         while (processors.stream().filter(HttpProcessor::isFinished).count() < processors.size()) {
@@ -74,7 +70,6 @@ public class FilesProcessor {
     }
 
     public void stopAllProcessorsIfError() throws InterruptedException {
-
         Exception exception = processors.stream().filter(p -> p.getException() != null).findFirst().map(HttpProcessor::getException).orElse(null);
         if (exception != null) {
             processors.forEach(p -> p.setCancelled(true));

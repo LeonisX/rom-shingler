@@ -2,10 +2,7 @@ package md.leonis.shingler.utils;
 
 import org.slf4j.Logger;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,6 +10,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import static md.leonis.shingler.model.ConfigHolder.*;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -112,7 +111,6 @@ public class ArchiveUtils {
         }
     }
 
-
     public static void compressZip(String archiveName, List<String> members) {
 
         List<String> args = new ArrayList<>(Arrays.asList(
@@ -205,7 +203,6 @@ public class ArchiveUtils {
     }
 
     public static List<String> listSlt(Path path) {
-
         String quotedPath = '"' + path.toAbsolutePath().toString() + '"';
 
         Path tmp = null;
@@ -310,12 +307,45 @@ Offset = 55724
 */
 
     public static List<String> listFiles(Path path) {
-
         List<String> files = listSlt(path).stream().filter(f -> f.startsWith("Path = "))
                 .map(f -> f.replace("Path = ", "")).collect(Collectors.toList());
 
         files.remove(0);
 
         return files;
+    }
+
+    public static void unzip(Path zipFilePath, Path destDir) {
+        byte[] buffer = new byte[1024];
+        try(FileInputStream fis = new FileInputStream(zipFilePath.toAbsolutePath().toString());
+            ZipInputStream zis = new ZipInputStream(fis)) {
+            if (!Files.exists(destDir)) {
+                Files.createDirectories(destDir);
+            }
+            ZipEntry ze = zis.getNextEntry();
+            while (ze != null) {
+                Path newFile = destDir.resolve(ze.getName());
+                if (ze.isDirectory()) {
+                    System.out.println("Creating directory: " + newFile.toAbsolutePath());
+                    Files.createDirectories(newFile.toAbsolutePath().getParent());
+                } else {
+                    System.out.println("Unzipping file: " + newFile.toAbsolutePath());
+                    //create directories for sub directories in zip
+                    Files.createDirectories(newFile.toAbsolutePath().getParent());
+                    FileOutputStream fos = new FileOutputStream(newFile.toFile());
+                    int len;
+                    while ((len = zis.read(buffer)) > 0) {
+                        fos.write(buffer, 0, len);
+                    }
+                    fos.close();
+                }
+                zis.closeEntry();
+                ze = zis.getNextEntry();
+            }
+            zis.closeEntry();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
     }
 }

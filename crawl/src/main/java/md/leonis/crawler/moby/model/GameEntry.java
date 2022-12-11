@@ -84,16 +84,15 @@ public class GameEntry {
     @JsonIgnore
     private List<Throwable> exceptions = new ArrayList<>();
 
+    // js-dos
+    private List<String> videos = new ArrayList<>();
+    private List<GameFileEntry> files = new ArrayList<>();
+    private boolean multiplayer;
+
     public GameEntry(String platformId, String gameId, String title) {
         this.platformId = platformId;
         this.gameId = gameId;
         this.title = title;
-    }
-
-    public GameEntry(GameInitialEntry entry) {
-        this.platformId = entry.getPlatformId();
-        this.gameId = entry.getGameId();
-        this.title = entry.getTitle();
     }
 
     @Override

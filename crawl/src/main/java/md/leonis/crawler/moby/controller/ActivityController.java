@@ -161,7 +161,7 @@ public class ActivityController {
 
                 } catch (Exception e) {
                     e.printStackTrace();
-                    Platform.runLater(() -> stageManager.showErrorAlert("Error", "Stack trace", e));
+                    Platform.runLater(() -> stageManager.showErrorAlert("Error", e.getMessage(), e));
                 }
                 return null;
             }

@@ -2,6 +2,7 @@ package md.leonis.crawler.moby.crawler;
 
 import md.leonis.crawler.moby.FilesProcessor;
 import md.leonis.crawler.moby.dto.FileEntry;
+import md.leonis.crawler.moby.executor.Executor;
 import md.leonis.crawler.moby.model.GameEntry;
 import md.leonis.crawler.moby.model.Platform;
 
@@ -18,8 +19,6 @@ import static md.leonis.shingler.utils.FileUtils.saveAsJson;
 public class TestCrawler extends AbstractCrawler {
 
     private int id = 0;
-
-    private FilesProcessor processor;
 
     public TestCrawler(FilesProcessor processor) {
         this.processor = processor;
@@ -41,22 +40,22 @@ public class TestCrawler extends AbstractCrawler {
     }
 
     @Override
-    public Map<String, List<String>> loadPlatformsBindingMap() throws Exception {
+    public Map<String, List<String>> loadPlatformsBindingMap() {
         return null;
     }
 
     @Override
-    public void savePlatformsBindingMap(Map<String, List<String>> map) throws Exception {
+    public void savePlatformsBindingMap(Map<String, List<String>> map) {
 
     }
 
     @Override
-    public Map<String, List<String>> loadGamesBindingMap(String platformId, String mobyPlatformId) throws Exception {
+    public Map<String, List<String>> loadGamesBindingMap(String platformId, String sourcePlatformId) {
         return null;
     }
 
     @Override
-    public void saveGamesBindingMap(String platformId, String mobyPlatformId, Map<String, List<String>> map) throws Exception {
+    public void saveGamesBindingMap(String platformId, String sourcePlatformId, Map<String, List<String>> map) {
 
     }
 
@@ -81,7 +80,6 @@ public class TestCrawler extends AbstractCrawler {
 
     @Override
     public List<GameEntry> loadGamesList(String platformId) {
-
         List<GameEntry> result = new ArrayList<>();
         for (int i = 0; i < new Random().nextInt(10) + 15; i++) {
             result.add(new GameEntry(platformId, String.valueOf(i), "title" + i));
@@ -100,18 +98,12 @@ public class TestCrawler extends AbstractCrawler {
     }
 
     @Override
-    public FilesProcessor getProcessor() {
-        return processor;
-    }
-
-    @Override
     public String getGamePage(String platformId, String gameId) {
         return null;
     }
 
     @Override
-    public void fileConsumer(FileEntry fileEntry) throws Exception {
-
+    public void fileConsumer(FileEntry fileEntry) {
     }
 
     @Override
@@ -125,8 +117,13 @@ public class TestCrawler extends AbstractCrawler {
     }
 
     @Override
-    public void setProcessor(FilesProcessor processor) {
-        this.processor = processor;
+    public Executor getExecutor() {
+        return null;
+    }
+
+    @Override
+    public String getHost() {
+        return null;
     }
 
     private void sleep(long millis) {

@@ -38,9 +38,10 @@ public class HttpExecutor implements Executor {
     private final List<Proxy> proxies;
 
     private volatile int index;
+    //TODO special header rules for every source
+    private boolean addHostHeader;
 
     public HttpExecutor() {
-
         this.proxies = new ArrayList<>();
         for (int i = 0; i < 16; i++) {
             proxies.add(DIRECT_LIST.get(0));
@@ -49,7 +50,6 @@ public class HttpExecutor implements Executor {
     }
 
     public HttpExecutor(List<Proxy> proxies) {
-
         this.proxies = proxies;
         this.index = proxies.isEmpty() ? 0 : RANDOM.nextInt(proxies.size());
     }
@@ -65,7 +65,6 @@ public class HttpExecutor implements Executor {
     }
 
     private Proxy getNextProxy(int currentIndex, int count) {
-
         //LOGGER.debug(String.format("Select proxy. Initial index: %s; Current index: %s", initialIndex, currentIndex));
 
         if (count == proxies.size()) {
@@ -95,7 +94,6 @@ public class HttpExecutor implements Executor {
     }
 
     private HttpResponse doGetPage(String host, String uri, String referrer, Proxy proxy, HttpUriRequestBase httpUriRequestBase) throws Exception {
-
         try {
             //LOGGER.info((host + uri + " <- " + referrer));
 
@@ -157,19 +155,18 @@ public class HttpExecutor implements Executor {
     }
 
     public HttpResponse getFile(FileEntry file) throws Exception {
-        return doGetFile(file.getHost(), file.getUri(), file.getReferrer(), getProxy(), new HttpGet(file.getUri()));
+        return doGetFile(file.getHost(), file.getReferrer(), getProxy(), new HttpGet(file.getUri()));
     }
 
     public HttpResponse getFile(String host, String uri, String referrer) throws Exception {
-        return doGetFile(host, uri, referrer, getProxy(), new HttpGet(uri));
+        return doGetFile(host, referrer, getProxy(), new HttpGet(uri));
     }
 
     public HttpResponse getFile(String host, String uri, String referrer, Proxy proxy) throws Exception {
-        return doGetFile(host, uri, referrer, proxy, new HttpGet(uri));
+        return doGetFile(host, referrer, proxy, new HttpGet(uri));
     }
 
-    private HttpResponse doGetFile(String host, String uri, String referrer, Proxy proxy, HttpUriRequestBase httpUriRequestBase) throws Exception {
-
+    private HttpResponse doGetFile(String host, String referrer, Proxy proxy, HttpUriRequestBase httpUriRequestBase) throws Exception {
         try {
             //LOGGER.info(host + uri);
 
@@ -192,28 +189,29 @@ public class HttpExecutor implements Executor {
 
             //TODO тут неверно. ошибка не всегда из-за прокси, надо разбираться
             e.printStackTrace();
-            proxy.setStatus(Proxy.ProxyStatus.UNAVAILABLE);
-            proxy.setRetryAfterSec(60);
+            //proxy.setStatus(Proxy.ProxyStatus.UNAVAILABLE);
+            //proxy.setRetryAfterSec(60);
             LOGGER.error("REST request exception. Proxy host: " + proxy.getHost(), e);
             throw e;
         }
     }
 
     private HttpResponse getHttpResponse(String host, String referrer, Proxy proxy, HttpUriRequestBase httpUriRequestBase) throws Exception {
-
         String[] chunks = host.split("://");
         HttpHost targetHost = new HttpHost(chunks[0], chunks[1]);
 
         referrer = (referrer == null) ? "https://www.google.com/" : referrer;
 
-        httpUriRequestBase.addHeader(new BasicHeader("Host", host.replace("http://", "").replace("https://", "")));
-        httpUriRequestBase.addHeader(new BasicHeader("Accept", "image/avif,image/webp,*/*"));
+        if (addHostHeader) {
+            httpUriRequestBase.addHeader(new BasicHeader("Host", "github.com"));
+        }
+        httpUriRequestBase.addHeader(new BasicHeader("Accept", "text/html,application/xhtml+xml,application/xml,image/avif,image/webp,*/*;q=0.8"));
         addBrowserHeaders(httpUriRequestBase, referrer);
 
         //Prepare the CloseableHttpClient
         CloseableHttpClient closeableHttpClient;
 
-        if (null != proxy.getHost()) {
+        if (proxy != null && null != proxy.getHost()) {
             HttpHost proxyHost = new HttpHost(proxy.getScheme(), proxy.getHost(), proxy.getPort());
             httpUriRequestBase.setConfig(RequestConfig.custom().setProxy(proxyHost).build());
 
@@ -240,7 +238,6 @@ public class HttpExecutor implements Executor {
     }
 
     public HttpResponse doHead(String uri, String referrer, Proxy proxy) throws Exception {
-
         try {
             //LOGGER.info(uri);
             HttpResponse httpResponse = getHttpResponse2(uri, referrer, proxy, new HttpHead(uri));
@@ -260,7 +257,6 @@ public class HttpExecutor implements Executor {
     }
 
     private HttpResponse getHttpResponse2(String host, String referrer, Proxy proxy, HttpUriRequestBase httpUriRequestBase) throws Exception {
-
         HttpHost targetHost = HttpHost.create(new URI(host).getHost()); // TODO optimize
 
         referrer = (referrer == null) ? "https://www.google.com/" : referrer;
@@ -299,7 +295,6 @@ public class HttpExecutor implements Executor {
     }
 
     private void addBrowserHeaders(HttpUriRequestBase httpUriRequestBase, String referrer) {
-
         httpUriRequestBase.addHeader(new BasicHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0"));
         httpUriRequestBase.addHeader(new BasicHeader("Accept-Language", "en-US;q=0.8,ru-RU,ru;q=0.5,en;q=0.3"));
         //httpUriRequestBase.addHeader(new BasicHeader("Accept-Encoding", "gzip, deflate, br"));
@@ -309,7 +304,6 @@ public class HttpExecutor implements Executor {
     }
 
     private void updateProxy(Proxy proxy, HttpResponse response) {
-
         // When a 429 is received, it's your obligation as an API to back off and not spam the API.
         //Repeatedly violating rate limits and/or failing to back off after receiving 429s will result in an automated IP ban (HTTP status 418).
         //IP bans are tracked and scale in duration for repeat offenders, from 2 minutes to 3 days.
@@ -322,5 +316,10 @@ public class HttpExecutor implements Executor {
             //TODO proxy.setStatus(status);
             //TODO proxy.setRetryAfterSec(retryAfterSec);
         }
+    }
+
+    public HttpExecutor withoutHostHeader() {
+        addHostHeader = false;
+        return this;
     }
 }

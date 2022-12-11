@@ -225,7 +225,7 @@ public class PlatformsBindingController {
             crawler.savePlatformsBindingMap(new TreeMap<>(platformsBinding));
 
         } catch (Exception e) {
-            stageManager.showErrorAlert("Error saving platformsBinding", "Stack trace", e);
+            stageManager.showErrorAlert("Error saving platformsBinding", e.getMessage(), e);
         }
     }
 

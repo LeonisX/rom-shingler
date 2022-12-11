@@ -3,7 +3,6 @@ package md.leonis.crawler.moby.crawler;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import md.leonis.crawler.moby.FilesProcessor;
-import md.leonis.crawler.moby.ImagesValidator;
 import md.leonis.crawler.moby.config.ConfigHolder;
 import md.leonis.crawler.moby.dto.FileEntry;
 import md.leonis.crawler.moby.executor.Executor;
@@ -11,7 +10,6 @@ import md.leonis.crawler.moby.executor.HttpExecutor;
 import md.leonis.crawler.moby.model.*;
 import md.leonis.shingler.utils.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hc.core5.http.Header;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -22,16 +20,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static md.leonis.crawler.moby.config.ConfigHolder.*;
 import static md.leonis.shingler.utils.FileUtils.*;
-import static md.leonis.shingler.utils.StringUtils.escapePathChars;
-import static md.leonis.shingler.utils.StringUtils.unescapeUriChars;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -39,7 +32,8 @@ public class YbomCrawler extends AbstractCrawler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(YbomCrawler.class);
 
-    private static final String ROOT = new StringBuilder("moc.semagybom.www//:sptth").reverse().toString();
+    private static final String HOST = new StringBuilder("moc.semagybom.www").reverse().toString();
+    private static final String ROOT = "https://" + HOST;
 
     public static final String GAME_MAIN_REFERRER = ROOT + "/search/quick?q=%s";
 
@@ -68,6 +62,7 @@ public class YbomCrawler extends AbstractCrawler {
     public static final String GAME_SPECS = ROOT + "/game/%s/%s/techinfo";
     public static final String GAME_ADS = ROOT + "/game/%s/%s/adblurbs";
     public static final String GAME_RATING_SYSTEMS = ROOT + "/game/%s/%s/rating-systems";
+
     private final Executor executor = new HttpExecutor();
 
     private static boolean useCache = true;
@@ -94,7 +89,7 @@ public class YbomCrawler extends AbstractCrawler {
         ConfigHolder.setSource("moby");
 
         YbomCrawler crawler = new YbomCrawler();
-        crawler.setProcessor(new FilesProcessor(1, crawler::getFilePath));
+        crawler.setProcessor(new FilesProcessor(1, crawler::fileConsumer));
 
         /*for (Platform p : platforms) {
             List<GameEntry> gameEntries = crawler.parseGamesList(p.getId());
@@ -115,8 +110,6 @@ public class YbomCrawler extends AbstractCrawler {
         System.out.println("Gata!!!!!!");
     }
 
-    private FilesProcessor processor;
-
     public Map<String, String> companies;
     public Map<String, String> sheets;
     public Map<String, String> gameGroups;
@@ -129,7 +122,6 @@ public class YbomCrawler extends AbstractCrawler {
     private boolean validate = false;
 
     public YbomCrawler() {
-
         preload();
     }
 
@@ -180,7 +172,6 @@ public class YbomCrawler extends AbstractCrawler {
 
     @Override
     public void parseGameEntry(GameEntry gameEntry) throws Exception {
-
         parseGameMain(gameEntry);
         // если ошибочная игра - не парсить.
         if (gameEntry.getGameId().isEmpty()) {
@@ -202,7 +193,6 @@ public class YbomCrawler extends AbstractCrawler {
     }
 
     private void preload() {
-
         companies = loadJsonMap(getSourceDir(getSource()), "companies");
         sheets = loadJsonMap(getSourceDir(getSource()), "sheets");
         gameGroups = loadJsonMap(getSourceDir(getSource()), "gameGroups");
@@ -210,7 +200,6 @@ public class YbomCrawler extends AbstractCrawler {
         sources = loadJsonMap(getSourceDir(getSource()), "sources");
         users = loadJsonMap(getSourceDir(getSource()), "users");
         attributes = loadJsonMap(getSourceDir(getSource()), "attributes");
-
         brokenImages = loadJsonList(getSourceDir(getSource()), "brokenImages");
     }
 
@@ -1326,19 +1315,7 @@ public class YbomCrawler extends AbstractCrawler {
     }
 
     @Override
-    public List<GameEntry> loadGamesList(String platformId) {
-        return loadJsonList(getGamesDir(getSource()), platformId, GameEntry.class);
-    }
-
-    @Override
-    public void saveGamesList(String platformId, List<GameEntry> games, GameEntry currentGame) throws Exception {
-        System.out.println("Save at: " + ((currentGame == null) ? "" : currentGame.getTitle()));
-        saveAsJson(getGamesDir(getSource()), platformId, games.stream().filter(g -> !g.getGameId().isEmpty()).collect(Collectors.toList()));
-    }
-
-    @Override
     public List<Platform> parsePlatformsList() throws Exception {
-
         List<Platform> platforms = new ArrayList<>();
 
         HttpExecutor.HttpResponse response = getAndSavePage(PLATFORMS, ROOT);
@@ -1346,149 +1323,6 @@ public class YbomCrawler extends AbstractCrawler {
         getAs(getByClass(doc, "browseTable")).forEach(a -> platforms.add(new Platform(getLastChunk(a), a.text(), 0, 0, null)));
 
         return platforms;
-    }
-
-    @Override
-    public List<Platform> loadPlatformsList() {
-        return loadJsonList(getSourceDir(getSource()), "platforms", Platform.class);
-    }
-
-    @Override
-    public void savePlatformsList(List<Platform> platforms) throws Exception {
-        saveAsJson(getSourceDir(getSource()), "platforms", platforms);
-    }
-
-    @Override
-    public Map<String, List<String>> loadPlatformsBindingMap() throws Exception {
-        return loadJsonMapWithList(getSourceDir(getSource()), "platformsBinding", String.class);
-    }
-
-    @Override
-    public void savePlatformsBindingMap(Map<String, List<String>> map) throws Exception {
-        saveAsJson(getSourceDir(getSource()), "platformsBinding", map);
-    }
-
-    @Override
-    public Map<String, List<String>> loadGamesBindingMap(String platformId, String mobyPlatformId) throws Exception {
-        return loadJsonMapWithList(getGamesDir(getSource()), platformId + "-" + mobyPlatformId + "-binding", String.class);
-    }
-
-    @Override
-    public void saveGamesBindingMap(String platformId, String mobyPlatformId, Map<String, List<String>> map) throws Exception {
-        saveAsJson(getGamesDir(getSource()), platformId + "-" + mobyPlatformId + "-binding", map);
-    }
-
-    public Path getPagePath(String uri) {
-        if (uri.startsWith("/")) {
-            uri = uri.substring(1);
-        }
-        uri = escapePathChars(unescapeUriChars(uri));
-        return getPagesDir(getSource()).resolve(uri).normalize().toAbsolutePath();
-    }
-
-    private HttpExecutor.HttpResponse getAndSavePage(String uri, String referrer) throws Exception {
-        URL url = new URL(uri);
-
-        Path path = getPagePath(url.getPath());
-
-        if (Files.isDirectory(path)) {
-            path = path.resolve("default.htm");
-        }
-
-        if (Files.exists(path)) {
-            if (useCache) { // TODO if read from cache - beatify way
-                //TODO уметь выключать, чтобы не спамило
-                //LOGGER.info("Use cached page: " + path.toAbsolutePath());
-                return new Executor.HttpResponse(new String(Files.readAllBytes(path)), 200, new Header[0]);
-            }
-        } else {
-            try {
-                Files.delete(path);
-            } catch (Exception ignored) {
-            }
-        }
-
-        HttpExecutor.HttpResponse response = executor.getPage(uri, referrer);
-
-        if (response.getCode() != 200 || response.getBody().isEmpty()) {
-            System.out.println(response.getCode());
-            System.out.println(response.getBody().substring(0, Math.min(response.getBody().length(), 128)));
-            throw new RuntimeException(response.getCode() + ": " + response.getBody());
-        }
-
-        System.out.println("trying to save page: " + path);
-        Path dir = path.getParent();
-        //при записи проверять и если есть такой файл, то копировать в дефолт.
-        if (Files.isRegularFile(dir)) {
-            Files.move(dir, dir.getParent().resolve("defaultTmp.htm"));
-            Files.createDirectories(dir);
-            Files.move(dir.getParent().resolve("defaultTmp.htm"), dir.resolve("default.htm"));
-        }
-
-        Files.createDirectories(dir);
-        Files.write(path, response.getBody().getBytes());
-        System.out.println("saved page: " + path);
-
-        return response;
-    }
-
-    @Override
-    public Path getFilePath(FileEntry fileEntry) {
-        return getFilePath(fileEntry.getPlatformId(), fileEntry.getUri());
-    }
-
-    @Override
-    public Path getFilePath(String platformId, String uri) {
-        if (uri.startsWith("/")) {
-            uri = uri.substring(1);
-        }
-        uri = escapePathChars(unescapeUriChars(uri));
-        return getCacheDir(getSource()).resolve(platformId).resolve(uri).normalize().toAbsolutePath();
-    }
-
-    @Override
-    public void fileConsumer(FileEntry fileEntry) {
-
-        Path path = getFilePath(fileEntry);
-
-        try {
-            if (Files.exists(path)) { // TODO if read from cache
-
-                //TODO remove this validation, use in the specific validation task only
-                if (validate) {
-
-                    if (ImagesValidator.isBrokenImage(path)) {
-                        LOGGER.info("BrokenImage: " + path.toAbsolutePath());
-                        Files.delete(path);
-                        //throw new RuntimeException("Invalid image: " + path);
-                    } else {
-                        LOGGER.info("Already cached: " + path.toAbsolutePath());
-                        return;
-                    }
-                } else {
-                    //TODO уметь выключать, чтобы не спамило
-                    //LOGGER.info("Already cached: " + path.toAbsolutePath());
-                    return;
-                }
-            }
-
-            Executor.HttpResponse response = executor.getFile(fileEntry);
-
-            //TODO
-            if (response.getCode() == 404) {
-                //YbomCrawler.brokenImages.add(host + uri);
-            } else if (response.getCode() != 200) {
-                throw new RuntimeException(response.getCode() + ": " + fileEntry.getHost() + fileEntry.getUri());
-            } else {
-                //System.out.println("trying to save: " + path);
-                Path dir = path.getParent();
-                Files.createDirectories(dir);
-                Files.write(path, response.getBytes());
-            }
-
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private String getGameMainReferrer(String gameId) {
@@ -1622,5 +1456,15 @@ public class YbomCrawler extends AbstractCrawler {
     @Override
     public String getGamePage(String platformId, String gameId) {
         return String.format(GAME_MAIN, platformId, gameId);
+    }
+
+    @Override
+    public Executor getExecutor() {
+        return executor;
+    }
+
+    @Override
+    public String getHost() {
+        return HOST;
     }
 }

@@ -3,6 +3,7 @@ package md.leonis.shingler.utils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,12 +18,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class FileUtils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileUtils.class);
 
-    private static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule()).disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     private static final String JSON = ".json";
 
@@ -112,6 +115,12 @@ public class FileUtils {
             Files.delete(path.resolve(fileName + JSON));
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    public static List<Path> listFiles(Path path) throws IOException {
+        try (Stream<Path> stream = Files.list(path)) {
+            return stream.filter(file -> !Files.isDirectory(file)).collect(Collectors.toList());
         }
     }
 }

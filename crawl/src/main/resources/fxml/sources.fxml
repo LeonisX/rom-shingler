@@ -15,6 +15,7 @@
    <Label text="Select source:"/>
    <HBox alignment="CENTER_LEFT" prefHeight="31.0" prefWidth="920.0" spacing="5.0">
       <Button fx:id="mobyButton" mnemonicParsing="false" onAction="#mobyButtonClick" text="Moby"/>
+      <Button fx:id="jsDosButton" mnemonicParsing="false" onAction="#jsDosButtonClick" text="js-dos"/>
       <Button fx:id="testButton" mnemonicParsing="false" onAction="#testButtonClick" text="Test"/>
       <Button disable="true" mnemonicParsing="false" text="other"/>
    </HBox>

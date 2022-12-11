@@ -19,6 +19,7 @@ public class SourcesController {
     private final StageManager stageManager;
     private final ConfigHolder configHolder;
     public Button mobyButton;
+    public Button jsDosButton;
     public Button testButton;
 
     @Lazy
@@ -29,11 +30,14 @@ public class SourcesController {
 
     @FXML
     private void initialize() {
-
     }
 
     public void mobyButtonClick() {
         loadActivityAndShowPane("moby");
+    }
+
+    public void jsDosButtonClick() {
+        loadActivityAndShowPane("js-dos");
     }
 
     public void testButtonClick() {

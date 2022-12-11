@@ -13,9 +13,9 @@ import java.util.List;
 public class FileEntry {
 
     private String platformId;
-    private String host;
-    private String uri;
-    private String referrer;
+    private String host;            // https://host.com
+    private String uri;             // /images/...
+    private String referrer;        // https//...
     private boolean completed;
     private int errorsCount = 0;
     private List<Throwable> exceptions = new ArrayList<>();

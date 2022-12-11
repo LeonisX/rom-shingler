@@ -11,11 +11,11 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class Platform {
 
-    private String id;
-    private String title;
-    private long total;
-    private long completed;
-    private LocalDateTime date;
+    private String id;          // dos, snes, c64
+    private String title;       // MS-DOS, Super Nintendo, Commodore 64
+    private long total;         // Games count
+    private long completed;     // Games completed count
+    private LocalDateTime date; // Archivation date
 
     public Platform(String id, String title) {
         this.id = id;

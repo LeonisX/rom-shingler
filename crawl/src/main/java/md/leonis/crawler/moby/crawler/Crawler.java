@@ -18,28 +18,50 @@ import java.util.stream.Collectors;
 
 public interface Crawler {
 
-    // Platforms
+    /*
+    * Platforms
+    */
+
+    // Load platforms list from site
     List<Platform> parsePlatformsList() throws Exception;
 
+    // Abstract
+    // Load platforms list from disk
     List<Platform> loadPlatformsList() throws Exception;
 
+    // Abstract
+    // Save platforms list to disk
     void savePlatformsList(List<Platform> platforms) throws Exception;
 
+    // Abstract
+    // Load platforms binding map from disk
     Map<String, List<String>> loadPlatformsBindingMap() throws Exception;
 
+    // Abstract
+    // Save platforms binding map to disk
     void savePlatformsBindingMap(Map<String, List<String>> map) throws Exception;
 
-    Map<String, List<String>> loadGamesBindingMap(String platformId, String mobyPlatformId) throws Exception;
+    // Abstract
+    // Load games binding map from disk
+    Map<String, List<String>> loadGamesBindingMap(String platformId, String sourcePlatformId) throws Exception;
 
-    void saveGamesBindingMap(String platformId, String mobyPlatformId, Map<String, List<String>> map) throws Exception;
+    // Abstract
+    // Save games binding map to disk
+    void saveGamesBindingMap(String platformId, String sourcePlatformId, Map<String, List<String>> map) throws Exception;
 
-    // Games
+    /*
+     * Games
+     */
+
+    // Parse game entry (html -> GameEntry)
     void parseGameEntry(GameEntry gameEntry) throws Exception;
 
     List<GameEntry> parseGamesList(String platformId) throws Exception;
 
+    // Abstract
     List<GameEntry> loadGamesList(String platformId) throws Exception;
 
+    // Abstract
     void saveGamesList(String platformId, List<GameEntry> games, GameEntry currentGame) throws Exception;
 
     List<GameEntry> getGamesList(List<String> platforms) throws Exception;
@@ -67,15 +89,18 @@ public interface Crawler {
 
     // Files
 
+    String getHost();
+
+    // Abstract
     void fileConsumer(FileEntry fileEntry) throws Exception;
 
+    // Abstract
     Path getFilePath(FileEntry fileEntry);
 
+    // Abstract
     Path getFilePath(String platformId, String uri);
 
-
     // JSoup
-
     class A extends Element {
 
         private final String href;
@@ -188,7 +213,6 @@ public interface Crawler {
         Element el = select(element, selector);
         return el == null ? new Elements() : Objects.requireNonNull(el.nextElementSibling()).getElementsByTag("li");
     }
-
 
     default String getLastChunk(A a) {
         return getLastChunk(a.href());

@@ -6,6 +6,7 @@ import md.leonis.crawler.moby.FilesProcessor;
 import md.leonis.crawler.moby.HttpProcessor;
 import md.leonis.crawler.moby.controller.GamesBindingController;
 import md.leonis.crawler.moby.crawler.Crawler;
+import md.leonis.crawler.moby.crawler.JsDosCrawler;
 import md.leonis.crawler.moby.crawler.TestCrawler;
 import md.leonis.crawler.moby.crawler.YbomCrawler;
 import md.leonis.crawler.moby.dto.FileEntry;
@@ -69,10 +70,11 @@ public class ConfigHolder {
     }
 
     public static Crawler getCrawler() {
-
         switch (getSource()) {
             case "moby":
                 return new YbomCrawler(4);
+            case "js-dos":
+                return new JsDosCrawler(8);
             case "test":
                 Queue<FileEntry> queue = new ConcurrentLinkedQueue<>();
                 List<HttpProcessor> processors = new ArrayList<>();
