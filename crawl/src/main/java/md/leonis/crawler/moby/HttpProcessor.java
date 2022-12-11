@@ -2,6 +2,7 @@ package md.leonis.crawler.moby;
 
 import lombok.Data;
 import md.leonis.crawler.moby.dto.FileEntry;
+import md.leonis.crawler.moby.exception.NotFoundException;
 import md.leonis.crawler.moby.executor.Executor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,7 +74,12 @@ public class HttpProcessor implements Runnable {
                             successConsumer.accept(fileEntry);
                             sleep = sleepInterval;
                         } catch (Exception e) {
-                            if (fileEntry.getErrorsCount() < 5) {
+                            if (e instanceof NotFoundException) {
+                                fileEntry.setErrorsCount(5);
+                                fileEntry.getExceptions().add(e);
+                                file = e.getMessage();
+                                errorConsumer.accept(fileEntry);
+                            } else if (fileEntry.getErrorsCount() < 5) {
                                 fileEntry.setErrorsCount(fileEntry.getErrorsCount() + 1);
                                 fileEntry.getExceptions().add(e);
                                 file = String.format("Sleep %s second(s) after %s (%s: %s)", sleep, file, e.getClass().getSimpleName(), e.getMessage());

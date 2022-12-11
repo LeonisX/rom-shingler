@@ -14,7 +14,7 @@ public class MobyArtImage extends MobyImage {
 
     private Map<String, String> summary = new LinkedHashMap<>();
 
-    public MobyArtImage(String id, String small, String description) {
-        super(id, small, description);
+    public MobyArtImage(String id, String host, String small, String description) {
+        super(id, host, small, description);
     }
 }

@@ -3,6 +3,7 @@ package md.leonis.crawler.moby.crawler;
 import md.leonis.crawler.moby.FilesProcessor;
 import md.leonis.crawler.moby.ImagesValidator;
 import md.leonis.crawler.moby.dto.FileEntry;
+import md.leonis.crawler.moby.exception.NotFoundException;
 import md.leonis.crawler.moby.executor.Executor;
 import md.leonis.crawler.moby.executor.HttpExecutor;
 import md.leonis.crawler.moby.model.GameEntry;
@@ -30,13 +31,16 @@ public abstract class AbstractCrawler implements Crawler {
     private Map<String, List<GameEntry>> platformGamesMap = new HashMap<>();
     private boolean suspended = false;
     private boolean aborted = false;
-    private Consumer<GameEntry> refreshConsumer = (a) -> {};
-    private Consumer<GameEntry> successConsumer = (a) -> {};
-    private Consumer<GameEntry> errorConsumer = (a) -> {};
+    private Consumer<GameEntry> refreshConsumer = (a) -> {
+    };
+    private Consumer<GameEntry> successConsumer = (a) -> {
+    };
+    private Consumer<GameEntry> errorConsumer = (a) -> {
+    };
 
     protected FilesProcessor processor;
 
-    private static boolean useCache = true;
+    protected boolean useCache = true;
 
     private boolean validate = false;
 
@@ -242,25 +246,33 @@ public abstract class AbstractCrawler implements Crawler {
 
     @Override
     public Path getFilePath(FileEntry fileEntry) {
-        return getFilePath(fileEntry.getPlatformId(), fileEntry.getUri());
+        return getFilePath(fileEntry.getPlatformId(), fileEntry.getHost(), fileEntry.getUri());
     }
 
     @Override
-    public Path getFilePath(String platformId, String uri) {
+    public Path getFilePath(String platformId, String host, String uri) {
         if (uri.startsWith("/")) {
             uri = uri.substring(1);
         }
         uri = escapePathChars(unescapeUriChars(uri));
-        return getCacheDir(getSource()).resolve(platformId).resolve(uri).normalize().toAbsolutePath();
+        Path path = getCacheDir(getSource());
+        if (isPrependPlatformId()) {
+            path = path.resolve(platformId);
+        }
+        if (!host.endsWith(getHost())) {
+            path = path.resolve(escapePathChars(host));
+        }
+        return path.resolve(uri).normalize().toAbsolutePath();
     }
 
     @Override
     public void fileConsumer(FileEntry fileEntry) {
         Path path = getFilePath(fileEntry);
 
+        Executor.HttpResponse response;
+
         try {
             if (Files.exists(path)) { // TODO if read from cache
-
                 //TODO remove this validation, use in the specific validation task only
                 if (validate) {
                     if (ImagesValidator.isBrokenImage(path)) {
@@ -278,20 +290,22 @@ public abstract class AbstractCrawler implements Crawler {
                 }
             }
 
-            Executor.HttpResponse response = getExecutor().getFile(fileEntry);
+            response = getExecutor().getFile(fileEntry);
+        } catch (Exception e) {
+            throw new RuntimeException(fileEntry.getHost() + fileEntry.getUri(), e);
+        }
 
-            //TODO
-            if (response.getCode() == 404) {
-                //YbomCrawler.brokenImages.add(host + uri);
-            } else if (response.getCode() != 200) {
-                throw new RuntimeException(response.getCode() + ": " + fileEntry.getHost() + fileEntry.getUri());
-            } else {
-                //System.out.println("trying to save: " + path);
-                Path dir = path.getParent();
-                Files.createDirectories(dir);
-                Files.write(path, response.getBytes());
-            }
+        if (response.getCode() == 404) {
+            throw new NotFoundException("404: " + fileEntry.getHost() + fileEntry.getUri());
+        } else if (response.getCode() != 200) {
+            throw new RuntimeException(response.getCode() + ": " + fileEntry.getHost() + fileEntry.getUri());
+        }
 
+        try {
+            //System.out.println("trying to save: " + path);
+            Path dir = path.getParent();
+            Files.createDirectories(dir);
+            Files.write(path, response.getBytes());
         } catch (Exception e) {
             throw new RuntimeException(fileEntry.getHost() + fileEntry.getUri(), e);
         }

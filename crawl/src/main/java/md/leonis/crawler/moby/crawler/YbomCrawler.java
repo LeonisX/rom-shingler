@@ -65,7 +65,7 @@ public class YbomCrawler extends AbstractCrawler {
 
     private final Executor executor = new HttpExecutor();
 
-    private static boolean useCache = true;
+    private static final boolean prependPlatformId = true;
 
     public static void main(String[] args) throws Exception {
 
@@ -100,7 +100,7 @@ public class YbomCrawler extends AbstractCrawler {
         */
 
         //!!!!!!!!!!!!!!
-        useCache = false;
+        crawler.useCache = false;
 
         List<GameEntry> entries = FileUtils.loadJsonList(getSourceDir(getSource()), "brokenGames", GameEntry.class);
 
@@ -555,7 +555,6 @@ public class YbomCrawler extends AbstractCrawler {
     }
 
     private void parseGameScreenshots(GameEntry entry) throws Exception {
-
         if (!entry.isHasScreenshots()) {
             return;
         }
@@ -592,7 +591,7 @@ public class YbomCrawler extends AbstractCrawler {
             Element divSmall = getByTag(divS, "small");
             String description = divSmall.text();
 
-            MobyImage mobyImage = new MobyImage(id, small, description);
+            MobyImage mobyImage = new MobyImage(id, ROOT, small, description);
             parseGameScreenshotsImage(entry, mobyImage);
             processor.add(new FileEntry(entry.getPlatformId(), ROOT, mobyImage.getSmall(), thisLink));
             processor.add(new FileEntry(entry.getPlatformId(), ROOT, mobyImage.getLarge(), thisLink));
@@ -792,7 +791,7 @@ public class YbomCrawler extends AbstractCrawler {
                 Element divS = select(div, "div.thumbnail-cover-caption");
                 Element p = getByTag(divS, "p");
                 //System.out.println(p.text());
-                MobyArtImage mobyImage = new MobyArtImage(id, small, p.text());
+                MobyArtImage mobyImage = new MobyArtImage(id, ROOT, small, p.text());
                 parseGameCoverArtImage(entry, mobyImage);
                 processor.add(new FileEntry(entry.getPlatformId(), ROOT, mobyImage.getSmall(), thisLink));
                 processor.add(new FileEntry(entry.getPlatformId(), ROOT, mobyImage.getLarge(), thisLink));
@@ -886,7 +885,7 @@ public class YbomCrawler extends AbstractCrawler {
                         node = getNextNode(node);
                     }
 
-                    PromoImage pi = new PromoImage(promoImageId, promoImage, imageTypeName, sourceDescr);
+                    PromoImage pi = new PromoImage(promoImageId, ROOT, promoImage, imageTypeName, sourceDescr);
 
                     parseGamePromoArtImage(entry, pi);
 
@@ -1358,7 +1357,6 @@ public class YbomCrawler extends AbstractCrawler {
     }
 
     public List<CreditsNode> parseCredits(Element td) {
-
         Map<String, String> idNames = new LinkedHashMap<>();
         // <a href=".../developer/sheet/view/developerId,45166/">Ayako Mori</a>
         String text = td.childNodes().stream().map(node -> {
@@ -1466,5 +1464,10 @@ public class YbomCrawler extends AbstractCrawler {
     @Override
     public String getHost() {
         return HOST;
+    }
+
+    @Override
+    public boolean isPrependPlatformId() {
+        return prependPlatformId;
     }
 }

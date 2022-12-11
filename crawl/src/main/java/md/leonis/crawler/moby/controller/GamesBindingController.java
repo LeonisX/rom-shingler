@@ -41,10 +41,7 @@ import static md.leonis.shingler.utils.TiviApiUtils.loadTiviGames;
 @Controller
 public class GamesBindingController {
 
-
     final DataFormat dataFormat = new DataFormat("title");
-
-
 
     private final StageManager stageManager;
     private final ConfigHolder configHolder;
@@ -96,7 +93,6 @@ public class GamesBindingController {
 
     @FXML
     private void initialize() throws Exception {
-
         robot = Application.GetApplication().createRobot();
 
         idTableColumn.setCellValueFactory(v -> new ReadOnlyStringWrapper(org.apache.commons.lang3.StringUtils.right("000" + v.getValue().getId(), 4)));
@@ -146,7 +142,6 @@ public class GamesBindingController {
         });
 
         tableView.setRowFactory(tableView -> {
-
             final TableRow<Cont> row = new TableRow<Cont>() {
 
                 @Override
@@ -191,7 +186,6 @@ public class GamesBindingController {
             });
 
             row.hoverProperty().addListener((observable) -> {
-
                 activeCont = row.getItem();
                 if (row.isHover() && activeCont != null) {
                     String tivi = activeCont.getTivi() == null ? "" : activeCont.getTivi().platformId + "::" + activeCont.getTivi().getGameId() + "::" + activeCont.getTivi().getYear();
@@ -241,7 +235,6 @@ public class GamesBindingController {
                 event.setDropCompleted(success);
                 event.consume();
             });
-
 
             return row;
         });
@@ -394,9 +387,9 @@ public class GamesBindingController {
         }
 
         //List<Structure> tivi = tiviList.stream().map(Structure::new).collect(Collectors.toList());
-        List<Structure> moby = gameEntries.stream().map(Structure::new).collect(Collectors.toList());
+        List<Structure> moby = gameEntries.stream().map(g -> new Structure(g, crawler)).collect(Collectors.toList());
         fullMoby = new ArrayList<>(moby);
-        gameEntries.forEach(g -> g.getAlternateTitles().forEach(a -> fullMoby.add(new Structure(g, a))));
+        gameEntries.forEach(g -> g.getAlternateTitles().forEach(a -> fullMoby.add(new Structure(g, a, crawler))));
 
         //Map<String, Structure> tiviMap = new TreeMap<>(tivi.stream().collect(Collectors.toMap(Structure::getGameId, Function.identity())));
         Set<Structure> mobyMap = new HashSet<>(moby);
@@ -567,7 +560,6 @@ public class GamesBindingController {
     }
 
     public void rollbackButtonClick() {
-
         if (rollbackList.isEmpty()) {
             return;
         }
@@ -576,7 +568,6 @@ public class GamesBindingController {
     }
 
     private void rollbackOrDelete(Cont cont) {
-
         int index = observableList.indexOf(cont);
 
         if (index >= 0) {
@@ -592,7 +583,6 @@ public class GamesBindingController {
     }
 
     public void showGreenCheckBoxAction() {
-
         Cont cont = tableView.getSelectionModel().getSelectedItem();
         int index = tableView.getSelectionModel().getSelectedIndex();
         TableViewSkin<?> ts = (TableViewSkin<?>) tableView.getSkin();
@@ -669,7 +659,7 @@ public class GamesBindingController {
             //System.out.println(this.images);
         }
 
-        public Structure(GameEntry gameEntry) {
+        public Structure(GameEntry gameEntry, Crawler crawler) {
             this.platformId = gameEntry.getPlatformId();
             this.gameId = gameEntry.getGameId();
             this.unmodifiedTitle = gameEntry.getTitle();
@@ -678,11 +668,11 @@ public class GamesBindingController {
             this.left = false;
             this.year = String.join(", ", gameEntry.getDates());
             this.alternativeTitles = gameEntry.getAlternateTitles().stream().map(a -> a.split("\"")[1]).collect(Collectors.toList());
-            this.images = gameEntry.getScreens().stream().map(s -> getCrawler().getFilePath(gameEntry.getPlatformId(), s.getLarge()).toAbsolutePath().toString()).collect(Collectors.toList());
+            this.images = gameEntry.getScreens().stream().map(s -> crawler.getFilePath(gameEntry.getPlatformId(), s.getHost(), s.getLarge()).toAbsolutePath().toString()).collect(Collectors.toList());
         }
 
         // "alternateTitles" : [ "\"Alien 3\" -- Alternative spelling" ],
-        public Structure(GameEntry gameEntry, String altName) {
+        public Structure(GameEntry gameEntry, String altName, Crawler crawler) {
             this.platformId = gameEntry.getPlatformId();
             this.gameId = gameEntry.getGameId();
             this.unmodifiedTitle = altName.split("\"")[1];
@@ -692,7 +682,7 @@ public class GamesBindingController {
             this.left = false;
             this.year = String.join(", ", gameEntry.getDates());
             this.alternativeTitles = gameEntry.getAlternateTitles().stream().map(a -> a.split("\"")[1]).collect(Collectors.toList());
-            this.images = gameEntry.getScreens().stream().map(s -> getCrawler().getFilePath(gameEntry.getPlatformId(), s.getLarge()).toAbsolutePath().toString()).collect(Collectors.toList());
+            this.images = gameEntry.getScreens().stream().map(s -> crawler.getFilePath(gameEntry.getPlatformId(), s.getHost(), s.getLarge()).toAbsolutePath().toString()).collect(Collectors.toList());
         }
 
         private String normalize(String s) {

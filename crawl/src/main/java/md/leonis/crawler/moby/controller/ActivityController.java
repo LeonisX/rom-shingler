@@ -185,6 +185,7 @@ public class ActivityController {
 
     private final Consumer<GameEntry> crawlerErrorConsumer = gameEntry -> {
         Throwable throwable = gameEntry.getExceptions().get(gameEntry.getExceptions().size() - 1);
+        throwable.printStackTrace();
         addLog(String.format("%s:%s: %s", gameEntry.getPlatformId(), gameEntry.getTitle(), throwable.getMessage()));
         gameEntryOp(false, gameEntry);
         gameEntryOp(true, gameEntry);

@@ -107,12 +107,17 @@ public class TestCrawler extends AbstractCrawler {
     }
 
     @Override
+    public boolean isPrependPlatformId() {
+        return false;
+    }
+
+    @Override
     public Path getFilePath(FileEntry fileEntry) {
         return null;
     }
 
     @Override
-    public Path getFilePath(String platformId, String uri) {
+    public Path getFilePath(String platformId, String host, String uri) {
         return null;
     }
 

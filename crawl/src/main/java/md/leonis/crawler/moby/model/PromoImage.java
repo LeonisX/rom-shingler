@@ -16,8 +16,11 @@ public class PromoImage {
     private String typeName;
     private List<String> sourceDescr;
 
-    public PromoImage(String id, String small, String typeName, List<String> sourceDescr) {
+    private String host;
+
+    public PromoImage(String id, String host, String small, String typeName, List<String> sourceDescr) {
         this.id = id;
+        this.host = host;
         this.small = small;
         this.typeName = typeName;
         this.sourceDescr = sourceDescr;

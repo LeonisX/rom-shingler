@@ -89,6 +89,8 @@ public interface Crawler {
 
     // Files
 
+    boolean isPrependPlatformId();
+
     String getHost();
 
     // Abstract
@@ -98,7 +100,7 @@ public interface Crawler {
     Path getFilePath(FileEntry fileEntry);
 
     // Abstract
-    Path getFilePath(String platformId, String uri);
+    Path getFilePath(String platformId, String host, String uri);
 
     // JSoup
     class A extends Element {

@@ -3,6 +3,7 @@ package md.leonis.crawler.moby.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import md.leonis.crawler.moby.model.jsdos.GameFileEntry;
 
 import java.util.*;
 

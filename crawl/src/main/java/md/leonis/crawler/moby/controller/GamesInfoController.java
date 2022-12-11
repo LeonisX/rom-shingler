@@ -37,7 +37,6 @@ public class GamesInfoController {
 
     @FXML
     private void initialize() {
-
         if (tiviStructure == null) {
             fillListView(tiviListView, tiviFlowPane, mobyStructure);
             rightBorderPane.setVisible(false);
@@ -55,7 +54,6 @@ public class GamesInfoController {
     }
 
     private void fillListView(ListView<String> listView, FlowPane flowPane, GamesBindingController.Structure structure) {
-
         listView.getItems().clear();
         if (structure != null) {
             listView.getItems().add(structure.getUnmodifiedTitle());
