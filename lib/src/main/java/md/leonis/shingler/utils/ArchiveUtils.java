@@ -81,7 +81,7 @@ public class ArchiveUtils {
             if (isWindows) {
                 if (members.size() > 50) {
                     File tmp = File.createTempFile("shg", "ar");
-                    IOUtils.saveToFile(tmp.toPath(), members.stream().map(n -> romsCollection.getRomsPath().resolve(n).toString()).collect(Collectors.toList()));
+                    FileUtils.saveToFile(tmp.toPath(), members.stream().map(n -> romsCollection.getRomsPath().resolve(n).toString()).collect(Collectors.toList()));
                     args.add("@" + tmp.getAbsolutePath());
                 } else {
                     args.addAll(members.stream().map(n -> '"' + romsCollection.getRomsPath().resolve(n).toString() + '"').collect(Collectors.toList()));
@@ -130,7 +130,7 @@ public class ArchiveUtils {
             if (isWindows) {
                 if (members.size() > 50) {
                     File tmp = File.createTempFile("shg", "ar");
-                    IOUtils.saveToFile(tmp.toPath(), members);
+                    FileUtils.saveToFile(tmp.toPath(), members);
                     args.add("@" + tmp.getAbsolutePath());
                 } else {
                     args.addAll(members.stream().map(n -> '"' + n + '"').collect(Collectors.toList()));

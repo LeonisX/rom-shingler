@@ -15,7 +15,6 @@ import java.io.*;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
@@ -34,29 +33,21 @@ public class IOUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(IOUtils.class);
 
     @SuppressWarnings("all")
-    @Measured
     public static List<File> listFiles(final File folder) {
         return Arrays.stream(folder.listFiles()).filter(File::isFile).collect(Collectors.toList());
     }
 
-    @Measured
     public static List<Path> listFiles(final Path folder) {
         LOGGER.info("Getting a list of files...");
-        List<Path> fileList = new ArrayList<>();
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(folder)) {
-            for (Path path : stream) {
-                if (!Files.isDirectory(path)) {
-                    fileList.add(path);
-                }
-            }
+        try {
+            return FileUtils.listFiles(folder);
         } catch (IOException e) {
             LOGGER.error("Can't get list of files from dir: {}", folder.toString(), e);
+            return new ArrayList<>();
         }
-        return fileList;
     }
 
     public static void downloadFromUrl(URL url, Path path) throws IOException {
-
         FileUtils.createDirectories(path.getParent());
 
         ReadableByteChannel channel = null;
@@ -140,7 +131,6 @@ public class IOUtils {
 
     @Measured
     public static void serialize(File file, Object object) {
-
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
             backupFile(file);
             oos.writeObject(object);
@@ -149,12 +139,10 @@ public class IOUtils {
         }
     }
 
-    @Measured
     public static byte[] loadBytes(File file) throws IOException {
         return Files.readAllBytes(file.toPath());
     }
 
-    @Measured
     public static byte[] loadBytes(Path file) throws IOException {
         return Files.readAllBytes(file);
     }
@@ -409,50 +397,5 @@ public class IOUtils {
             throw new RuntimeException(e);
         }
         return result;
-    }
-
-    public static void copyFile(Path src, Path dest) {
-        try {
-            Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Measured
-    public static void deleteFile(Path path) {
-        try {
-            Files.delete(path);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static long fileSize(Path path) {
-        try {
-            return Files.size(path);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static List<String> loadTextFile(Path path) {
-        try {
-            return Files.readAllLines(path, StandardCharsets.UTF_8);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static void saveToFile(Path path, List<String> list) {
-        saveToFile(path, String.join("\n", list));
-    }
-
-    public static void saveToFile(Path path, String text) {
-        try (PrintWriter out = new PrintWriter(path.toFile())) {
-            out.println(text);
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

@@ -12,7 +12,6 @@ import md.leonis.crawler.moby.model.Platform;
 import md.leonis.crawler.moby.model.jsdos.GameFileEntry;
 import md.leonis.shingler.utils.ArchiveUtils;
 import md.leonis.shingler.utils.FileUtils;
-import md.leonis.shingler.utils.IOUtils;
 import md.leonis.shingler.utils.StringUtils;
 
 import java.io.IOException;
@@ -94,7 +93,7 @@ public class JsDosCrawler extends AbstractCrawler {
 
     private List<GameEntry> parseGames(String platformId) throws IOException {
         List<Game> games = FileUtils.listFiles(getPagesDir(getSource()).resolve("repository-main").resolve("_pages")).stream().map(file -> {
-            List<String> lines = IOUtils.loadTextFile(file);
+            List<String> lines = FileUtils.loadTextFile(file);
             Game game = new Game();
             game.setFiles(loadFiles(lines));
             game.setLayout(loadGameField(lines, "layout:"));

@@ -11,9 +11,12 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -121,6 +124,50 @@ public class FileUtils {
     public static List<Path> listFiles(Path path) throws IOException {
         try (Stream<Path> stream = Files.list(path)) {
             return stream.filter(file -> !Files.isDirectory(file)).collect(Collectors.toList());
+        }
+    }
+
+    public static void copyFile(Path src, Path dest) {
+        try {
+            Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void deleteFile(Path path) {
+        try {
+            Files.delete(path);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static long fileSize(Path path) {
+        try {
+            return Files.size(path);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static List<String> loadTextFile(Path path) {
+        try {
+            return Files.readAllLines(path, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void saveToFile(Path path, List<String> list) {
+        saveToFile(path, String.join("\n", list));
+    }
+
+    public static void saveToFile(Path path, String text) {
+        try (PrintWriter out = new PrintWriter(path.toFile())) {
+            out.println(text);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
         }
     }
 }
