@@ -1,8 +1,6 @@
 package md.leonis.shingler.utils;
 
 import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import md.leonis.shingler.model.dto.TableName;
 import md.leonis.shingler.model.dto.TiviStructure;
 
@@ -12,15 +10,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static md.leonis.shingler.model.ConfigHolder.*;
-import static md.leonis.shingler.utils.FileUtils.loadJsonList;
-import static md.leonis.shingler.utils.FileUtils.saveAsJson;
+import static md.leonis.shingler.utils.FileUtils.*;
 
 public class TiviApiUtils {
 
     public static final String TIVI = "tivi";
-
-    //TODO
-    private static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     public static List<String> readTables(String apiPath, String serverSecret) {
         List<TableName> tables = new ArrayList<>();

@@ -52,7 +52,6 @@ public class PlatformsBindingController {
 
     @FXML
     private void initialize() throws Exception {
-
         // read moby, tivi
         List<String> tiviList = TiviApiUtils.readTables(ConfigHolder.apiPath, ConfigHolder.serverSecret);
         crawler = ConfigHolder.getCrawler();
@@ -102,7 +101,6 @@ public class PlatformsBindingController {
     }
 
     private HBox newHBox(String cpu, String solution) {
-
         Label label = new Label(cpu);
         label.setMinWidth(60);
         Button okButton = new Button("ok");
@@ -161,7 +159,6 @@ public class PlatformsBindingController {
     }
 
     private void setComboboxItems(ComboBox<Platform> comboBox, String cpu) {
-
         String solution = (comboBox.getUserData() != null) ? (String) comboBox.getUserData() : null;
 
         if (null != solution) {
@@ -179,7 +176,6 @@ public class PlatformsBindingController {
     }
 
     private void processPane(Pane pane) {
-
         String currentCpu = ((Label) (pane).getChildren().get(0)).getText();
         List<String> list = (platformsBinding.containsKey(currentCpu)) ? platformsBinding.get(currentCpu) : new ArrayList<>();
         ComboBox<Platform> comboBox = (ComboBox<Platform>) pane.getChildren().get(1);
@@ -231,7 +227,6 @@ public class PlatformsBindingController {
 
     //TODO rollback
     public void rollbackButtonClick() {
-
         String cpu = ((Label) (rollbackHBox).getChildren().get(0)).getText();
         List<String> list = platformsBinding.get(cpu).stream().filter(s -> !s.equals(rollbackPlatform.getId())).collect(Collectors.toList());
         if (!list.isEmpty()) {
