@@ -52,7 +52,7 @@ public class TiviApiUtils {
         List<TiviStructure> tables = new ArrayList<>();
 
         int offset = 0;
-        int count = 2000;
+        int count = 1000;
 
         try {
             while (true) {
@@ -68,7 +68,7 @@ public class TiviApiUtils {
             }
         } catch (IOException e) {
             e.printStackTrace();
-            System.out.println("Error in readTable");
+            System.out.println("Error in readTable: " + platform);
         }
         return tables;
     }

@@ -31,18 +31,18 @@ public class SourcesController {
     @FXML
     private void initialize() {
         /*try {
-            String TIVI = "tivi";
-            //ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule()).disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
             List<String> tiviList = TiviApiUtils.readTables(ConfigHolder.apiPath, ConfigHolder.serverSecret);
 
             for (String platformId : tiviList) {
-                List<TiviStructure> structure = loadTiviGames(platformId, true);
-                saveAsJson(getGamesDir(TIVI), platformId, structure);
+                if (!platformId.equals("facts")) {
+                    List<TiviStructure> structure = loadTiviGames(platformId, true);
+                    saveAsJson(getGamesDir("tivi"), platformId, structure);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        System.out.println("gata");*/
+        System.out.println("gata")*/;
     }
 
     public void mobyButtonClick() {
