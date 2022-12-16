@@ -1,6 +1,6 @@
 package md.leonis.shingler.gui;
 
-import liquibase.util.file.FilenameUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.IOException;

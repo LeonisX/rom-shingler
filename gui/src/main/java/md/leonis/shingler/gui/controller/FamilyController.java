@@ -1547,7 +1547,7 @@ public class FamilyController {
 
         Path path = Paths.get("audit.txt");
 
-        IOUtils.saveToFile(path, result);
+        FileUtils.saveToFile(path, result);
         stageManager.showInformationAlert("Audit report", "ROM name vs family name", path.toAbsolutePath().toString());
     }
 

@@ -9,7 +9,11 @@ import md.leonis.shingler.Main1024a;
 import md.leonis.shingler.gui.controls.SmartDirectoryChooser;
 import md.leonis.shingler.gui.view.FxmlView;
 import md.leonis.shingler.gui.view.StageManager;
-import md.leonis.shingler.model.*;
+import md.leonis.shingler.model.CollectionType;
+import md.leonis.shingler.model.ConfigHolder;
+import md.leonis.shingler.model.GID;
+import md.leonis.shingler.model.RomsCollection;
+import md.leonis.shingler.utils.FileUtils;
 import md.leonis.shingler.utils.IOUtils;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
@@ -259,7 +263,7 @@ public class CollectionController {
     }
 
     private void deleteCollection(String currentCollection) {
-        IOUtils.deleteFile(workCollectionsPath().resolve(currentCollection));
+        FileUtils.deleteFile(workCollectionsPath().resolve(currentCollection));
     }
 
     public void typeButtonClick() {

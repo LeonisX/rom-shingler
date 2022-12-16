@@ -17,6 +17,7 @@ import md.leonis.shingler.model.ConfigHolder;
 import md.leonis.shingler.model.GID;
 import md.leonis.shingler.model.Platform;
 import md.leonis.shingler.model.RomsCollection;
+import md.leonis.shingler.utils.FileUtils;
 import md.leonis.shingler.utils.IOUtils;
 import md.leonis.shingler.utils.TiviUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -37,7 +38,6 @@ import static md.leonis.shingler.utils.BinaryUtils.bytesToHex;
 public class CompareController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CompareController.class);
-
 
     private static final Color BLUE_GRAY = Color.color(0.4019608f, 0.4019608f, 0.6f);
 
@@ -326,9 +326,9 @@ public class CompareController {
                 .filter(e -> e.getValue().size() == e.getValue().stream().filter(v -> StringUtils.isBlank(v.getValue().getTitle())).count())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        IOUtils.saveToFile(getInputPath().resolve(platform + "_renamed.csv"), renamed.stream().map(p -> new CSV.RenamedStructure(TiviUtils.getSid(p.getKey()), ListFilesa.getCleanName(p.getKey()), ListFilesa.getCleanName(p.getValue()))).sorted(Comparator.comparing(CSV.RenamedStructure::getNewName)).sorted(Comparator.comparing(r -> sidOrder(r.getSid()))).map(p -> '"' + p.getSid() + "\";\"" + p.getNewName() + "\";\"" + p.getOldName() + '"').distinct().collect(Collectors.toList()));
-        IOUtils.saveToFile(getInputPath().resolve(platform + "_added.csv"), added.entrySet().stream().map(p -> new CSV.AddedStructure(TiviUtils.getSid(p.getValue().get(0).getValue().getTitle()), p.getKey())).sorted(Comparator.comparing(CSV.AddedStructure::getName)).sorted(Comparator.comparing(r -> sidOrder(r.getSid()))).map(p -> '"' + p.getSid() + "\";\"" + p.getName() + '"').collect(Collectors.toList()));
-        IOUtils.saveToFile(getInputPath().resolve(platform + "_deleted.txt"), deleted.keySet().stream().sorted().collect(Collectors.toList()));
+        FileUtils.saveToFile(getInputPath().resolve(platform + "_renamed.csv"), renamed.stream().map(p -> new CSV.RenamedStructure(TiviUtils.getSid(p.getKey()), ListFilesa.getCleanName(p.getKey()), ListFilesa.getCleanName(p.getValue()))).sorted(Comparator.comparing(CSV.RenamedStructure::getNewName)).sorted(Comparator.comparing(r -> sidOrder(r.getSid()))).map(p -> '"' + p.getSid() + "\";\"" + p.getNewName() + "\";\"" + p.getOldName() + '"').distinct().collect(Collectors.toList()));
+        FileUtils.saveToFile(getInputPath().resolve(platform + "_added.csv"), added.entrySet().stream().map(p -> new CSV.AddedStructure(TiviUtils.getSid(p.getValue().get(0).getValue().getTitle()), p.getKey())).sorted(Comparator.comparing(CSV.AddedStructure::getName)).sorted(Comparator.comparing(r -> sidOrder(r.getSid()))).map(p -> '"' + p.getSid() + "\";\"" + p.getName() + '"').collect(Collectors.toList()));
+        FileUtils.saveToFile(getInputPath().resolve(platform + "_deleted.txt"), deleted.keySet().stream().sorted().collect(Collectors.toList()));
     }
 
     private String sidOrder(String sid) {
