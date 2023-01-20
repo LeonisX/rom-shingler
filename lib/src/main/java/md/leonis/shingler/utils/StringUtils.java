@@ -135,7 +135,7 @@ public class StringUtils {
     }
 
     public static String removeSpecialChars(String fileName) {
-        for (char c : "'[!]\"<>;/\\`~@#$%^&*()".toCharArray()) {
+        for (char c : "'[!]\",<>;/\\`~@#$%^&*().:?".toCharArray()) {
             fileName = fileName.replace("" + c, "");
         }
         for (char c : "=+".toCharArray()) {
@@ -279,7 +279,7 @@ public class StringUtils {
     public static String cpu(String cpu) {
         cpu = unescapeChars(cpu);
 
-        String separators = " _+~";
+        String separators = " -_+~";
         String restricted = "'\"().,&!?$@#%^*=/\\[];:|<>{}";
 
         for (char c : separators.toCharArray()) {
@@ -310,7 +310,7 @@ public class StringUtils {
     }
 
     public static String replaceFromTail(String substr, String replace, String string) {
-        if (string.endsWith(substr)) {
+        if (string.toLowerCase().endsWith(substr.toLowerCase())) {
             return string.substring(0, string.length() - substr.length()) + replace;
         } else {
             return string;
