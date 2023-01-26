@@ -18,8 +18,8 @@ import java.util.stream.Collectors;
 public class InlineImagesExtractor {
 
     private static final boolean PREPEND_INDEX = false;
-    private static final File HTML_FILE = new File("C:\\Users\\user\\Downloads\\Live A Live. - TiVi форум.html");
-    private static final String BASE_URI = "http://tv-games.ru/forum/blog.php?b=1562";
+    private static final File HTML_FILE = new File("H:\\Downloads\\html\\Great Giana Sisters - TiVi форум.html");
+    private static final String BASE_URI = "http://tv-games.ru/forum/blog.php?b=542";
 
     public static void main(String[] args) throws Exception {
 
