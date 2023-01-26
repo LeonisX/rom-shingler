@@ -58,7 +58,7 @@ public class JsDosCrawler extends AbstractCrawler {
     }
 
     @Override
-    public void parseGameEntry(GameEntry entry) throws Exception {
+    public void parseGameEntry(GameEntry entry) {
         // https://cdn.dos.zone/original/2X/f/f9ddfcf94f9412ca549ff26b48f2c000d8ff7d24.png
         for (MobyImage screen : entry.getScreens()) {
             processor.add(new FileEntry(entry.getPlatformId(), screen.getHost(), screen.getLarge(), "https://dos.zone"));
@@ -70,8 +70,12 @@ public class JsDosCrawler extends AbstractCrawler {
     @Override
     public List<GameEntry> parseGamesList(String platformId) throws Exception {
         //load from github, delete files, save new
-        org.apache.commons.io.FileUtils.deleteDirectory(getPagesDir(getSource()).toFile());
-        org.apache.commons.io.FileUtils.deleteDirectory(getCacheDir(getSource()).toFile());
+        try {
+            org.apache.commons.io.FileUtils.deleteDirectory(getPagesDir(getSource()).toFile());
+            org.apache.commons.io.FileUtils.deleteDirectory(getCacheDir(getSource()).toFile());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         FileEntry fileEntry = new FileEntry(PLATFORM_ID, ROOT, SOURCE_CODE, REFERRER);
         System.out.println("Downloading: " + ROOT + SOURCE_CODE);
         Executor.HttpResponse response = executor.getFile(fileEntry);
@@ -157,7 +161,12 @@ public class JsDosCrawler extends AbstractCrawler {
                 }
             }
         }
-        return sb.toString();
+        String result = sb.toString();
+        if (result.startsWith("'") && result.endsWith("'")) {
+            result = result.substring(1).substring(0, result.length() - 1);
+            result = result.replace("''", "'");
+        }
+        return result;
     }
 
     private List<GameFileEntry> loadFiles(List<String> lines) {
