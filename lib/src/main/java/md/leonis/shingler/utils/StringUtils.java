@@ -2,9 +2,9 @@ package md.leonis.shingler.utils;
 
 import org.apache.commons.text.StringEscapeUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.text.Normalizer;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static md.leonis.shingler.model.ConfigHolder.platform;
 import static md.leonis.shingler.model.ConfigHolder.platformsByCpu;
@@ -28,8 +28,10 @@ public class StringUtils {
         fileName = fileName.replace(" (Beta)", "");
         fileName = fileName.replace(" (Unl)", "");
         fileName = fileName.replace(" (Wxn)", "");
-        String result = StringUtils.removeSpecialChars(fileName.replace("_", " ")); // remove special symbols
-        return StringUtils.force63(result).replace(" ", "_");
+        String ext = getFileExtension(fileName);
+        fileName = stripExtension(fileName);
+        fileName = StringUtils.removeSpecialChars(fileName.replace("_", " ")); // remove special symbols
+        return StringUtils.force63(fileName + "." + ext).replace(" ", "_");
     }
 
     /// SNES Columns (Unl) problem
@@ -45,7 +47,6 @@ public class StringUtils {
     }
 
     static String force63(String fileName) {
-
         String name = removeThe(fileName);
 
         // [t1][a1][T-Port] -> [t1a1T-Port]
@@ -276,37 +277,40 @@ public class StringUtils {
         return StringEscapeUtils.unescapeHtml4(s);
     }
 
-    public static String cpu(String cpu) {
-        cpu = unescapeChars(cpu);
+    static List<String> tails = Arrays.asList(" unl", " ii", " iii", " iv", " v", " vi", " vii", " viii", " ix");
+    static List<String> tailsReplacement = Arrays.asList("", " 2", " 3", " 4", " 5", " 6", " 7", " 8", " 9");
+    static List<String> mids = Arrays.asList("ii", "iii", "iv");
+    static List<String> midsReplacement = Arrays.asList("2", "3", "4");
 
-        String separators = " -_+~";
-        String restricted = "'\"().,&!?$@#%^*=/\\[];:|<>{}";
+    // ЧПУ для названий страниц игр
+    public static String cpu(String text) {
+        text = unescapeChars(text);
+        return Arrays.stream(generateCpu(text).split(" ")).filter(s -> !s.equals("a") && !s.equals("the")).collect(Collectors.joining("-"));
+    }
 
-        for (char c : separators.toCharArray()) {
-            cpu = cpu.replace("" + c, "-");
-        }
-
-        for (char c : restricted.toCharArray()) {
-            cpu = cpu.replace("" + c, "");
-        }
-
-        cpu = translit(cpu);
-        cpu = cpu.toLowerCase();
-        cpu = cpu.replace("--", "-");
-        cpu = cpu.replace("--", "-");
-
-        List<String> tails = Arrays.asList("-unl", "-ii", "-iii", "-iv", "-v", "-vi", "-vii", "-");
-        List<String> tailsReplacement = Arrays.asList("", "-2", "-3", "-4", "-5", "-6", "-7", "");
+    // ЧПУ, слова разделены пробелами
+    public static String generateCpu(String text) {
+        text = cleanString(text).toLowerCase();
 
         for (int i = 0; i < tails.size(); i++) {
-            String s = tails.get(i);
-            cpu = replaceFromTail(s, tailsReplacement.get(i), cpu);
+            text = replaceFromTail(" " + tails.get(i), " " + tailsReplacement.get(i), text);
         }
 
-        cpu = cpu.replace("-iii-", "-3-");
-        cpu = cpu.replace("-ii-", "-2-");
+        for (int i = 0; i < mids.size(); i++) {
+            text = replaceFromTail(" " + mids.get(i) + " ", " " + midsReplacement.get(i) + " ", text);
+        }
 
-        return cpu;
+        return text;
+    }
+
+    public static String cleanString(String string) {
+        for (char c : " -_+~".toCharArray()) {
+            string = string.replace("" + c, " ");
+        }
+        return Normalizer.normalize(StringUtils.toTranslit(string), Normalizer.Form.NFD) // repair aáeéiíoóöőuúüű AÁEÉIÍOÓÖŐUÚÜŰ
+                .replaceAll("\\p{InCombiningDiacriticalMarks}+", "") // repair aáeéiíoóöőuúüű AÁEÉIÍOÓÖŐUÚÜŰ
+                .replaceAll("[^\\p{Alnum}]+", " ") // all, except [a-zA-Z0-9] convert to a single " "
+                .trim().replace("  ", " ");
     }
 
     public static String replaceFromTail(String substr, String replace, String string) {
@@ -317,26 +321,58 @@ public class StringUtils {
         }
     }
 
-    public static String translit(String string) {
-        /*Transliterator toLatinTrans = Transliterator.getInstance("Russian-Latin/BGN");
-        String result = toLatinTrans.transliterate(resursing);*/
-
-        List<String> rus = Arrays.asList("а", "б", "в", "г", "д", "е", "з", "и", "к", "л", "м", "н", "о", "п", "р",
-                "с", "т", "у", "ф", "ц", "ы", "й", "ё", "ж", "х", "ч", "ш", "щ", "э", "ю", "я", "ъ", "ь", "%20%20", "%20", " ");
-
-        List<String> lat = Arrays.asList("a", "b", "v", "g", "d", "e", "z", "i", "k", "l", "m", "n", "o", "p", "r",
-                "s", "t", "u", "f", "c", "y", "ij", "yo", "zh", "h", "ch", "sh", "shch", "je", "yu", "ya", "", "", "-", "-", "-");
-
-        for (int i = 0; i < rus.size(); i++) {
-            string = string.replace(rus.get(i), lat.get(i));
+    public static String sid(String title) {
+        if (title.startsWith("Замечание")) {
+            return "1";
+        } else if (StringUtils.isNotBlank(title)) {
+            if (title.endsWith("(Hack)") || title.endsWith(" Hack)") || title.contains("(Hack ")) {
+                return "hak";
+            } else if (title.contains("(PD)")) {
+                return "pd";
+            } else if ("abcdefghijklmnopqrstuvwxyz".contains(title.substring(0, 1).toLowerCase())) {
+                return title.substring(0, 1).toLowerCase();
+            } else {
+                // todo russian
+                return "num";
+            }
+        } else {
+            throw new RuntimeException("Blank game title!");
         }
+    }
 
-        for (int i = 0; i < rus.size(); i++) {
-            string = string.replace(org.apache.commons.lang3.StringUtils.capitalize(rus.get(i)), org.apache.commons.lang3.StringUtils.capitalize(lat.get(i)));
+    // Транслитерация по правилам международных телеграмм
+    private static final List<Character> RUS = Arrays.asList(
+            'а', 'б', 'в', 'г', 'д', 'е', 'ё', 'ж', 'з', 'и', 'й',
+            'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф',
+            'х', 'ц', 'ч', 'ш', 'щ', 'ъ', 'ы', 'ь', 'э', 'ю', 'я');
+
+    private static final List<String> LAT = Arrays.asList(
+            "a", "b", "v", "g", "d", "e", "e", "j", "z", "i", "i",
+            "k", "l", "m", "n", "o", "p", "r", "s", "t", "u", "f",
+            "h", "c", "ch", "sh", "sc", "", "y", "", "e", "iu", "ia");
+
+    private static final Map<Integer, String> TRANSLIT_MAP = new HashMap<>();
+
+    static {
+        for (int i = 0; i < RUS.size(); i++) {
+            TRANSLIT_MAP.put((int) RUS.get(i), LAT.get(i));
+            TRANSLIT_MAP.put((int) RUS.get(i).toString().toUpperCase().charAt(0), LAT.get(i).toUpperCase());
         }
+    }
 
-        string = string.replaceAll("/[^a-zA-Z0-9_\\-]+/si", "");
-        return string;
+    /**
+     * Переводит русский текст в транслит. В результирующей строке
+     * каждая русская буква будет заменена на соответствующую английскую.
+     * Не русские символы останутся прежними.
+     *
+     * @param text исходный текст с русскими символами
+     * @return результат
+     */
+    public static String toTranslit(String text) {
+        return text.chars().mapToObj(c -> {
+            String replace = TRANSLIT_MAP.get(c);
+            return (replace == null) ? Character.valueOf((char) c).toString() : replace;
+        }).collect(Collectors.joining());
     }
 
     //TODO https://perishablepress.com/stop-using-unsafe-characters-in-urls/
@@ -410,7 +446,7 @@ public class StringUtils {
     public static boolean isBlank(String str) {
         int strLen;
         if (str != null && (strLen = str.length()) != 0) {
-            for(int i = 0; i < strLen; ++i) {
+            for (int i = 0; i < strLen; ++i) {
                 if (!Character.isWhitespace(str.charAt(i))) {
                     return false;
                 }

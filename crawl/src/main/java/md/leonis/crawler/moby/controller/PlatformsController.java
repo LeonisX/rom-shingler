@@ -44,6 +44,7 @@ public class PlatformsController {
     public MenuItem loadGamesListMenuItem;
     public MenuItem auditMenuItem;
     public MenuItem addToQueueMenuItem;
+    public MenuItem bindGamesMenuItem;
     public ListView<Platform> platformsQueueListView;
 
     public Button reloadGamesListButton;
@@ -56,7 +57,6 @@ public class PlatformsController {
     public CheckBox showReadyPlatformsCheckBox;
     public CheckBox showEmptyPlatformsCheckBox;
     public Button platformsBindings;
-    public MenuItem bindGamesMenuItem;
 
     private Crawler crawler;
 
@@ -220,11 +220,8 @@ public class PlatformsController {
         platformsQueueListView.getItems().clear();
     }
 
-
     // context menu
     public void loadGamesListMenuItemClick() {
-
-
         //TODO show games diff if found
     }
 

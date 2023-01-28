@@ -21,9 +21,11 @@ import lombok.NoArgsConstructor;
 import md.leonis.crawler.moby.config.ConfigHolder;
 import md.leonis.crawler.moby.crawler.Crawler;
 import md.leonis.crawler.moby.model.GameEntry;
+import md.leonis.crawler.moby.model.jsdos.GameFileEntry;
 import md.leonis.crawler.moby.view.FxmlView;
 import md.leonis.crawler.moby.view.StageManager;
 import md.leonis.shingler.model.dto.TiviStructure;
+import md.leonis.shingler.utils.FileUtils;
 import md.leonis.shingler.utils.StringUtils;
 import md.leonis.shingler.utils.WebUtils;
 import org.apache.commons.text.similarity.LevenshteinDistance;
@@ -32,6 +34,7 @@ import org.springframework.stereotype.Controller;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static md.leonis.crawler.moby.config.ConfigHolder.*;
@@ -64,6 +67,7 @@ public class GamesBindingController {
 
     public ListView<Structure> listView;
     public TextField searchTextField;
+    public Button serviceButton;
 
     List<Binding> gamesBinding;
     List<GameEntry> gameEntries = new ArrayList<>();
@@ -227,7 +231,7 @@ public class GamesBindingController {
                         rollbackList.add(dstCont);
                         updateFamilies(dstCont);
                     } else {
-                        System.out.println(String.format("Can't copy %s to %s!", srcCont, dstCont));
+                        System.out.printf("Can't copy %s to %s!%n", srcCont, dstCont);
                     }
                     tableView.refresh();
                     success = true;
@@ -374,7 +378,7 @@ public class GamesBindingController {
             try {
                 data = loadTiviGames(e.getKey(), false);
             } catch (Exception ex) {
-                stageManager.showErrorAlert("Error saving Tivi Games", ex.getClass().getSimpleName() + ex.getMessage(), ex);
+                stageManager.showErrorAlert("Error loading Tivi Games", ex.getClass().getSimpleName() + ": " + ex.getMessage(), ex);
             }
             return data.stream().filter(t -> !t.getSid().equals("hak")).sorted(Comparator.comparing(TiviStructure::getName));
         }).collect(Collectors.toList());
@@ -429,10 +433,120 @@ public class GamesBindingController {
         });
     }
 
+    // какие-то ручные запросы
+    public void serviceButtonClick() throws Exception {
+        List<TiviStructure> data = loadTiviGames("dos", false);
+        Set<String> titles = data.stream().map(TiviStructure::getName).collect(Collectors.toSet());
+        Set<String> cpus = data.stream().map(TiviStructure::getCpu).collect(Collectors.toSet());
 
+        List<GameEntry> gameEntries = crawler.loadGamesList("dos");
+        Map<String, GameEntry> map = gameEntries.stream().collect(Collectors.toMap(GameEntry::getGameId, Function.identity()));
+
+        List<String> lines = new ArrayList<>();
+
+        final int[] nextIndex = {data.stream().mapToInt(TiviStructure::getId).max().orElseThrow(() -> new RuntimeException("Igor to net!"))};
+
+        String sys = "dos";
+        long created = System.currentTimeMillis() / 1000;
+
+        observableList.stream().filter(c -> c.getMoby() != null && !c.isGreen()).map(Cont::getMoby).forEach(structure -> {
+            //System.out.println(structure.getTitle() + ": " + structure.getGameId());
+
+            String title = structure.getUnmodifiedTitle();
+            String year = structure.getYear().isEmpty() ? "Alt" : structure.getYear();
+            //A, The
+            if (title.startsWith("A ")) {
+                title = title.substring(2) + ", A";
+            }
+            if (title.startsWith("The ")) {
+                title = title.substring(4) + ", The";
+            }
+            title = getAddon(title, year, "%s (%s)", titles);
+
+            String cpu = StringUtils.cpu(title);
+            cpu = getAddon(cpu, year, "%s-%s", cpus).toLowerCase();
+
+            String finalTitle = title.replace("'", "''");
+            String finalCpu = cpu;
+            optionalGameFileEntry(map.get(structure.getGameId())).ifPresent(file -> {
+                String game = file.getHost() + file.getUrl();
+                String query = String.format(insert, sys,
+                        ++nextIndex[0], sys, created, created, StringUtils.sid(finalTitle), finalCpu, finalTitle, "", "", // n, sys, created, modified, sid, cpu, name, descript, keywords
+                        "", "", "", "", "", "", "", "", // region, publisher, developer, god, god1, ngamers, type, genre
+                        "", "", "", "", "", "", "", // image1-7
+                        "", "", "", "", "", "", "", // image8-14
+                        game, 0, "", 0, game, "yes", 0, "", "", // game, downloaded, music, music_downloaded, rom, playable, played, text1, text2
+                        "", "", "", "", 0, 0, 0, 0, 0 // analog, drname, cros, serie, rating, userrating, totalrating, viewes, comments
+                );
+                System.out.println(query);
+                lines.add(query);
+            });
+        });
+
+        //add game, rom, playable
+        observableList.stream().filter(Cont::isGreen).forEach(cont ->
+                optionalGameFileEntry(map.get(cont.getMoby().getGameId())).ifPresent(file -> {
+                    String game = file.getHost() + file.getUrl();
+                    String query = String.format(update, sys, game, game, cont.getTivi().getGameId());
+                    System.out.println(query);
+                    lines.add(query);
+                }));
+
+        //cpus: _ -> -
+        observableList.stream().map(Cont::getTivi).filter(Objects::nonNull).forEach(structure -> {
+            if (structure.gameId.contains("_")) {
+                String query = String.format(updateCpu, sys, StringUtils.cpu(structure.gameId), structure.gameId);
+                System.out.println(query);
+                lines.add(query);
+            }
+        });
+
+        FileUtils.saveToFile(getSourceDir(getSource()).resolve("insert.sql"), lines);
+        System.out.println("gata");
+    }
+
+    private Optional<GameFileEntry> optionalGameFileEntry(GameEntry gameEntry) {
+        return gameEntry.getFiles().stream().filter(f -> f.getUrl().endsWith(".jsdos")).findFirst();
+    }
+
+    String updateCpu = "UPDATE `base_%s` SET cpu='%s' WHERE cpu='%s';";
+
+    String update = "UPDATE `base_%s` SET game='%s', rom='%s', playable='yes' WHERE cpu='%s';";
+
+    String insert = "INSERT INTO `base_%s` VALUES " +
+            // n, sys, created, modified, sid, cpu, name, descript, keywords
+            // 1, '3do', 0, 1640065258, '1', 'zamechanie-po-baze-dannyh', 'Замечание по базе данных', '', ''
+            "(%s, '%s', %s, %s, '%s', '%s', '%s', '%s', '%s', " +
+            // region, publisher, developer, god, god1, ngamers, type, genre
+            // 'EU;', 'Leonis', '', '2012', '0303', NULL, '', ''
+            "'%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', " +
+            // image1 - image14
+            "'%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', " +
+            // game, downloaded, music, music_downloaded, rom, playable, played, text1, text2
+            // '', 0, '', 0, '', 'no', 0, 'Стро...', ''
+            "'%s', %s, '%s', %s, '%s', '%s', %s, '%s', '%s', " +
+            // analog, drname, cros, serie, rating, userrating, totalrating, viewes, comments
+            // '', '', '', '', 53, 93, 224, 15246, 1
+            "'%s', '%s', '%s', '%s', %s, %s, %s, %s, %s);";
+
+    String rep = " 23456789";
+
+    private String getAddon(String string, String key, String format, Set<String> strings) {
+        if (!strings.contains(string)) {
+            return string;
+        }
+        for (int i = 0; i < rep.length(); i++) {
+            String addon = (i == 0 && !key.isEmpty()) ? key : "Alt" + rep.charAt(i);
+            String newString = String.format(format, string, addon);
+            if (!strings.contains(newString)) {
+                strings.add(newString);
+                return newString;
+            }
+        }
+        throw new RuntimeException("How???");
+    }
 
     public void autoAssignButtonClick() {
-
         // одинаковые тоже в верх
         // если два кандидата, то не мэппить.
         for (Cont cont : new ArrayList<>(observableList)) {
