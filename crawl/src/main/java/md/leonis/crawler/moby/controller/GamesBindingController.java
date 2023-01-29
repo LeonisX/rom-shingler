@@ -438,6 +438,7 @@ public class GamesBindingController {
         List<TiviStructure> data = loadTiviGames("dos", false);
         Set<String> titles = data.stream().map(TiviStructure::getName).collect(Collectors.toSet());
         Set<String> cpus = data.stream().map(TiviStructure::getCpu).collect(Collectors.toSet());
+        cpus.addAll(data.stream().map(s -> newCpu(s.getCpu())).collect(Collectors.toSet()));
 
         List<GameEntry> gameEntries = crawler.loadGamesList("dos");
         Map<String, GameEntry> map = gameEntries.stream().collect(Collectors.toMap(GameEntry::getGameId, Function.identity()));
@@ -495,7 +496,7 @@ public class GamesBindingController {
         //cpus: _ -> -
         observableList.stream().map(Cont::getTivi).filter(Objects::nonNull).forEach(structure -> {
             if (structure.gameId.contains("_")) {
-                String query = String.format(updateCpu, sys, StringUtils.cpu(structure.gameId), structure.gameId);
+                String query = String.format(updateCpu, sys, newCpu(structure.gameId), structure.gameId);
                 System.out.println(query);
                 lines.add(query);
             }
@@ -503,6 +504,13 @@ public class GamesBindingController {
 
         FileUtils.saveToFile(getSourceDir(getSource()).resolve("insert.sql"), lines);
         System.out.println("gata");
+    }
+
+    private String newCpu(String cpu) {
+        boolean isTail = cpu.endsWith("_");
+        cpu = StringUtils.cpu(cpu);
+        cpu = isTail ? cpu + "-" : cpu;
+        return cpu;
     }
 
     private Optional<GameFileEntry> optionalGameFileEntry(GameEntry gameEntry) {
@@ -533,6 +541,7 @@ public class GamesBindingController {
 
     private String getAddon(String string, String key, String format, Set<String> strings) {
         if (!strings.contains(string)) {
+            strings.add(string);
             return string;
         }
         for (int i = 0; i < rep.length(); i++) {
