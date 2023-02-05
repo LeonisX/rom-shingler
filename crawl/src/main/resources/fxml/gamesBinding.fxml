@@ -22,6 +22,7 @@
             <Label fx:id="infoLabel" />
          <Button fx:id="autoAssignButton" mnemonicParsing="false" onAction="#autoAssignButtonClick" text="Auto assign" />
             <Button fx:id="serviceButton" mnemonicParsing="false" onAction="#serviceButtonClick" text="Service Button (don't touch!)" />
+            <Button fx:id="duplicatedButton" mnemonicParsing="false" onAction="#duplicatesButtonClick" text="Find Duplicates" />
             <BorderPane.margin>
                 <Insets left="5.0" />
             </BorderPane.margin>

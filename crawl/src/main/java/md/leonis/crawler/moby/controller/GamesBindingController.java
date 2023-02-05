@@ -11,6 +11,9 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.control.*;
 import javafx.scene.input.*;
 import javafx.stage.Stage;
@@ -32,7 +35,10 @@ import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
 
+import java.awt.*;
 import java.io.Serializable;
+import java.nio.file.Path;
+import java.util.List;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -68,6 +74,7 @@ public class GamesBindingController {
     public ListView<Structure> listView;
     public TextField searchTextField;
     public Button serviceButton;
+    public Button duplicatedButton;
 
     List<Binding> gamesBinding;
     List<GameEntry> gameEntries = new ArrayList<>();
@@ -553,6 +560,46 @@ public class GamesBindingController {
             }
         }
         throw new RuntimeException("How???");
+    }
+
+    public void duplicatesButtonClick() throws Exception {
+        List<TiviStructure> data = loadTiviGames("dos", false);
+        Map<String, TiviStructure> tiviMap = data.stream().collect(Collectors.toMap(TiviStructure::getCpu, Function.identity()));
+
+        List<GameEntry> gameEntries = crawler.loadGamesList("dos");
+        Map<String, GameEntry> ybomMap = gameEntries.stream().collect(Collectors.toMap(GameEntry::getGameId, Function.identity()));
+
+        List<String> lines = new ArrayList<>();
+
+        List<GamesBindingController.Binding> bindings = new ArrayList<>(gamesBinding);
+
+        String sys = "dos";
+
+        while (bindings.size() > 1) {
+            GamesBindingController.Binding entry = bindings.get(bindings.size() - 1);
+            for (int i = 0; i < entry.mobyGameIds.size(); i++) {
+                for (int j = 0; j < bindings.size() - 1; j++) {
+                    GamesBindingController.Binding vsEntry = bindings.get(j);
+                    if (vsEntry.mobyGameIds.contains(entry.mobyGameIds.get(i))) {
+                        TiviStructure tiviStructure = tiviMap.get(entry.gameId);
+                        TiviStructure vsTiviStructure = tiviMap.get(vsEntry.gameId);
+                        if (tiviStructure != null && vsTiviStructure != null) { // omit deleted games
+                            lines.add(String.format("<b>%s</b><br />", ybomMap.get(entry.mobyGameIds.get(i))));
+                            lines.add(String.format("<a href=\"http://tv-games.ru/game/%s/%s.html\">%s</a><br />", sys, tiviStructure.getCpu(), tiviStructure.getName()));
+                            lines.add(String.format("<a href=\"http://tv-games.ru/game/%s/%s.html\">%s</a><br />", sys, vsTiviStructure.getCpu(), vsTiviStructure.getName()));
+                            lines.add("<br />");
+                        }
+                    }
+                }
+            }
+            bindings.remove(bindings.size() - 1);
+        }
+
+
+        Path path = getSourceDir(getSource()).resolve("dupes.html");
+        FileUtils.saveToFile(path, lines);
+        Desktop.getDesktop().browse(path.normalize().toUri());
+        System.out.println("gata");
     }
 
     public void autoAssignButtonClick() {
