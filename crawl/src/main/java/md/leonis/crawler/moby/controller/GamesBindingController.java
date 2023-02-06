@@ -75,6 +75,7 @@ public class GamesBindingController {
     public TextField searchTextField;
     public Button serviceButton;
     public Button duplicatedButton;
+    public Button sanitizeBindingsButton;
 
     List<Binding> gamesBinding;
     List<GameEntry> gameEntries = new ArrayList<>();
@@ -562,6 +563,7 @@ public class GamesBindingController {
         throw new RuntimeException("How???");
     }
 
+    // Найти игры, которые привязаны к одним и тем же играм моби (с большой вероятностью дубликаты)
     public void duplicatesButtonClick() throws Exception {
         List<TiviStructure> data = loadTiviGames("dos", false);
         Map<String, TiviStructure> tiviMap = data.stream().collect(Collectors.toMap(TiviStructure::getCpu, Function.identity()));
@@ -599,6 +601,26 @@ public class GamesBindingController {
         Path path = getSourceDir(getSource()).resolve("dupes.html");
         FileUtils.saveToFile(path, lines);
         Desktop.getDesktop().browse(path.normalize().toUri());
+        System.out.println("gata");
+    }
+
+    // Почистить привязки (если были удалены игры из базы)
+    public void sanitizeBindingsButtonClick() throws Exception {
+        List<TiviStructure> data = loadTiviGames("dos", false);
+        Map<String, TiviStructure> tiviMap = data.stream().collect(Collectors.toMap(TiviStructure::getCpu, Function.identity()));
+
+        List<GamesBindingController.Binding> bindings = new ArrayList<>();
+
+        gamesBinding.forEach(binding -> {
+            if (tiviMap.get(binding.gameId) != null) {
+                bindings.add(binding);
+            } else {
+                System.out.println("Deleted: " + binding.gameId);
+            }
+        });
+
+        gamesBinding = bindings;
+        saveBindings();
         System.out.println("gata");
     }
 
