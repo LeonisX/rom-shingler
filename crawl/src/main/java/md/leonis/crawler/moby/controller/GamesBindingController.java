@@ -586,7 +586,8 @@ public class GamesBindingController {
                         TiviStructure tiviStructure = tiviMap.get(entry.gameId);
                         TiviStructure vsTiviStructure = tiviMap.get(vsEntry.gameId);
                         if (tiviStructure != null && vsTiviStructure != null) { // omit deleted games
-                            lines.add(String.format("<b>%s</b><br />", ybomMap.get(entry.mobyGameIds.get(i))));
+                            GameEntry gameEntry = ybomMap.get(entry.mobyGameIds.get(i));
+                            lines.add(String.format("<a href=\"https://www.mobygames.com/game/%s\">%s</a> %s<br />", gameEntry.getGameId(), gameEntry.getTitle(), gameEntry.getAlternateTitles()));
                             lines.add(String.format("<a href=\"http://tv-games.ru/game/%s/%s.html\">%s</a><br />", sys, tiviStructure.getCpu(), tiviStructure.getName()));
                             lines.add(String.format("<a href=\"http://tv-games.ru/game/%s/%s.html\">%s</a><br />", sys, vsTiviStructure.getCpu(), vsTiviStructure.getName()));
                             lines.add("<br />");
