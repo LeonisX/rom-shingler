@@ -695,13 +695,13 @@ public class GamesBindingController {
 
         if (structure != null) {
             List<Structure> list = fullMoby.stream().filter(p -> p.getTitle().equals(structure.getTitle())).collect(Collectors.toList());
-            list.add(new Structure("", "", "", "-------------", "", "", new ArrayList<>(), new ArrayList<>(), false));
+            list.add(new Structure("", "", "", "-------------", "", "", "", new ArrayList<>(), new ArrayList<>(), false));
 
             List<Structure> gamesList = fullMoby.stream().map(p -> new Pair<>(new LevenshteinDistance().apply(structure.getTitle(), p.getTitle()), p))
                     .sorted(Comparator.comparing(Pair::getKey)).filter(p -> p.getKey() <= 5).map(Pair::getValue).collect(Collectors.toList());
 
             list.addAll(gamesList);
-            list.add(new Structure("", "", "", "-------------", "", "", new ArrayList<>(), new ArrayList<>(), false));
+            list.add(new Structure("", "", "", "-------------", "", "", "", new ArrayList<>(), new ArrayList<>(), false));
             list.addAll(fullMoby.stream().sorted(Comparator.comparing(Structure::getUnmodifiedTitle)).collect(Collectors.toList()));
 
             listViewData = new FilteredList<>(FXCollections.observableList(list));
@@ -834,6 +834,7 @@ public class GamesBindingController {
         private String title;
         private String family;
         private String year;
+        private String publisher;
         private List<String> alternativeTitles = new ArrayList<>();
         private List<String> images = new ArrayList<>();
 
@@ -847,6 +848,7 @@ public class GamesBindingController {
             this.family = structure.getGame();
             this.left = true;
             this.year = structure.getGod1() + structure.getGod();
+            this.publisher = structure.getPublisher();
             this.alternativeTitles = structure.getDrname() == null ? new ArrayList<>() : Arrays.asList(structure.getDrname().split(";"));
             this.images = structure.getImages().stream().map(s -> localSitePath + "images/" + platformId + "/i/" + structure.getSid() + "/" + s).collect(Collectors.toList());
             //System.out.println(this.images);
@@ -860,6 +862,7 @@ public class GamesBindingController {
             this.family = gameId;
             this.left = false;
             this.year = String.join(", ", gameEntry.getDates());
+            this.publisher = String.join(", ", gameEntry.getPublishers());
             this.alternativeTitles = gameEntry.getAlternateTitles().stream().map(a -> a.split("\"")[1]).collect(Collectors.toList());
             this.images = gameEntry.getScreens().stream().map(s -> crawler.getFilePath(gameEntry.getPlatformId(), s.getHost(), s.getLarge()).toAbsolutePath().toString()).collect(Collectors.toList());
         }
@@ -874,6 +877,7 @@ public class GamesBindingController {
             this.family = gameId;
             this.left = false;
             this.year = String.join(", ", gameEntry.getDates());
+            this.publisher = String.join(", ", gameEntry.getPublishers());
             this.alternativeTitles = gameEntry.getAlternateTitles().stream().map(a -> a.split("\"")[1]).collect(Collectors.toList());
             this.images = gameEntry.getScreens().stream().map(s -> crawler.getFilePath(gameEntry.getPlatformId(), s.getHost(), s.getLarge()).toAbsolutePath().toString()).collect(Collectors.toList());
         }

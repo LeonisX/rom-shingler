@@ -62,6 +62,7 @@ public class GamesInfoController {
 
             //listView.getItems().add("Family: " + structure.getFamily());
             listView.getItems().add("Year: " + structure.getYear());
+            listView.getItems().add("Publisher: " + structure.getPublisher());
             listView.getItems().add("");
             structure.getAlternativeTitles().forEach(a -> listView.getItems().add(a));
 
