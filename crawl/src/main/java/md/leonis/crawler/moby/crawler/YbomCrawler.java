@@ -91,6 +91,11 @@ public class YbomCrawler extends AbstractCrawler {
         YbomCrawler crawler = new YbomCrawler();
         crawler.setProcessor(new FilesProcessor(1, crawler::fileConsumer));
 
+        GameEntry gameEntry = new GameEntry("dos", "one-nil-soccer-manager", "One-Nil Soccer Manager");
+        crawler.parseGameEntry(gameEntry);
+
+        System.out.println();
+
         /*for (Platform p : platforms) {
             List<GameEntry> gameEntries = crawler.parseGamesList(p.getId());
             crawler.saveGamesList(p.getId(), gameEntries.stream().sorted(Comparator.comparing(GameEntry::getTitle)).collect(Collectors.toList()));
@@ -610,6 +615,9 @@ public class YbomCrawler extends AbstractCrawler {
         // <h3>Worldrunning between enemies</h3></div>
         Element div = select(container, "div.screenshot");
         Element img = div.child(0);
+        if (img.tagName().equals("a")) {
+            img = img.child(0);
+        }
         assert (img.tagName().equals("img"));
         Element h3 = div.child(1);
         assert (h3.tagName().equals("h3"));

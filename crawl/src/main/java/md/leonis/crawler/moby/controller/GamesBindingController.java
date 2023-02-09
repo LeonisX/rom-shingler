@@ -24,7 +24,6 @@ import lombok.NoArgsConstructor;
 import md.leonis.crawler.moby.config.ConfigHolder;
 import md.leonis.crawler.moby.crawler.Crawler;
 import md.leonis.crawler.moby.model.GameEntry;
-import md.leonis.crawler.moby.model.MobyImage;
 import md.leonis.crawler.moby.model.jsdos.GameFileEntry;
 import md.leonis.crawler.moby.view.FxmlView;
 import md.leonis.crawler.moby.view.StageManager;
@@ -707,7 +706,7 @@ public class GamesBindingController {
 
                 //14 screens
                 Set<String> availableImages = new HashSet<>();
-                List<String> screens = mobyGame.getScreens().stream().map(MobyImage::getLarge).collect(Collectors.toList());
+                List<String> screens = mobyGame.getScreens().stream().map(mg -> mg.getLarge().isEmpty() ? mg.getSmall() : mg.getLarge()).collect(Collectors.toList());
                 int min = Math.min(screens.size(), 14);
                 screens = screens.subList(0, min);
                 List<String> images = new ArrayList<>();
@@ -719,9 +718,11 @@ public class GamesBindingController {
 
                 //copy
                 for (int i = 0; i < min; i++) {
-                    System.out.println(getCacheDir(getSource()).normalize().toAbsolutePath());
+                    //System.out.println(getCacheDir(getSource()).normalize().toAbsolutePath());
                     Path source = Paths.get(getCacheDir(getSource()).resolve(mobyGame.getPlatformId()) + screens.get(i));
-                    Path target = getCacheDir("tivi").resolve(tiviGame.getSys()).resolve(tiviGame.getSid()).resolve(images.get(i));
+                    Path targetDir = getCacheDir("tivi").resolve(tiviGame.getSys()).resolve(tiviGame.getSid());
+                    FileUtils.createDirectories(targetDir);
+                    Path target = targetDir.resolve(images.get(i));
                     try {
                         Files.copy(source, target);
                     } catch (Exception e) {
@@ -757,8 +758,7 @@ public class GamesBindingController {
         return date.split(",")[1].trim();
     }
 
-    DateTimeFormatter fullFormatter = DateTimeFormatter.ofPattern("MMM dd, yyyy"); // Oct 01, 1995
-    DateTimeFormatter shortFormatter = DateTimeFormatter.ofPattern("MMM, yyyy"); // Oct, 1995
+    DateTimeFormatter fullFormatter = DateTimeFormatter.ofPattern("MMM dd, yyyy").withLocale(Locale.ENGLISH); // Oct 01, 1995
 
     private String parseGod1(String date) {
         switch (date.length()) {
