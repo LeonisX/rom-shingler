@@ -115,7 +115,6 @@ class StringUtilsTest {
         assertEquals("Adventures of Captain Comic.7z", StringUtils.deleteSubstr(", The", "Adventures of Captain Comic, The.7z", 0));
     }
 
-
     @Test
     void toChunksTest1() {
         List<String> chunks = StringUtils.toChunks("test");
@@ -162,6 +161,21 @@ class StringUtilsTest {
     void toChunksTest8() {
         List<String> chunks = StringUtils.toChunks("test [T+Rus Leonis (test[1])] (Unl [a[s]])");
         assertArrayEquals(new String[]{"test", "[T+Rus Leonis (test[1])]", "(Unl [a[s]])"}, chunks.toArray(new String[0]));
+    }
+
+    @Test
+    void formatTitle() {
+        assertEquals("Adventures of Captain Comic", StringUtils.formatTitle("Adventures of Captain Comic"));
+        assertEquals("Adventures of Captain Comic, The", StringUtils.formatTitle("The Adventures of Captain Comic"));
+        assertEquals("Adventures of Captain Comic, A", StringUtils.formatTitle("A Adventures of Captain Comic"));
+
+        assertEquals("Adventures of Captain Comic: The Game", StringUtils.formatTitle("Adventures of Captain Comic: The Game"));
+        assertEquals("Adventures of Captain Comic, The: The Game", StringUtils.formatTitle("The Adventures of Captain Comic: The Game"));
+        assertEquals("Adventures of Captain Comic, A: The Game", StringUtils.formatTitle("A Adventures of Captain Comic: The Game"));
+        
+        assertEquals("Adventures of Captain Comic - The Game", StringUtils.formatTitle("Adventures of Captain Comic - The Game"));
+        assertEquals("Adventures of Captain Comic, The - The Game", StringUtils.formatTitle("The Adventures of Captain Comic - The Game"));
+        assertEquals("Adventures of Captain Comic, A - The Game", StringUtils.formatTitle("A Adventures of Captain Comic - The Game"));
     }
 
     @Test
@@ -213,8 +227,6 @@ class StringUtilsTest {
         assertEquals("DCEvolutionnet_Intro_by_Ventzislav_Tzvetkov_MazeApathyV100PD.zip", StringUtils.normalize("DCEvolution.net Intro by Ventzislav Tzvetkov, Maze & Apathy V1.00 (PD)", "zip"));
         assertEquals("Sega_Genesis_6-Button-rollerv2byCharlesMacDonaldpooraussiePD.zip", StringUtils.normalize("Sega Genesis 6-Button Controller v2 by Charles MacDonald & pooraussie (PD)", "zip"));
         assertEquals("Sega_Mega_DriveGenesi-nControllerTestV10byCharlesMacDonaldPD.zip", StringUtils.normalize("Sega Mega Drive & Genesis 6 Button Controller Test V1.0 by Charles MacDonald (PD)", "zip"));
-
-
     }
 
     @Test

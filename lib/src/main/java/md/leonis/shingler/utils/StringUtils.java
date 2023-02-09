@@ -1,5 +1,7 @@
 package md.leonis.shingler.utils;
 
+import md.leonis.shingler.model.dto.TiviStructure;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.text.StringEscapeUtils;
 
 import java.text.Normalizer;
@@ -275,6 +277,62 @@ public class StringUtils {
         //s = s.replace("&amp;", "&");
 
         return StringEscapeUtils.unescapeHtml4(s);
+    }
+
+    // https://wiki.no-intro.org/index.php?title=Naming_Convention
+    // If the first word is a common article then it will be moved to the end of the main title and separated with a comma.
+    // This includes non English common articles too.
+
+    // In cases where the title begins with "The" or "A", it should be moved to the end of the title, and preceded by a comma.
+    // This same rule applies if the title is not in English, e.g. "De" for Dutch, "Die" for German, and "Le/La/Les" for French etc. //TODO
+
+    // Subtitles and pretitles are always separated from the main title by a hyphen " - ".
+    // Titles that use a different separation style (ex. colon or "~ Subtitle ~") will be converted to a hyphen style.
+    //If the first word of a subtitle is a common article it will NOT be moved to the end.
+    public static String formatTitle(String title) {
+        //A, The
+        if (title.startsWith("A ")) {
+            if (title.contains(":")) {
+                title = title.substring(2).replace(":", ", A:");
+            } else if (title.contains("-")) {
+                title = title.substring(2).replace(" -", ", A -");
+            } else {
+                title = title.substring(2) + ", A";
+            }
+        }
+        if (title.startsWith("The ")) {
+            if (title.contains(":")) {
+                title = title.substring(4).replace(":", ", The:");
+            } else if (title.contains("-")) {
+                title = title.substring(4).replace(" -", ", The -");
+            } else {
+                title = title.substring(4) + ", The";
+            }
+        }
+
+        return title;
+    }
+
+    //TODO refactor
+    public static String normalizeImageName(TiviStructure tiviGame, Set<String> images, int index, String imageOld) {
+        String sid = tiviGame.getSid();
+        String region = (sid.equals("pd") || sid.equals("hak")) ? "" : "_" + tiviGame.getRegion().replace(";", "");
+        String image = StringUtils.cleanString(unescapeChars(tiviGame.getName() + region).replace(" ", "_"));
+        image = image.substring(0, Math.min(62, image.length()));
+        return renameImage(tiviGame, images, index, unescapeChars(imageOld), image);
+    }
+
+    private static String renameImage(TiviStructure tiviGame, Set<String> images, int index, String imageOld, String image) {
+        String ext = FilenameUtils.getExtension(imageOld); // jpg
+        String imageNew = String.format("%s_%s.%s", image, index, ext);
+        if (images.contains(imageNew)) {
+            String author = tiviGame.getPublisher().isEmpty() ? tiviGame.getDeveloper() : tiviGame.getPublisher();
+            imageNew = String.format("%s_%s_%s.%s", image, StringUtils.cleanString(unescapeChars(author)).replace(" ", "_"), index, ext);
+            if (images.contains(imageNew)) {
+                throw new RuntimeException("Can't find new image title: " + imageNew);
+            }
+        }
+        return imageNew.replace(" ", "_");
     }
 
     static List<String> tails = Arrays.asList(" unl", " ii", " iii", " iv", " v", " vi", " vii", " viii", " ix");

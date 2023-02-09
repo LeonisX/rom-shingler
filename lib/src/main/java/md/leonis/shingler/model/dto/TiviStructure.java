@@ -1,6 +1,7 @@
 package md.leonis.shingler.model.dto;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -74,15 +75,17 @@ public class TiviStructure implements Cloneable {
     private int viewes;
     private int comments;
 
+    @JsonIgnore
     public String getGame() {
         return game == null ? "" : game.trim();
     }
 
+    @JsonIgnore
     public String getRom() {
         return rom == null ? "" : rom.trim();
     }
 
-
+    @JsonIgnore
     public List<String> getImages() {
         List<String> images = new ArrayList<>();
         if (image1 != null && !image1.isEmpty()) {
@@ -127,7 +130,52 @@ public class TiviStructure implements Cloneable {
         if (image14 != null && !image14.isEmpty()) {
             images.add(image14);
         }
-
         return images;
+    }
+
+    @JsonIgnore
+    public void setImages(List<String> images) {
+        if (!images.isEmpty()) {
+            image1 = images.get(0);
+        }
+        if (images.size() > 1) {
+            image2 = images.get(1);
+        }
+        if (images.size() > 2) {
+            image3 = images.get(2);
+        }
+        if (images.size() > 3) {
+            image4 = images.get(3);
+        }
+        if (images.size() > 4) {
+            image5 = images.get(4);
+        }
+        if (images.size() > 5) {
+            image6 = images.get(5);
+        }
+        if (images.size() > 6) {
+            image7 = images.get(6);
+        }
+        if (images.size() > 7) {
+            image8 = images.get(7);
+        }
+        if (images.size() > 8) {
+            image9 = images.get(8);
+        }
+        if (images.size() > 9) {
+            image10 = images.get(9);
+        }
+        if (images.size() > 10) {
+            image11 = images.get(10);
+        }
+        if (images.size() > 11) {
+            image12 = images.get(11);
+        }
+        if (images.size() > 12) {
+            image13 = images.get(12);
+        }
+        if (images.size() > 13) {
+            image14 = images.get(13);
+        }
     }
 }

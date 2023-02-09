@@ -24,6 +24,7 @@ import lombok.NoArgsConstructor;
 import md.leonis.crawler.moby.config.ConfigHolder;
 import md.leonis.crawler.moby.crawler.Crawler;
 import md.leonis.crawler.moby.model.GameEntry;
+import md.leonis.crawler.moby.model.MobyImage;
 import md.leonis.crawler.moby.model.jsdos.GameFileEntry;
 import md.leonis.crawler.moby.view.FxmlView;
 import md.leonis.crawler.moby.view.StageManager;
@@ -37,13 +38,18 @@ import org.springframework.stereotype.Controller;
 
 import java.awt.*;
 import java.io.Serializable;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static md.leonis.crawler.moby.config.ConfigHolder.*;
+import static md.leonis.shingler.utils.FileUtils.loadJsonMap;
 import static md.leonis.shingler.utils.StringUtils.*;
 import static md.leonis.shingler.utils.TiviApiUtils.loadTiviGames;
 
@@ -76,6 +82,7 @@ public class GamesBindingController {
     public Button serviceButton;
     public Button duplicatedButton;
     public Button sanitizeBindingsButton;
+    public Button copyFromMobyButton;
 
     List<Binding> gamesBinding;
     List<GameEntry> gameEntries = new ArrayList<>();
@@ -463,13 +470,9 @@ public class GamesBindingController {
 
             String title = structure.getUnmodifiedTitle();
             String year = structure.getYear().isEmpty() ? "Alt" : structure.getYear();
-            //A, The
-            if (title.startsWith("A ")) {
-                title = title.substring(2) + ", A";
-            }
-            if (title.startsWith("The ")) {
-                title = title.substring(4) + ", The";
-            }
+
+            title = formatTitle(title);
+
             title = getAddon(title, year, "%s (%s)", titles);
 
             String cpu = StringUtils.cpu(title);
@@ -623,6 +626,153 @@ public class GamesBindingController {
         gamesBinding = bindings;
         saveBindings();
         System.out.println("gata");
+    }
+
+    // Скопировать необходимую инфу из Моби
+    public void copyFromMobyButtonButtonClick() throws Exception {
+        crawler = getCrawler();
+
+        // TiVi games
+        Map<String, Map<String, TiviStructure>> tiviGames = new HashMap<>();
+        platformsBindingMapEntries.forEach(e -> {
+            Map<String, TiviStructure> data = new HashMap<>();
+            try {
+                data = loadTiviGames(e.getKey(), false).stream().collect(Collectors.toMap(TiviStructure::getCpu, Function.identity()));
+            } catch (Exception ex) {
+                stageManager.showErrorAlert("Error loading Tivi Games", ex.getClass().getSimpleName() + ": " + ex.getMessage(), ex);
+            }
+            tiviGames.put(e.getKey(), data);
+        });
+
+        // Moby games
+        Map<String, Map<String, GameEntry>> mobyGames = new HashMap<>();
+        for (String p : platformsBindingMapEntries.stream().flatMap(e -> e.getValue().stream()).collect(Collectors.toList())) {
+            mobyGames.put(p, crawler.loadGamesList(p).stream().collect(Collectors.toMap(GameEntry::getGameId, Function.identity())));
+        }
+
+        // Companies
+        Map<String, String> companies = loadJsonMap(getSourceDir(getSource()), "companies");
+
+        //загрузить сопоставление если есть
+        List<Binding> gamesBinding = new ArrayList<>();
+        for (Map.Entry<String, List<String>> e : platformsBindingMapEntries) {
+            for (String mobyPlatformId : e.getValue()) {
+                Map<String, List<String>> map = crawler.loadGamesBindingMap(e.getKey(), mobyPlatformId);
+                map.forEach((key, value) -> gamesBinding.add(new Binding(e.getKey(), key, mobyPlatformId, value)));
+            }
+        }
+
+        // обработка
+        gamesBinding.forEach(binding -> {
+            String tiviPlatform = binding.getPlatformId();
+            String mobyPlatform = binding.getMobyPlatformId();
+            String tiviCpu = binding.getGameId();
+            String mobyGameId = binding.getMobyGameIds().get(0);
+            TiviStructure tiviGame = tiviGames.get(tiviPlatform).get(tiviCpu);
+            GameEntry mobyGame = mobyGames.get(mobyPlatform).get(mobyGameId);
+            if (!tiviGame.getName().equals(mobyGame.getTitle())) {
+                //TODO The, A -> at the end (467 page, need special function ( :, - )
+                System.out.println(String.format("%s -> %s", tiviGame.getName(), formatTitle(mobyGame.getTitle())));
+                //System.out.println(String.format("%s -> %s", tiviGame.getPublisher(), String.join(", ", mobyGame.getPublishers())));
+                //System.out.println(String.format("%s -> %s", tiviGame.getDeveloper(), String.join(", ", mobyGame.getDevelopers())));
+                //Pair<String, String> date = parseDates(mobyGame.getDates());
+                //System.out.println(String.format("%s.%s -> %s.%s (%s)", tiviGame.getGod1(), tiviGame.getGod(), date.getKey(), date.getValue(), mobyGame.getDates()));
+                // Oct 01, 1995             1995                Jul, 1987
+
+                // God, God1
+                Pair<String, String> date = parseDates(mobyGame.getDates());
+                tiviGame.setGod(date.getValue());
+                tiviGame.setGod1(date.getKey());
+                // DrName
+                String formattedTitle = StringUtils.formatTitle(mobyGame.getTitle());
+                if (!tiviGame.getName().equals(formattedTitle)) {
+                    if (tiviGame.getDrname().isEmpty()) {
+                        tiviGame.setDrname(formattedTitle.trim());
+                    } else {
+                        tiviGame.setDrname((formattedTitle + "; " + tiviGame.getDrname()).trim());
+                    }
+                }
+                // Publisher, Developer
+                String publishers = mobyGame.getPublishers().stream().map(companies::get).collect(Collectors.joining(", "));
+                String developers = mobyGame.getDevelopers().stream().map(companies::get).collect(Collectors.joining(", "));
+                System.out.println(publishers);
+                System.out.println(developers);
+                if (publishers.equals(developers)) {
+                    tiviGame.setPublisher(publishers);
+                    tiviGame.setDeveloper("");
+                } else {
+                    tiviGame.setPublisher(publishers);
+                    tiviGame.setDeveloper(developers);
+                }
+
+                //14 screens
+                Set<String> availableImages = new HashSet<>();
+                List<String> screens = mobyGame.getScreens().stream().map(MobyImage::getLarge).collect(Collectors.toList());
+                int min = Math.min(screens.size(), 14);
+                screens = screens.subList(0, min);
+                List<String> images = new ArrayList<>();
+                for (int i = 0; i < min; i++) {
+                    images.add(StringUtils.normalizeImageName(tiviGame, availableImages, i, screens.get(i)));
+                }
+
+                tiviGame.setImages(images);
+
+                //copy
+                for (int i = 0; i < min; i++) {
+                    System.out.println(getCacheDir(getSource()).normalize().toAbsolutePath());
+                    Path source = Paths.get(getCacheDir(getSource()).resolve(mobyGame.getPlatformId()) + screens.get(i));
+                    Path target = getCacheDir("tivi").resolve(tiviGame.getSys()).resolve(tiviGame.getSid()).resolve(images.get(i));
+                    try {
+                        Files.copy(source, target);
+                    } catch (Exception e) {
+                        System.out.println("Can't copy: " + source.normalize().toAbsolutePath() + " to " + target.normalize().toAbsolutePath());
+                    }
+                }
+
+                //TODO sql
+
+
+                //TODO для управления названиями нужен диалог. Отмечать названия, переставлять, итд
+                // Display title, Official title, ...
+            }
+        });
+        System.out.println("gata");
+    }
+
+    private Pair<String, String> parseDates(List<String> dates) {
+        switch (dates.size()) {
+            case 0:
+            return new Pair<>("", "");
+            case 1:
+                return new Pair<>(parseGod1(dates.get(0)), parseGod(dates.get(0)));
+            default:
+                throw new RuntimeException("Too many dates: " + dates);
+        }
+    }
+
+    private String parseGod(String date) {
+        if (date.length() == 4) {
+            return date;
+        }
+        return date.split(",")[1].trim();
+    }
+
+    DateTimeFormatter fullFormatter = DateTimeFormatter.ofPattern("MMM dd, yyyy"); // Oct 01, 1995
+    DateTimeFormatter shortFormatter = DateTimeFormatter.ofPattern("MMM, yyyy"); // Oct, 1995
+
+    private String parseGod1(String date) {
+        switch (date.length()) {
+            case 4:
+                return "";
+            case 9:
+                date = date.replace(",", " 01,");
+                return String.format("%02d", LocalDate.parse(date, fullFormatter).getMonthValue());
+            case 12:
+                LocalDate localDate = LocalDate.parse(date, fullFormatter);
+                return String.format("%02d%02d", localDate.getDayOfMonth(), localDate.getMonthValue());
+            default:
+                throw new RuntimeException("Wrong date format: " + date);
+        }
     }
 
     public void autoAssignButtonClick() {
