@@ -770,7 +770,9 @@ public class GamesBindingController {
     }
 
     private String formatArg(Object arg) {
-        if (arg instanceof String) {
+        if (arg == null) {
+            return "NULL";
+        } else if (arg instanceof String) {
             return String.format("'%s'", ((String) arg).replace("'", "''"));
         } else {
             return String.valueOf(arg);
@@ -778,7 +780,7 @@ public class GamesBindingController {
     }
 
     private void addArg(Map<String, Object> args, String field, String oldValue, String newValue) {
-        if (!oldValue.equals(newValue)) {
+        if (!Objects.equals(oldValue, newValue)) {
             args.put(field, newValue);
         }
     }
