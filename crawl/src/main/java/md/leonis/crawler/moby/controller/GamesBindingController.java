@@ -24,6 +24,7 @@ import lombok.NoArgsConstructor;
 import md.leonis.crawler.moby.config.ConfigHolder;
 import md.leonis.crawler.moby.crawler.Crawler;
 import md.leonis.crawler.moby.model.GameEntry;
+import md.leonis.crawler.moby.model.MobyImage;
 import md.leonis.crawler.moby.model.jsdos.GameFileEntry;
 import md.leonis.crawler.moby.view.FxmlView;
 import md.leonis.crawler.moby.view.StageManager;
@@ -661,6 +662,8 @@ public class GamesBindingController {
             }
         }
 
+        List<String> lines = new ArrayList<>();
+
         // обработка
         gamesBinding.forEach(binding -> {
             String tiviPlatform = binding.getPlatformId();
@@ -671,47 +674,65 @@ public class GamesBindingController {
             GameEntry mobyGame = mobyGames.get(mobyPlatform).get(mobyGameId);
             if (!tiviGame.getName().equals(mobyGame.getTitle())) {
                 //TODO The, A -> at the end (467 page, need special function ( :, - )
-                System.out.println(String.format("%s -> %s", tiviGame.getName(), formatTitle(mobyGame.getTitle())));
+                //System.out.println(String.format("%s -> %s", tiviGame.getName(), formatTitle(mobyGame.getTitle())));
                 //System.out.println(String.format("%s -> %s", tiviGame.getPublisher(), String.join(", ", mobyGame.getPublishers())));
                 //System.out.println(String.format("%s -> %s", tiviGame.getDeveloper(), String.join(", ", mobyGame.getDevelopers())));
                 //Pair<String, String> date = parseDates(mobyGame.getDates());
                 //System.out.println(String.format("%s.%s -> %s.%s (%s)", tiviGame.getGod1(), tiviGame.getGod(), date.getKey(), date.getValue(), mobyGame.getDates()));
                 // Oct 01, 1995             1995                Jul, 1987
 
+                //sql
+                Map<String, Object> args = new LinkedHashMap<>();
+
                 // God, God1
                 Pair<String, String> date = parseDates(mobyGame.getDates());
+                addArg(args, "god", tiviGame.getGod(), date.getValue());
                 tiviGame.setGod(date.getValue());
+                addArg(args, "god1", tiviGame.getGod1(), date.getKey());
                 tiviGame.setGod1(date.getKey());
                 // DrName
                 String formattedTitle = StringUtils.formatTitle(mobyGame.getTitle());
                 if (!tiviGame.getName().equals(formattedTitle)) {
                     if (tiviGame.getDrname().isEmpty()) {
+                        addArg(args, "drname", tiviGame.getDrname(), formattedTitle.trim());
                         tiviGame.setDrname(formattedTitle.trim());
                     } else {
+                        addArg(args, "drname", tiviGame.getDrname(), (formattedTitle + "; " + tiviGame.getDrname()).trim());
                         tiviGame.setDrname((formattedTitle + "; " + tiviGame.getDrname()).trim());
                     }
                 }
                 // Publisher, Developer
                 String publishers = mobyGame.getPublishers().stream().map(companies::get).collect(Collectors.joining(", "));
                 String developers = mobyGame.getDevelopers().stream().map(companies::get).collect(Collectors.joining(", "));
-                System.out.println(publishers);
-                System.out.println(developers);
+                //System.out.println(publishers);
+                //System.out.println(developers);
                 if (publishers.equals(developers)) {
+                    addArg(args, "publisher", tiviGame.getPublisher(), publishers);
+                    addArg(args, "developer", tiviGame.getDeveloper(), "");
                     tiviGame.setPublisher(publishers);
                     tiviGame.setDeveloper("");
                 } else {
+                    addArg(args, "publisher", tiviGame.getPublisher(), publishers);
+                    addArg(args, "developer", tiviGame.getDeveloper(), developers);
                     tiviGame.setPublisher(publishers);
                     tiviGame.setDeveloper(developers);
                 }
 
                 //14 screens
                 Set<String> availableImages = new HashSet<>();
-                List<String> screens = mobyGame.getScreens().stream().map(mg -> mg.getLarge().isEmpty() ? mg.getSmall() : mg.getLarge()).collect(Collectors.toList());
+                mobyGame.getScreens().forEach(mg -> {
+                    if (mg.getLarge().isEmpty()) {
+                        System.out.println(tiviGame.getName());
+                        System.out.println("Large screenshot is empty: " + mobyGame.getTitle());
+                    }
+                });
+                List<String> screens = mobyGame.getScreens().stream().map(MobyImage::getLarge).collect(Collectors.toList());
                 int min = Math.min(screens.size(), 14);
                 screens = screens.subList(0, min);
                 List<String> images = new ArrayList<>();
                 for (int i = 0; i < min; i++) {
                     images.add(StringUtils.normalizeImageName(tiviGame, availableImages, i, screens.get(i)));
+                    addArg(args, "image" + (i + 1), "", images.get(i));
                 }
 
                 tiviGame.setImages(images);
@@ -731,19 +752,41 @@ public class GamesBindingController {
                 }
 
                 //TODO sql
+                if (!args.isEmpty()) {
+                    String argString = args.entrySet().stream().map(a -> String.format("%s=%s", a.getKey(), formatArg(a.getValue()))).collect(Collectors.joining(","));
+                    String sql = String.format("UPDATE base_%s SET %s WHERE cpu='%s';", tiviGame.getSys(), argString, tiviGame.getCpu());
+                    System.out.println(sql);
+                    lines.add(sql);
+                }
 
 
                 //TODO для управления названиями нужен диалог. Отмечать названия, переставлять, итд
                 // Display title, Official title, ...
             }
         });
+
+        FileUtils.saveToFile(getSourceDir(getSource()).resolve("update.sql"), lines);
         System.out.println("gata");
+    }
+
+    private String formatArg(Object arg) {
+        if (arg instanceof String) {
+            return String.format("'%s'", ((String) arg).replace("'", "''"));
+        } else {
+            return String.valueOf(arg);
+        }
+    }
+
+    private void addArg(Map<String, Object> args, String field, String oldValue, String newValue) {
+        if (!oldValue.equals(newValue)) {
+            args.put(field, newValue);
+        }
     }
 
     private Pair<String, String> parseDates(List<String> dates) {
         switch (dates.size()) {
             case 0:
-            return new Pair<>("", "");
+                return new Pair<>("", "");
             case 1:
                 return new Pair<>(parseGod1(dates.get(0)), parseGod(dates.get(0)));
             default:
