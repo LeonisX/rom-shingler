@@ -491,6 +491,81 @@ public class StringUtils {
         return path.replace("://", "@").replace("?", "@").replace(":", "@");
     }
 
+
+    //TODO plural function https://www.irlc.msu.ru/irlc_projects/speak-russian/time_new/rus/grammar/
+
+    //todo return to tivi admin
+    private static List<String> jmRule = Arrays.asList("сь", "бь", "дь", "рь");
+    private static List<String> jiRule = Arrays.asList("га", "жа", "ка", "ха", "ча", "ша", "ща");
+
+    public static String plural(String word, int count) {
+        if (jmRule.stream().anyMatch(word::endsWith)) {
+            return pluraljm(word, count);
+        } else if (jiRule.stream().anyMatch(word::endsWith)) {
+            return pluralj(word, count);
+        } else if (word.endsWith("а")) {
+            return pluralj2(word, count);
+        } else {
+            return pluralm(word, count);
+        }
+    }
+
+    //                                       1   2-4  6...11,...
+    private static final String[] RULE_J = {"a", "и", ""}; // книга -> книги
+    private static final String[] RULE_J2 = {"a", "ы", ""}; // игра -> игры
+    private static final String[] RULE_JM = {"ь", "и", "ей"};
+    private static final String[] RULE_M = {"", "а", "ов"};
+
+    private static String pluralj(String word, int count) { // книга -> книги
+        return plural(word.substring(0, word.length() - 1), RULE_J, count);
+    }
+
+    private static String pluralj2(String word, int count) { // игра -> игры
+        return plural(word.substring(0, word.length() - 1), RULE_J2, count);
+    }
+
+    private static String pluraljm(String word, int count) { // запись
+        return plural(word.substring(0, word.length() - 1), RULE_JM, count);
+    }
+
+    private static String pluralm(String word, int count) { // журнал
+        return plural(word, RULE_M, count);
+    }
+
+    private static String plural(String word, String[] rule, int count) {
+        if (count >= 11 & count <= 19) {
+            return word + rule[2];
+        }
+        switch (count % 10) {
+            case 1:
+                return word + rule[0];
+            case 2:
+            case 3:
+            case 4:
+                return word + rule[1];
+            default:
+                return word + rule[2];
+        }
+    }
+
+    // Просто множественное число
+
+    public static String pluralWords(String word) {
+        return Arrays.stream(word.split(" ")).map(StringUtils::plural).collect(Collectors.joining(" "));
+    }
+
+    public static String plural(String word) {
+        if (word.endsWith("сь") || word.endsWith("бь") || word.endsWith("дь") || word.endsWith("рь") || word.endsWith("а") || word.endsWith("я")) {
+            return word.substring(0, word.length() - 1) + "и"; // запись, книга, документация
+        } else if (word.endsWith("о")) {
+            return word.substring(0, word.length() - 1) + "а"; // окно
+        } else if (word.endsWith("ый")) {
+            return word.substring(0, word.length() - 1) + "е"; // сервисный
+        } else {
+            return word + "ы"; // журнал
+        }
+    }
+
     // From commons
 
     public static boolean isEmpty(String str) {

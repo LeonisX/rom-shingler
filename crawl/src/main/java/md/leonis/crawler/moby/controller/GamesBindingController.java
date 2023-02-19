@@ -83,6 +83,7 @@ public class GamesBindingController {
     public Button duplicatedButton;
     public Button sanitizeBindingsButton;
     public Button copyFromMobyButton;
+    public Button dosStatsButton;
 
     List<Binding> gamesBinding;
     List<GameEntry> gameEntries = new ArrayList<>();
@@ -629,7 +630,7 @@ public class GamesBindingController {
     }
 
     // Скопировать необходимую инфу из Моби
-    public void copyFromMobyButtonButtonClick() throws Exception {
+    public void copyFromMobyButtonClick() throws Exception {
         crawler = getCrawler();
 
         // TiVi games
@@ -765,6 +766,87 @@ public class GamesBindingController {
 
         FileUtils.saveToFile(getSourceDir(getSource()).resolve("update.sql"), lines);
         System.out.println("gata");
+    }
+
+    // Разнообразная статистика по DOS играм
+    @SuppressWarnings("all")
+    public void dosStatsButtonClick() throws Exception {
+        crawler = getCrawler();
+
+        // Moby games
+        List<GameEntry> mobyGames = new ArrayList<>();
+        for (String p : platformsBindingMapEntries.stream().flatMap(e -> e.getValue().stream()).collect(Collectors.toList())) {
+            mobyGames.addAll(crawler.loadGamesList(p));
+        }
+
+        // Companies
+        Map<String, String> companies = loadJsonMap(getSourceDir(getSource()), "companies");
+        Map<String, String> sheets = loadJsonMap(getSourceDir(getSource()), "sheets");
+
+        Map<String, List<GameEntry>> byYear = mobyGames.stream().collect(Collectors.groupingBy(g -> parseDates(g.getDates()).getValue()));
+
+        List<String> publishersList = mobyGames.stream().flatMap(g -> g.getPublishers().stream().map(companies::get)).collect(Collectors.toList());
+        List<String> developersList = mobyGames.stream().flatMap(g -> g.getDevelopers().stream().map(companies::get)).collect(Collectors.toList());
+        List<String> genresList = mobyGames.stream().flatMap(g -> g.getGenres().stream().map(sheets::get)).collect(Collectors.toList());
+
+        Set<String> specs = mobyGames.stream().flatMap(g -> g.getSpecs().keySet().stream()).collect(Collectors.toSet());
+
+        Map<String, List<String>> bySpecs = new HashMap<>();
+        specs.forEach(s -> bySpecs.put(s, gameEntries.stream().filter(GameEntry::isHasSpecs).flatMap(g -> {
+            Map<String, List<String>> specsMap = g.getSpecs();
+            if (specsMap != null && specsMap.get(s) != null) {
+                return g.getSpecs().get(s).stream();
+            } else return new ArrayList<String>().stream();
+        }).collect(Collectors.toList())));
+
+        List<String> yearsLines = new ArrayList<>();
+        byYear.entrySet().stream().sorted(Comparator.comparingInt(e -> e.getValue().size()))
+                .forEach(e -> yearsLines.add(String.format("\"%s\";\"%s\"", e.getKey(), e.getValue().size())));
+        FileUtils.saveToFile(getSourceDir(getSource()).resolve("year.csv"), yearsLines);
+
+        List<String> publishersLines = new ArrayList<>();
+        publishersList.stream().filter(Objects::nonNull).collect(Collectors.groupingBy(Function.identity())).entrySet().stream()
+                .map(w -> new Pair<>(w.getKey(), w.getValue().size()))
+                .sorted(Comparator.comparingInt(e -> ((Pair<String, Integer>) e).getValue()).reversed())
+                .forEach(e -> publishersLines.add(String.format("%s: %s %s", repairPublisher(e.getKey()), e.getValue(), plural("игра", e.getValue()))));
+        publishersLines.subList(0, 100).forEach(System.out::println);
+
+        List<String> developersLines = new ArrayList<>();
+        developersList.stream().filter(Objects::nonNull).collect(Collectors.groupingBy(Function.identity())).entrySet().stream()
+                .map(w -> new Pair<>(w.getKey(), w.getValue().size()))
+                .sorted(Comparator.comparingInt(e -> ((Pair<String, Integer>) e).getValue()).reversed())
+                .forEach(e -> developersLines.add(String.format("%s: %s %s", repairPublisher(e.getKey()), e.getValue(), plural("игра", e.getValue()))));
+        developersLines.subList(0, 100).forEach(System.out::println);
+
+        List<String> genresLines = new ArrayList<>();
+        genresList.stream().filter(Objects::nonNull).collect(Collectors.groupingBy(Function.identity())).entrySet().stream().sorted(Comparator.comparingInt(e -> e.getValue().size()))
+                .forEach(e -> genresLines.add(String.format("%s: %s %s", e.getKey(), e.getValue().size(), plural("игра", e.getValue().size()))));
+        genresLines.forEach(System.out::println);
+
+        bySpecs.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(e -> {
+            System.out.println(String.format("%s:", e.getKey()));
+            e.getValue().stream().collect(Collectors.groupingBy(Function.identity())).entrySet().stream().map(w -> new Pair<>(w.getKey(), w.getValue().size()))
+                    .sorted(Comparator.comparingInt(p -> ((Pair<String, Integer>) p).getValue()).reversed())
+                    .map(w -> w.getKey() + ": " + w.getValue()).forEach(System.out::println);
+            System.out.println();
+        });
+
+        System.out.println("gata");
+    }
+
+    private String repairPublisher(String publisher) {
+        publisher = removeTail(publisher, " Inc.");
+        publisher = removeTail(publisher, " Ltd.");
+        publisher = removeTail(publisher, " LLC");
+        publisher = removeTail(publisher, " SA");
+        publisher = removeTail(publisher, " S.A.");
+        publisher = removeTail(publisher, " The");
+        publisher = removeTail(publisher, " Plc");
+        publisher = removeTail(publisher, " Corp.");
+        publisher = removeTail(publisher, " GmbH");
+        publisher = removeTail(publisher, " Limited");
+        publisher = removeTail(publisher, ",");
+        return publisher;
     }
 
     private String formatArg(Object arg) {
